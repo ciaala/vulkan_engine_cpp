@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.7)
-
+set(CMAKE_MODULE_PATH ../cmake)
 project(vkengine)
 set(CMAKE_CXX_STANDARD 14)
-
+find_package(XCB REQUIRED)
 set(SOURCE_FILES src/Engine.cpp
-        src/Renderer.cpp )
+        src/Renderer.cpp src/renderer/RendererDefinition.hpp)
 add_library(vkengine STATIC ${SOURCE_FILES})
-target_link_libraries(vkengine vulkan)
-target_include_directories(vkengine PUBLIC vulkan)
+target_link_libraries(vkengine vulkan xcb)
+target_include_directories(vkengine PUBLIC vulkan PUBLIC xcb)
