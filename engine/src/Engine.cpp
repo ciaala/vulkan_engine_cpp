@@ -4,28 +4,36 @@
 
 #include <iostream>
 #include "../include/Engine.hpp"
-namespace vlk {
-//    engine::engine(int argc, char **argv) {
+
+//    vlk::Engine::Engine(int argc, char **argv) {
 //        this->argc = argc;
 //        this->argv = argv;
 //    }
 
-    std::string Engine::getVulkanVersion() {
-        return std::to_string(VK_HEADER_VERSION);
+std::string vlk::Engine::getVulkanVersion() {
+    return std::to_string(VK_HEADER_VERSION);
+}
+
+vlk::Engine::Engine(Application *application) {
+    this->application = application;
+    this->setup();
+    this->init();
+}
+
+void vlk::Engine::setup() {
+    this->renderer = new Renderer();
+}
+
+void vlk::Engine::init() {
+    if (this->DEBUG_LEVEL) {
+        std::cout << "Starting up sample_application: " << this->application->getName() << std::endl;
     }
 
-    Engine::Engine(Application *application) {
-        this->application = application;
-        this->setup();
-        this->init();
-    }
-    void Engine::setup() {
-        this->renderer = new Renderer();
-    }
-    void Engine::init() {
-        if (this->DEBUG_LEVEL) {
-            std::cout << "Starting up sample_application: " << this->application->getName() << std::endl;
-        }
+}
 
-    }
+void vlk::Engine::draw() {
+    std::cout << "Engine.draw" << std::endl;
+}
+
+void vlk::Engine::resize() {    std::cout << "Engine.resize" << std::endl;
 }

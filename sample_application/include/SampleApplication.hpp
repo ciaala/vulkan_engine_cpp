@@ -7,7 +7,12 @@
 
 
 #include "Application.hpp"
-
+struct vktexcube_vs_uniform {
+    // Must start with MVP
+    float mvp[4][4];
+    float position[12 * 3][4];
+    float attr[12 * 3][4];
+};
 class SampleApplication : public Application {
 public:
     SampleApplication();

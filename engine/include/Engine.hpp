@@ -9,7 +9,10 @@
 #include <string>
 #include "Application.hpp"
 #include "Renderer.hpp"
+
 namespace vlk {
+    class Renderer;
+
     class Engine {
     private:
         // int argc;
@@ -22,9 +25,22 @@ namespace vlk {
 
         Engine(Application *application);
 
-        static std::string getVulkanVersion();
         void setup();
+
         void init();
+
+        void draw();
+
+        void resize();
+
+        Application* getApplication() { return this->application; }
+
+    public:
+        // ---- STATIC
+
+        static std::string getVulkanVersion();
+
+        static std::string getName();
     };
 }
 
