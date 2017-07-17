@@ -9,16 +9,11 @@
 #include <X11/Xutil.h>
 #include "VulkanModule.hpp"
 
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-
-#include "XCBModule.hpp"
-
 namespace vlk {
     class XCBModule;
+
     class VulkanModule;
-}
-#endif
-namespace vlk {
+
     class Renderer {
 
     private:
@@ -32,13 +27,19 @@ namespace vlk {
         VulkanModule *vulkanModule;
         Engine *engine;
     public:
-        XCBModule* getXCBModule();
+        XCBModule *getXCBModule();
+
         Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule);
 
-        void initVulkan();
-        void createWindow();
 
         void initWindowLibrary();
+
+        void initVulkan();
+
+        void createWindow();
+
+        void initSwapChain();
+
     };
 }
 

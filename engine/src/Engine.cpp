@@ -33,6 +33,7 @@ void vlk::Engine::init() {
     this->renderer->initWindowLibrary();
     this->renderer->initVulkan();
     this->renderer->createWindow();
+    this->renderer->initSwapChain();
     this->prepare();
     this->xcbModule->runXCB();
 }

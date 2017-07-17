@@ -43,3 +43,8 @@ void vlk::Renderer::initVulkan() {
 vlk::XCBModule* vlk::Renderer::getXCBModule() {
     return this->xcbModule;
 }
+
+void vlk::Renderer::initSwapChain() {
+    vulkanModule->initSurface(xcbModule->getConnection(), xcbModule->getWindow() );
+    vulkanModule->initSwapChain(vk::SurfaceKHR());
+}

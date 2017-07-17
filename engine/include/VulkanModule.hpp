@@ -12,7 +12,10 @@ namespace vlk {
 };
 
 #include <cstdint>
+#include <xcb/xcb.h>
+
 #define VK_USE_PLATFORM_XCB_KHR
+
 #include "vulkan/vulkan.hpp"
 #include "Engine.hpp"
 
@@ -48,9 +51,11 @@ namespace vlk {
 
         uint32_t queue_family_count;
 
+        bool separate_present_queue;
 
     public:
         VulkanModule(vlk::Engine *engine, bool validate);
+
         void init();
 
         void initValidation();
@@ -58,8 +63,24 @@ namespace vlk {
         bool validate;
 
         vk::Bool32 checkLayers(uint32_t check_count, const char *const *const check_names, uint32_t layer_count,
-                           vk::LayerProperties *layers);
+                               vk::LayerProperties *layers);
 
+        void initSwapChain(vk::SurfaceKHR surface);
+
+        void initSurface(xcb_connection_t *connection, unsigned int xcb_window);
+
+        vk::SurfaceKHR surface;
+
+        void create_device();
+
+    private:
+
+        vk::Format format;
+        vk::ColorSpaceKHR color_space;
+        bool quit;
+        uint32_t curFrame;
+        uint32_t frame_index;
+        vk::Fence fences[FRAME_LAG];
     };
 }
 

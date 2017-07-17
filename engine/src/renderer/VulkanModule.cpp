@@ -340,3 +340,153 @@ vlk::VulkanModule::checkLayers(uint32_t check_count, char const *const *const ch
     }
     return VK_TRUE;
 }
+
+void vlk::VulkanModule::initSurface(xcb_connection_t *connection, xcb_window_t xcb_window) {
+
+// Create a WSI surface for the window:
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    {
+            auto const createInfo = vk::Win32SurfaceCreateInfoKHR().setHinstance(connection).setHwnd(window);
+
+            auto result = inst.createWin32SurfaceKHR(&createInfo, nullptr, &surface);
+            VERIFY(result == vk::Result::eSuccess);
+        }
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    {
+            auto const createInfo = vk::WaylandSurfaceCreateInfoKHR().setDisplay(display).setSurface(window);
+
+            auto result = inst.createWaylandSurfaceKHR(&createInfo, nullptr, &surface);
+            VERIFY(result == vk::Result::eSuccess);
+        }
+#elif defined(VK_USE_PLATFORM_MIR_KHR)
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+    {
+            auto const createInfo = vk::XlibSurfaceCreateInfoKHR().setDpy(display).setWindow(xlib_window);
+
+            auto result = inst.createXlibSurfaceKHR(&createInfo, nullptr, &surface);
+            VERIFY(result == vk::Result::eSuccess);
+        }
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+    {
+        auto const createInfo = vk::XcbSurfaceCreateInfoKHR().setConnection(connection).setWindow(xcb_window);
+
+        auto result = inst.createXcbSurfaceKHR(&createInfo, nullptr, &this->surface);
+        VERIFY(result == vk::Result::eSuccess);
+    }
+#elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
+    {
+            auto result = create_display_surface();
+            VERIFY(result == vk::Result::eSuccess);
+        }
+#endif
+}
+
+void vlk::VulkanModule::initSwapChain(vk::SurfaceKHR surface) {
+
+    // Iterate over each queue to learn whether it supports presenting:
+    std::unique_ptr<vk::Bool32[]> supportsPresent(new vk::Bool32[queue_family_count]);
+    for (uint32_t i = 0; i < queue_family_count; i++) {
+        gpu.getSurfaceSupportKHR(i, surface, &supportsPresent[i]);
+    }
+
+    uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
+    uint32_t presentQueueFamilyIndex = UINT32_MAX;
+    for (uint32_t i = 0; i < queue_family_count; i++) {
+        if (queue_props[i].queueFlags & vk::QueueFlagBits::eGraphics) {
+            if (graphicsQueueFamilyIndex == UINT32_MAX) {
+                graphicsQueueFamilyIndex = i;
+            }
+
+            if (supportsPresent[i] == VK_TRUE) {
+                graphicsQueueFamilyIndex = i;
+                presentQueueFamilyIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (presentQueueFamilyIndex == UINT32_MAX) {
+        // If didn't find a queue that supports both graphics and present,
+        // then
+        // find a separate present queue.
+        for (uint32_t i = 0; i < queue_family_count; ++i) {
+            if (supportsPresent[i] == VK_TRUE) {
+                presentQueueFamilyIndex = i;
+                break;
+            }
+        }
+    }
+
+    // Generate error if could not find both a graphics and a present queue
+    if (graphicsQueueFamilyIndex == UINT32_MAX || presentQueueFamilyIndex == UINT32_MAX) {
+        ERR_EXIT("Could not find both graphics and present queues\n", "Swapchain Initialization Failure");
+    }
+
+    graphics_queue_family_index = graphicsQueueFamilyIndex;
+    present_queue_family_index = presentQueueFamilyIndex;
+    separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
+
+    this->create_device();
+
+    device.getQueue(graphics_queue_family_index, 0, &graphics_queue);
+    if (!separate_present_queue) {
+        present_queue = graphics_queue;
+    } else {
+        device.getQueue(present_queue_family_index, 0, &present_queue);
+    }
+
+    // Get the list of VkFormat's that are supported:
+    uint32_t formatCount;
+    auto result = gpu.getSurfaceFormatsKHR(surface, &formatCount, nullptr);
+    VERIFY(result == vk::Result::eSuccess);
+
+    std::unique_ptr<vk::SurfaceFormatKHR[]> surfFormats(new vk::SurfaceFormatKHR[formatCount]);
+    result = gpu.getSurfaceFormatsKHR(surface, &formatCount, surfFormats.get());
+    VERIFY(result == vk::Result::eSuccess);
+
+    // If the format list includes just one entry of VK_FORMAT_UNDEFINED,
+    // the surface has no preferred format.  Otherwise, at least one
+    // supported format will be returned.
+    if (formatCount == 1 && surfFormats[0].format == vk::Format::eUndefined) {
+        format = vk::Format::eB8G8R8A8Unorm;
+    } else {
+        assert(formatCount >= 1);
+        format = surfFormats[0].format;
+    }
+    color_space = surfFormats[0].colorSpace;
+
+    quit = false;
+    curFrame = 0;
+
+    // Create semaphores to synchronize acquiring presentable buffers before
+    // rendering and waiting for drawing to be complete before presenting
+    auto const semaphoreCreateInfo = vk::SemaphoreCreateInfo();
+
+    // Create fences that we can use to throttle if we get too far
+    // ahead of the image presents
+    auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
+    for (uint32_t i = 0; i < FRAME_LAG; i++) {
+        result = device.createFence(&fence_ci, nullptr, &fences[i]);
+        VERIFY(result == vk::Result::eSuccess);
+
+        result = device.createSemaphore(&semaphoreCreateInfo, nullptr, &image_acquired_semaphores[i]);
+        VERIFY(result == vk::Result::eSuccess);
+
+        result = device.createSemaphore(&semaphoreCreateInfo, nullptr, &draw_complete_semaphores[i]);
+        VERIFY(result == vk::Result::eSuccess);
+
+        if (separate_present_queue) {
+            result = device.createSemaphore(&semaphoreCreateInfo, nullptr, &image_ownership_semaphores[i]);
+            VERIFY(result == vk::Result::eSuccess);
+        }
+    }
+    frame_index = 0;
+
+    // Get Memory information and properties
+    gpu.getMemoryProperties(&memory_properties);
+}
+
+void vlk::VulkanModule::create_device() {
+    // TODO Copy the code of the create device
+
+}

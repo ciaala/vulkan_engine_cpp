@@ -9,10 +9,14 @@
 #include <string>
 #include "Application.hpp"
 #include "Renderer.hpp"
+#include "XCBModule.hpp"
+#include "VulkanModule.hpp"
 
 namespace vlk {
     class Renderer;
+
     class XCBModule;
+
     class VulkanModule;
 
     class Engine {

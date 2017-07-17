@@ -39,6 +39,12 @@ namespace vlk {
         void runXCB();
 
         void innerCode(uint16_t width, uint16_t height);
+
+        void initSwapChain();
+
+        xcb_connection_t *getConnection();
+
+        xcb_window_t getWindow();
     };
 }
 

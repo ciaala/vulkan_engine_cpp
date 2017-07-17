@@ -7,6 +7,7 @@
 #include "../../include/XCBModule.hpp"
 #include "../../include/Engine.hpp"
 #include <iostream>
+#define VERIFY(x) assert(x)
 
 void vlk::XCBModule::initXCBLibrary() {
     std::cout << "Init Window" << std::endl;
@@ -160,3 +161,12 @@ vlk::XCBModule::XCBModule(vlk::Engine *engine) {
     this->engine = engine;
 
 }
+
+xcb_connection_t *vlk::XCBModule::getConnection() {
+    return this->connection;
+}
+
+xcb_window_t vlk::XCBModule::getWindow() {
+    return this->xcb_window;
+}
+
