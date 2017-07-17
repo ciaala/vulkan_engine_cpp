@@ -13,3 +13,12 @@ Once GDB is running use the following gdb command to map the original source fil
 set substitute-path *from* *to*
 
 - set substitute-path /var/lib/jenkins/workspace/Create-Linux-VulkanSDK/Vulkan-LoaderAndValidationLayers /opt/VulkanSDK/1.0.54.0/source
+
+if you want to setup gdb automatically then you can set the command should be put inside the file
+./.gdbinit
+
+and you also have to enable auto-loading per project ( local path ) by editing the file ~/.gdbinit and add
+- add-auto-load-safe-path /user/crypt/projects/vulkan-engine.cpp/.gdbinit
+or
+- set auto-load safe-path /
+
