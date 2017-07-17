@@ -164,8 +164,9 @@ namespace vlk {
 
         uint32_t current_buffer;
         vk::DescriptorPool desc_pool;
-        bool prepared;
-        vk::PresentModeKHR presentMode;
+        bool prepared{false};
+        vk::PresentModeKHR presentMode {vk::PresentModeKHR::eFifo};
+
 
 
         uint32_t width;
@@ -189,6 +190,17 @@ namespace vlk {
         vk::ShaderModule frag_shader_module;
 
         void prepareCubeDataBuffers(const float *g_vertex_buffer_data, const float *g_uv_buffer_data);
+
+        // prepare the draw
+    private:
+        float spin_angle;
+        void updateDataBuffer();
+        float spin_increment;
+        bool pause{false};
+    public:
+        void resize();
+        void draw();
+
     };
 }
 

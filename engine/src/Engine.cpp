@@ -49,6 +49,7 @@ void vlk::Engine::draw() {
     } else {
         c ++;
     }
+    this->vulkanModule->draw();
 }
 
 void vlk::Engine::resize() {

@@ -513,6 +513,23 @@ void vlk::VulkanModule::createDevice() {
 }
 
 void vlk::VulkanModule::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data) {
+
+    this->width = 500;
+    this->height = 500;
+    vec3 eye = {0.0f, 3.0f, 5.0f};
+    vec3 origin = {0, 0, 0};
+    vec3 up = {0.0f, 1.0f, 0.0};
+
+    this->spin_angle = 4.0f;
+    this->spin_increment = 0.2f;
+    this->pause = false;
+
+    mat4x4_perspective(projection_matrix, (float)degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
+    mat4x4_look_at(view_matrix, eye, origin, up);
+    mat4x4_identity(model_matrix);
+
+    projection_matrix[1][1] *= -1;
+
     auto const cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(graphics_queue_family_index);
     auto result = device.createCommandPool(&cmd_pool_info, nullptr, &cmd_pool);
     VERIFY(result == vk::Result::eSuccess);
@@ -1351,4 +1368,167 @@ vk::ShaderModule vlk::VulkanModule::prepare_vs() {
     free(vertShaderCode);
 
     return vert_shader_module;
+}
+
+void vlk::VulkanModule::updateDataBuffer() {
+    mat4x4 VP;
+    mat4x4_mul(VP, projection_matrix, view_matrix);
+
+    // Rotate around the Y axis
+    mat4x4 Model;
+    mat4x4_dup(Model, model_matrix);
+    mat4x4_rotate(model_matrix, Model, 0.0f, 1.0f, 0.0f, (float)degreesToRadians(spin_angle));
+
+    mat4x4 MVP;
+    mat4x4_mul(MVP, VP, model_matrix);
+
+    auto data = device.mapMemory(swapchain_image_resources[current_buffer].uniform_memory, 0, VK_WHOLE_SIZE, vk::MemoryMapFlags());
+    // TODO i API changes
+//    VERIFY(data.result == vk::Result::eSuccess);
+
+    memcpy(data, (const void *)&MVP[0][0], sizeof(MVP));
+
+    device.unmapMemory(swapchain_image_resources[current_buffer].uniform_memory);
+}
+
+void vlk::VulkanModule::draw() {
+    // Ensure no more than FRAME_LAG renderings are outstanding
+    device.waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
+    device.resetFences(1, &fences[frame_index]);
+
+    vk::Result result;
+    do {
+        result = device.acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index],
+                                            vk::Fence(), &current_buffer);
+        if (result == vk::Result::eErrorOutOfDateKHR) {
+            // demo->swapchain is out of date (e.g. the window was resized) and
+            // must be recreated:
+            this->resize();
+        } else if (result == vk::Result::eSuboptimalKHR) {
+            // swapchain is not as optimal as it could be, but the platform's
+            // presentation engine will still present the image correctly.
+            break;
+        } else {
+            VERIFY(result == vk::Result::eSuccess);
+        }
+    } while (result != vk::Result::eSuccess);
+
+    this->updateDataBuffer();
+
+    // Wait for the image acquired semaphore to be signaled to ensure
+    // that the image won't be rendered to until the presentation
+    // engine has fully released ownership to the application, and it is
+    // okay to render to the image.
+    vk::PipelineStageFlags const pipe_stage_flags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    auto const submit_info = vk::SubmitInfo()
+            .setPWaitDstStageMask(&pipe_stage_flags)
+            .setWaitSemaphoreCount(1)
+            .setPWaitSemaphores(&image_acquired_semaphores[frame_index])
+            .setCommandBufferCount(1)
+            .setPCommandBuffers(&swapchain_image_resources[current_buffer].cmd)
+            .setSignalSemaphoreCount(1)
+            .setPSignalSemaphores(&draw_complete_semaphores[frame_index]);
+
+    result = graphics_queue.submit(1, &submit_info, fences[frame_index]);
+    VERIFY(result == vk::Result::eSuccess);
+
+    if (separate_present_queue) {
+        // If we are using separate queues, change image ownership to the
+        // present queue before presenting, waiting for the draw complete
+        // semaphore and signalling the ownership released semaphore when
+        // finished
+        auto const present_submit_info = vk::SubmitInfo()
+                .setPWaitDstStageMask(&pipe_stage_flags)
+                .setWaitSemaphoreCount(1)
+                .setPWaitSemaphores(&draw_complete_semaphores[frame_index])
+                .setCommandBufferCount(1)
+                .setPCommandBuffers(&swapchain_image_resources[current_buffer].graphics_to_present_cmd)
+                .setSignalSemaphoreCount(1)
+                .setPSignalSemaphores(&image_ownership_semaphores[frame_index]);
+
+        result = present_queue.submit(1, &present_submit_info, vk::Fence());
+        VERIFY(result == vk::Result::eSuccess);
+    }
+
+    // If we are using separate queues we have to wait for image ownership,
+    // otherwise wait for draw complete
+    auto const presentInfo = vk::PresentInfoKHR()
+            .setWaitSemaphoreCount(1)
+            .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index]
+                                                       : &draw_complete_semaphores[frame_index])
+            .setSwapchainCount(1)
+            .setPSwapchains(&swapchain)
+            .setPImageIndices(&current_buffer);
+
+    result = present_queue.presentKHR(&presentInfo);
+    frame_index += 1;
+    frame_index %= FRAME_LAG;
+    if (result == vk::Result::eErrorOutOfDateKHR) {
+        // swapchain is out of date (e.g. the window was resized) and
+        // must be recreated:
+        resize();
+    } else if (result == vk::Result::eSuboptimalKHR) {
+        // swapchain is not as optimal as it could be, but the platform's
+        // presentation engine will still present the image correctly.
+    } else {
+        VERIFY(result == vk::Result::eSuccess);
+    }
+}
+
+void vlk::VulkanModule::resize() {
+    uint32_t i;
+
+    // Don't react to resize until after first initialization.
+    if (!prepared) {
+        return;
+    }
+
+    // In order to properly resize the window, we must re-create the
+    // swapchain
+    // AND redo the command buffers, etc.
+    //
+    // First, perform part of the cleanup() function:
+    prepared = false;
+//    auto result =
+            device.waitIdle();
+//    VERIFY(result == vk::Result::eSuccess);
+
+    for (i = 0; i < swapchainImageCount; i++) {
+        device.destroyFramebuffer(swapchain_image_resources[i].framebuffer, nullptr);
+    }
+
+    device.destroyDescriptorPool(desc_pool, nullptr);
+
+    device.destroyPipeline(pipeline, nullptr);
+    device.destroyPipelineCache(pipelineCache, nullptr);
+    device.destroyRenderPass(render_pass, nullptr);
+    device.destroyPipelineLayout(pipeline_layout, nullptr);
+    device.destroyDescriptorSetLayout(desc_layout, nullptr);
+
+    for (i = 0; i < texture_count; i++) {
+        device.destroyImageView(textures[i].view, nullptr);
+        device.destroyImage(textures[i].image, nullptr);
+        device.freeMemory(textures[i].mem, nullptr);
+        device.destroySampler(textures[i].sampler, nullptr);
+    }
+
+    device.destroyImageView(depth.view, nullptr);
+    device.destroyImage(depth.image, nullptr);
+    device.freeMemory(depth.mem, nullptr);
+
+    for (i = 0; i < swapchainImageCount; i++) {
+        device.destroyImageView(swapchain_image_resources[i].view, nullptr);
+        device.freeCommandBuffers(cmd_pool, 1, &swapchain_image_resources[i].cmd);
+        device.destroyBuffer(swapchain_image_resources[i].uniform_buffer, nullptr);
+        device.freeMemory(swapchain_image_resources[i].uniform_memory, nullptr);
+    }
+
+    device.destroyCommandPool(cmd_pool, nullptr);
+    if (separate_present_queue) {
+        device.destroyCommandPool(present_cmd_pool, nullptr);
+    }
+
+    // Second, re-perform the prepare() function, which will re-create the
+    // swapchain.
+    engine->prepare();
 }
