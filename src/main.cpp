@@ -8,5 +8,7 @@ int main() {
     std::cout << "Vulkan version: " << vlk::Engine::getVulkanVersion() << std::endl ;
     SampleApplication sampleApplication;
     vlk::Engine engine(&sampleApplication);
+    engine.init();
+    engine.cleanup();
     return 0;
 }

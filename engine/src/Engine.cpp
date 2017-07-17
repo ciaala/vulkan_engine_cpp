@@ -17,11 +17,13 @@ std::string vlk::Engine::getVulkanVersion() {
 vlk::Engine::Engine(Application *application) {
     this->application = application;
     this->setupModules();
-    this->init();
 }
 
 void vlk::Engine::setupModules() {
-    this->renderer = new Renderer(this);
+    this->vulkanModule = new VulkanModule(this, true);
+    this->xcbModule = new XCBModule(this);
+
+    this->renderer = new Renderer(this, vulkanModule, xcbModule);
 }
 
 void vlk::Engine::init() {
@@ -29,11 +31,10 @@ void vlk::Engine::init() {
         std::cout << "Starting up sample_application: " << this->application->getName() << std::endl;
     }
     this->renderer->initWindowLibrary();
-    //this->renderer->initVulkan();
+    this->renderer->initVulkan();
     this->renderer->createWindow();
     this->prepare();
-    this->renderer->getXCBModule()->runXCB();
-    this->cleanup();
+    this->xcbModule->runXCB();
 }
 
 void vlk::Engine::draw() {
@@ -44,7 +45,7 @@ void vlk::Engine::draw() {
         std::cout << "Engine.draw " << gc << " x 10^6" << std::endl;
         c = 0;
     } else {
-        c++;
+        c ++;
     }
 }
 

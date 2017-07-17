@@ -27,6 +27,8 @@ vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) {
 void vlk::VulkanModule::initValidation() {
     uint32_t instance_layer_count = 0;
     uint32_t validation_layer_count = 0;
+    enabled_layer_count = 0;
+
     char const *const *instance_validation_layers = nullptr;
     char const *const instance_validation_layers_alt1[] = {"VK_LAYER_LUNARG_standard_validation"};
 
@@ -83,7 +85,6 @@ void vlk::VulkanModule::init() {
     uint32_t instance_extension_count = 0;
 
     enabled_extension_count = 0;
-    enabled_layer_count = 0;
 
     // Look for validation layers
     this->initValidation();
@@ -217,7 +218,7 @@ void vlk::VulkanModule::init() {
     auto const inst_info = vk::InstanceCreateInfo()
             .setPApplicationInfo(&app)
             .setEnabledLayerCount(enabled_layer_count)
-            .setPpEnabledLayerNames(instance_validation_layers)
+            .setPpEnabledLayerNames(enabled_layers)
             .setEnabledExtensionCount(enabled_extension_count)
             .setPpEnabledExtensionNames(extension_names);
 

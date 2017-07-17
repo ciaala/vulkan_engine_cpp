@@ -4,12 +4,12 @@
 
 #include "../include/SampleApplication.hpp"
 #include <string>
-SampleApplication::SampleApplication() {
+SampleApplication::SampleApplication() : applicationName("SampleApplication"){
 
 }
 
 std::string SampleApplication::getName() {
-    return "SampleApplication";
+    return this->applicationName;
 }
 
 

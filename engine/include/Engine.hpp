@@ -12,6 +12,8 @@
 
 namespace vlk {
     class Renderer;
+    class XCBModule;
+    class VulkanModule;
 
     class Engine {
     private:
@@ -20,6 +22,11 @@ namespace vlk {
         bool DEBUG_LEVEL = true;
         Application *application;
         Renderer *renderer;
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+        XCBModule *xcbModule;
+#endif
+
+        VulkanModule *vulkanModule;
     public:
         //engine(int argc = 0, char** argv = nullptr);
 

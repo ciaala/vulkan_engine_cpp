@@ -33,7 +33,7 @@ namespace vlk {
         Engine *engine;
     public:
         XCBModule* getXCBModule();
-        Renderer(Engine *engine);
+        Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule);
 
         void initVulkan();
         void createWindow();
