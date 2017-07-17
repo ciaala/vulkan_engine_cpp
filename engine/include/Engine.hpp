@@ -25,7 +25,7 @@ namespace vlk {
 
         Engine(Application *application);
 
-        void setup();
+        void setupModules();
 
         void init();
 
@@ -33,7 +33,11 @@ namespace vlk {
 
         void resize();
 
-        Application* getApplication() { return this->application; }
+        void prepare();
+
+        void cleanup();
+
+        Application *getApplication() { return this->application; }
 
     public:
         // ---- STATIC

@@ -3,15 +3,15 @@
 //
 
 #include <cstdint>
+#include <unistd.h>
 #include "../../include/XCBModule.hpp"
 #include "../../include/Engine.hpp"
 #include <iostream>
 
 void vlk::XCBModule::initXCBLibrary() {
-    const xcb_setup_t *setup;
-    xcb_screen_iterator_t iter;
-    int scr;
+    std::cout << "Init Window" << std::endl;
 
+    int scr;
     this->connection = xcb_connect(nullptr, &scr);
     if (xcb_connection_has_error(this->connection) > 0) {
         std::cout
@@ -20,15 +20,21 @@ void vlk::XCBModule::initXCBLibrary() {
                 << std::flush;
         exit(1);
     }
+    const xcb_setup_t *setup = xcb_get_setup(this->connection);
+    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);;
 
-    setup = xcb_get_setup(this->connection);
-    iter = xcb_setup_roots_iterator(setup);
+
     while (scr-- > 0) xcb_screen_next(&iter);
 
     this->screen = iter.data;
+
 }
 
 void vlk::XCBModule::createWindow(uint16_t width, uint16_t height) {
+    this->width = width;
+    this->height = height;
+
+    std::cout << "Creating Window" << std::endl;
     uint32_t value_mask, value_list[32];
 
     xcb_window = xcb_generate_id(connection);
@@ -37,8 +43,17 @@ void vlk::XCBModule::createWindow(uint16_t width, uint16_t height) {
     value_list[0] = screen->black_pixel;
     value_list[1] = XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 
-    xcb_create_window(connection, XCB_COPY_FROM_PARENT, xcb_window, screen->root, 0, 0, this->width, this->height, 0,
-                      XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, value_mask, value_list);
+    xcb_create_window(connection,
+                      XCB_COPY_FROM_PARENT,
+                      xcb_window, screen->root,
+                      0, 0,
+                      this->width, this->height,
+                      10,
+                      XCB_WINDOW_CLASS_INPUT_OUTPUT,
+                      screen->root_visual,
+
+                      value_mask,
+                      value_list);
 
     /* Magic code that will send notification when window is destroyed */
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(connection, 1, 12, "WM_PROTOCOLS");
@@ -47,13 +62,16 @@ void vlk::XCBModule::createWindow(uint16_t width, uint16_t height) {
     xcb_intern_atom_cookie_t cookie2 = xcb_intern_atom(connection, 0, 16, "WM_DELETE_WINDOW");
     atom_wm_delete_window = xcb_intern_atom_reply(connection, cookie2, 0);
 
-    xcb_change_property(connection, XCB_PROP_MODE_REPLACE, xcb_window, (*reply).atom, 4, 32, 1,
+    xcb_change_property(connection,
+                        XCB_PROP_MODE_REPLACE,
+                        xcb_window,
+                        (*reply).atom, 4, 32, 1,
                         &(*atom_wm_delete_window).atom);
 
     free(reply);
 
     xcb_map_window(connection, xcb_window);
-
+    xcb_flush(connection);
     // Force the x/y coordinates to 100,100 results are identical in
     // consecutive
     // runs
@@ -67,14 +85,19 @@ void vlk::XCBModule::handleXCBEvent(const xcb_generic_event_t *event) {
     switch (event_code) {
         case XCB_EXPOSE:
             // TODO: Resize window
+            std::cout << "Event XCB_EXPOSE" << std::endl;
             break;
         case XCB_CLIENT_MESSAGE:
-            if ((*(xcb_client_message_event_t *)event).data.data32[0] == (*atom_wm_delete_window).atom) {
+            std::cout << "Event XCB_CLIENT_MESSAGE" << std::endl;
+
+            if ((*(xcb_client_message_event_t *) event).data.data32[0] == (*atom_wm_delete_window).atom) {
                 quit = true;
             }
             break;
         case XCB_KEY_RELEASE: {
-            const xcb_key_release_event_t *key = (const xcb_key_release_event_t *)event;
+            std::cout << "Event XCB_KEY_RELEASE" << std::endl;
+
+            const xcb_key_release_event_t *key = (const xcb_key_release_event_t *) event;
 
             switch (key->detail) {
                 case 0x9:  // Escape
@@ -87,18 +110,22 @@ void vlk::XCBModule::handleXCBEvent(const xcb_generic_event_t *event) {
                     spin_angle += spin_increment;
                     break;
                 case 0x41:  // space bar
-                    pause = !pause;
+                    isPaused = !isPaused;
                     break;
             }
-        } break;
+        }
+            break;
         case XCB_CONFIGURE_NOTIFY: {
-            const xcb_configure_notify_event_t *cfg = (const xcb_configure_notify_event_t *)event;
+            std::cout << "Event XCB_CONFIGURE_NOTIFY" << std::endl;
+
+            const xcb_configure_notify_event_t *cfg = (const xcb_configure_notify_event_t *) event;
             if ((width != cfg->width) || (height != cfg->height)) {
                 width = cfg->width;
                 height = cfg->height;
                 engine->resize();
             }
-        } break;
+        }
+            break;
         default:
             break;
     }
@@ -110,7 +137,7 @@ void vlk::XCBModule::runXCB() {
     while (!quit) {
         xcb_generic_event_t *event;
 
-        if (pause) {
+        if (isPaused) {
             event = xcb_wait_for_event(connection);
         } else {
             event = xcb_poll_for_event(connection);
@@ -127,4 +154,9 @@ void vlk::XCBModule::runXCB() {
             quit = true;
         }
     }
+}
+
+vlk::XCBModule::XCBModule(vlk::Engine *engine) {
+    this->engine = engine;
+
 }

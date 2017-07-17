@@ -15,7 +15,6 @@
 
 namespace vlk {
     class XCBModule;
-
     class VulkanModule;
 }
 #endif
@@ -30,13 +29,14 @@ namespace vlk {
         XCBModule *xcbModule;
 #endif
 
-        VulkanModule vulkanModule();
-
+        VulkanModule *vulkanModule;
+        Engine *engine;
     public:
-        Renderer();
+        XCBModule* getXCBModule();
+        Renderer(Engine *engine);
 
         void initVulkan();
-
+        void createWindow();
 
         void initWindowLibrary();
     };

@@ -22,13 +22,14 @@ namespace vlk {
 
         float spin_angle;
         float spin_increment;
-        bool pause;
+        bool isPaused;
 
         uint16_t height;
         uint16_t width;
         int curFrame;  unsigned int frameCount;
         vlk::Engine *engine;
     public:
+        XCBModule(Engine *engine);
         void createWindow(uint16_t width, uint16_t height);
 
         void initXCBLibrary();
@@ -37,6 +38,7 @@ namespace vlk {
 
         void runXCB();
 
+        void innerCode(uint16_t width, uint16_t height);
     };
 }
 
