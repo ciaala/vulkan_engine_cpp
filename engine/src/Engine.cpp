@@ -20,7 +20,7 @@ vlk::Engine::Engine(Application *application) {
 }
 
 void vlk::Engine::setupModules() {
-    this->vulkanModule = new VulkanModule(this, true);
+    this->vulkanModule = new VulkanModule(this, false);
     this->xcbModule = new XCBModule(this);
 
     this->renderer = new Renderer(this, vulkanModule, xcbModule);
@@ -35,6 +35,7 @@ void vlk::Engine::init() {
     this->renderer->createWindow();
     this->renderer->initSwapChain();
     this->prepare();
+    this->renderer->prepare(this->application->getBufferData(), this->application->getUVBufferData());
     this->xcbModule->runXCB();
 }
 

@@ -8,20 +8,18 @@
 #include <string>
 #include "Application.hpp"
 
-struct vktexcube_vs_uniform {
-    // Must start with MVP
-    float mvp[4][4];
-    float position[12 * 3][4];
-    float attr[12 * 3][4];
-};
 
 class SampleApplication : public Application {
 private:
     std::string applicationName;
 public:
     SampleApplication();
-
-    std::string getName();
+    static const float g_uv_buffer_data[];
+    static const float g_vertex_buffer_data[];
+    virtual const float* getBufferData();
+    virtual const float* getUVBufferData();
+    virtual std::string getName();
+    ~SampleApplication() {};
 };
 
 

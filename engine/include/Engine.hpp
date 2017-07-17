@@ -5,7 +5,6 @@
 #ifndef VULKAN_ENGINE_CPP_ENGINE_H
 #define VULKAN_ENGINE_CPP_ENGINE_H
 
-#include <vulkan/vulkan.hpp>
 #include <string>
 #include "Application.hpp"
 #include "Renderer.hpp"
@@ -56,6 +55,8 @@ namespace vlk {
         static std::string getVulkanVersion();
 
         static std::string getName();
+
+
     };
 }
 

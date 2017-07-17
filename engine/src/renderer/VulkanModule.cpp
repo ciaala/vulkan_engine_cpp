@@ -5,22 +5,16 @@
 #include <iostream>
 #include "../../include/VulkanModule.hpp"
 #include "../../include/Engine.hpp"
+#include "../../include/CommonMacro.hpp"
+#include "../../include/ShaderModule.hpp"
 
-#define VERIFY(x) assert(x)
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
-
-#define ERR_EXIT(err_msg, err_class) \
-    do {                             \
-        printf("%s\n", err_msg);     \
-        fflush(stdout);              \
-        exit(1);                     \
-    } while (0)
 
 vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) {
     this->engine = engine;
     this->validate = validate;
     enabled_extension_count = 0;
     enabled_layer_count = 0;
+    this->use_staging_buffer = false;
 
 }
 
@@ -501,7 +495,7 @@ void vlk::VulkanModule::createDevice() {
             .setEnabledLayerCount(0)
             .setPpEnabledLayerNames(nullptr)
             .setEnabledExtensionCount(enabled_extension_count)
-            .setPpEnabledExtensionNames((const char *const *)extension_names)
+            .setPpEnabledExtensionNames((const char *const *) extension_names)
             .setPEnabledFeatures(nullptr);
 
     if (separate_present_queue) {
@@ -513,4 +507,848 @@ void vlk::VulkanModule::createDevice() {
 
     auto result = gpu.createDevice(&deviceInfo, nullptr, &device);
     VERIFY(result == vk::Result::eSuccess);
+    this->memoryModule = new MemoryModule(&memory_properties);
+    this->textureModule = new TextureModule(&device, memoryModule);
+    this->shaderModule = new ShaderModule(&device);
+}
+
+void vlk::VulkanModule::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data) {
+    auto const cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(graphics_queue_family_index);
+    auto result = device.createCommandPool(&cmd_pool_info, nullptr, &cmd_pool);
+    VERIFY(result == vk::Result::eSuccess);
+
+    auto const cmd = vk::CommandBufferAllocateInfo()
+            .setCommandPool(cmd_pool)
+            .setLevel(vk::CommandBufferLevel::ePrimary)
+            .setCommandBufferCount(1);
+
+    result = device.allocateCommandBuffers(&cmd, &this->cmd);
+    VERIFY(result == vk::Result::eSuccess);
+
+    auto const cmd_buf_info = vk::CommandBufferBeginInfo().setPInheritanceInfo(nullptr);
+
+    result = this->cmd.begin(&cmd_buf_info);
+    VERIFY(result == vk::Result::eSuccess);
+
+    this->prepareBuffers();
+    this->prepareDepth();
+    this->prepareTextures();
+    this->prepareCubeDataBuffers(g_vertex_buffer_data, g_uv_buffer_data);
+
+    this->prepareDescriptorLayout();
+    this->prepareRenderPass();
+    this->preparePipeline();
+
+    for (uint32_t i = 0; i < swapchainImageCount; ++i) {
+        result = device.allocateCommandBuffers(&cmd, &swapchain_image_resources[i].cmd);
+        VERIFY(result == vk::Result::eSuccess);
+    }
+
+    if (separate_present_queue) {
+        auto const present_cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(present_queue_family_index);
+
+        result = device.createCommandPool(&present_cmd_pool_info, nullptr, &present_cmd_pool);
+        VERIFY(result == vk::Result::eSuccess);
+
+        auto const present_cmd = vk::CommandBufferAllocateInfo()
+                .setCommandPool(present_cmd_pool)
+                .setLevel(vk::CommandBufferLevel::ePrimary)
+                .setCommandBufferCount(1);
+
+        for (uint32_t i = 0; i < swapchainImageCount; i++) {
+            result = device.allocateCommandBuffers(&present_cmd, &swapchain_image_resources[i].graphics_to_present_cmd);
+            VERIFY(result == vk::Result::eSuccess);
+
+            this->buildImageOwnershipCmd(i);
+        }
+    }
+
+    this->prepareDescriptorPool();
+    this->prepareDescriptorSet();
+    this->prepareFramebuffers();
+
+    for (uint32_t i = 0; i < swapchainImageCount; ++i) {
+        current_buffer = i;
+        this->drawBuildCmd(swapchain_image_resources[i].cmd);
+    }
+
+    /*
+     * Prepare functions above may generate pipeline commands
+     * that need to be flushed before beginning the render loop.
+     */
+    this->flushInitCmd();
+    if (staging_texture.image) {
+        textureModule->destroyTextureImage(&staging_texture);
+    }
+
+    current_buffer = 0;
+    prepared = true;
+
+}
+
+void vlk::VulkanModule::prepareBuffers() {
+    vk::SwapchainKHR oldSwapchain = swapchain;
+
+    // Check the surface capabilities and formats
+    vk::SurfaceCapabilitiesKHR surfCapabilities;
+    auto result = gpu.getSurfaceCapabilitiesKHR(surface, &surfCapabilities);
+    VERIFY(result == vk::Result::eSuccess);
+
+    uint32_t presentModeCount;
+    result = gpu.getSurfacePresentModesKHR(surface, &presentModeCount, nullptr);
+    VERIFY(result == vk::Result::eSuccess);
+
+    std::unique_ptr<vk::PresentModeKHR[]> presentModes(new vk::PresentModeKHR[presentModeCount]);
+    result = gpu.getSurfacePresentModesKHR(surface, &presentModeCount, presentModes.get());
+    VERIFY(result == vk::Result::eSuccess);
+
+    vk::Extent2D swapchainExtent;
+    // width and height are either both -1, or both not -1.
+    if (surfCapabilities.currentExtent.width == (uint32_t) -1) {
+        // If the surface size is undefined, the size is set to
+        // the size of the images requested.
+        swapchainExtent.width = width;
+        swapchainExtent.height = height;
+    } else {
+        // If the surface size is defined, the swap chain size must match
+        swapchainExtent = surfCapabilities.currentExtent;
+        width = surfCapabilities.currentExtent.width;
+        height = surfCapabilities.currentExtent.height;
+    }
+
+    // The FIFO present mode is guaranteed by the spec to be supported
+    // and to have no tearing.  It's a great default present mode to use.
+    vk::PresentModeKHR swapchainPresentMode = vk::PresentModeKHR::eFifo;
+
+    //  There are times when you may wish to use another present mode.  The
+    //  following code shows how to select them, and the comments provide some
+    //  reasons you may wish to use them.
+    //
+    // It should be noted that Vulkan 1.0 doesn't provide a method for
+    // synchronizing rendering with the presentation engine's display.  There
+    // is a method provided for throttling rendering with the display, but
+    // there are some presentation engines for which this method will not work.
+    // If an application doesn't throttle its rendering, and if it renders much
+    // faster than the refresh rate of the display, this can waste power on
+    // mobile devices.  That is because power is being spent rendering images
+    // that may never be seen.
+
+    // VK_PRESENT_MODE_IMMEDIATE_KHR is for applications that don't care
+    // about
+    // tearing, or have some way of synchronizing their rendering with the
+    // display.
+    // VK_PRESENT_MODE_MAILBOX_KHR may be useful for applications that
+    // generally render a new presentable image every refresh cycle, but are
+    // occasionally early.  In this case, the application wants the new
+    // image
+    // to be displayed instead of the previously-queued-for-presentation
+    // image
+    // that has not yet been displayed.
+    // VK_PRESENT_MODE_FIFO_RELAXED_KHR is for applications that generally
+    // render a new presentable image every refresh cycle, but are
+    // occasionally
+    // late.  In this case (perhaps because of stuttering/latency concerns),
+    // the application wants the late image to be immediately displayed,
+    // even
+    // though that may mean some tearing.
+
+    if (presentMode != swapchainPresentMode) {
+        for (size_t i = 0; i < presentModeCount; ++i) {
+            if (presentModes[i] == presentMode) {
+                swapchainPresentMode = presentMode;
+                break;
+            }
+        }
+    }
+
+    if (swapchainPresentMode != presentMode) {
+        ERR_EXIT("Present mode specified is not supported\n", "Present mode unsupported");
+    }
+
+    // Determine the number of VkImages to use in the swap chain.
+    // Application desires to acquire 3 images at a time for triple
+    // buffering
+    uint32_t desiredNumOfSwapchainImages = 3;
+    if (desiredNumOfSwapchainImages < surfCapabilities.minImageCount) {
+        desiredNumOfSwapchainImages = surfCapabilities.minImageCount;
+    }
+
+    // If maxImageCount is 0, we can ask for as many images as we want,
+    // otherwise
+    // we're limited to maxImageCount
+    if ((surfCapabilities.maxImageCount > 0) && (desiredNumOfSwapchainImages > surfCapabilities.maxImageCount)) {
+        // Application must settle for fewer images than desired:
+        desiredNumOfSwapchainImages = surfCapabilities.maxImageCount;
+    }
+
+    vk::SurfaceTransformFlagBitsKHR preTransform;
+    if (surfCapabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity) {
+        preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+    } else {
+        preTransform = surfCapabilities.currentTransform;
+    }
+
+    // Find a supported composite alpha mode - one of these is guaranteed to be set
+    vk::CompositeAlphaFlagBitsKHR compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+    vk::CompositeAlphaFlagBitsKHR compositeAlphaFlags[4] = {
+            vk::CompositeAlphaFlagBitsKHR::eOpaque,
+            vk::CompositeAlphaFlagBitsKHR::ePreMultiplied,
+            vk::CompositeAlphaFlagBitsKHR::ePostMultiplied,
+            vk::CompositeAlphaFlagBitsKHR::eInherit,
+    };
+    for (uint32_t i = 0; i < sizeof(compositeAlphaFlags); i++) {
+        if (surfCapabilities.supportedCompositeAlpha & compositeAlphaFlags[i]) {
+            compositeAlpha = compositeAlphaFlags[i];
+            break;
+        }
+    }
+
+    auto const swapchain_ci = vk::SwapchainCreateInfoKHR()
+            .setSurface(surface)
+            .setMinImageCount(desiredNumOfSwapchainImages)
+            .setImageFormat(format)
+            .setImageColorSpace(color_space)
+            .setImageExtent({swapchainExtent.width, swapchainExtent.height})
+            .setImageArrayLayers(1)
+            .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+            .setImageSharingMode(vk::SharingMode::eExclusive)
+            .setQueueFamilyIndexCount(0)
+            .setPQueueFamilyIndices(nullptr)
+            .setPreTransform(preTransform)
+            .setCompositeAlpha(compositeAlpha)
+            .setPresentMode(swapchainPresentMode)
+            .setClipped(true)
+            .setOldSwapchain(oldSwapchain);
+
+    result = device.createSwapchainKHR(&swapchain_ci, nullptr, &swapchain);
+    VERIFY(result == vk::Result::eSuccess);
+
+    // If we just re-created an existing swapchain, we should destroy the
+    // old
+    // swapchain at this point.
+    // Note: destroying the swapchain also cleans up all its associated
+    // presentable images once the platform is done with them.
+    if (oldSwapchain) {
+        device.destroySwapchainKHR(oldSwapchain, nullptr);
+    }
+
+    result = device.getSwapchainImagesKHR(swapchain, &swapchainImageCount, nullptr);
+    VERIFY(result == vk::Result::eSuccess);
+
+    std::unique_ptr<vk::Image[]> swapchainImages(new vk::Image[swapchainImageCount]);
+    result = device.getSwapchainImagesKHR(swapchain, &swapchainImageCount, swapchainImages.get());
+    VERIFY(result == vk::Result::eSuccess);
+
+    swapchain_image_resources.reset(new SwapchainImageResources[swapchainImageCount]);
+
+    for (uint32_t i = 0; i < swapchainImageCount; ++i) {
+        auto color_image_view =
+                vk::ImageViewCreateInfo()
+                        .setViewType(vk::ImageViewType::e2D)
+                        .setFormat(format)
+                        .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+        swapchain_image_resources[i].image = swapchainImages[i];
+
+        color_image_view.image = swapchain_image_resources[i].image;
+
+        result = device.createImageView(&color_image_view, nullptr, &swapchain_image_resources[i].view);
+        VERIFY(result == vk::Result::eSuccess);
+    }
+}
+
+
+void vlk::VulkanModule::prepareDepth() {
+    depth.format = vk::Format::eD16Unorm;
+
+    auto const image = vk::ImageCreateInfo()
+            .setImageType(vk::ImageType::e2D)
+            .setFormat(depth.format)
+            .setExtent({(uint32_t) width, (uint32_t) height, 1})
+            .setMipLevels(1)
+            .setArrayLayers(1)
+            .setSamples(vk::SampleCountFlagBits::e1)
+            .setTiling(vk::ImageTiling::eOptimal)
+            .setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment)
+            .setSharingMode(vk::SharingMode::eExclusive)
+            .setQueueFamilyIndexCount(0)
+            .setPQueueFamilyIndices(nullptr)
+            .setInitialLayout(vk::ImageLayout::eUndefined);
+
+    auto result = device.createImage(&image, nullptr, &depth.image);
+    VERIFY(result == vk::Result::eSuccess);
+
+    vk::MemoryRequirements mem_reqs;
+    device.getImageMemoryRequirements(depth.image, &mem_reqs);
+
+    depth.mem_alloc.setAllocationSize(mem_reqs.size);
+    depth.mem_alloc.setMemoryTypeIndex(0);
+
+    auto const pass = memoryModule->memoryTypeFromProperties(mem_reqs.memoryTypeBits,
+                                                             vk::MemoryPropertyFlagBits::eDeviceLocal,
+                                                             &depth.mem_alloc.memoryTypeIndex);
+    VERIFY(pass);
+
+    result = device.allocateMemory(&depth.mem_alloc, nullptr, &depth.mem);
+    VERIFY(result == vk::Result::eSuccess);
+    //TODO Investigate this change to the result type. Is it an API change ?
+    // result =
+    device.bindImageMemory(depth.image, depth.mem, 0);
+    //VERIFY(result == vk::Result::eSuccess);
+
+    auto const view = vk::ImageViewCreateInfo()
+            .setImage(depth.image)
+            .setViewType(vk::ImageViewType::e2D)
+            .setFormat(depth.format)
+            .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1));
+    result = device.createImageView(&view, nullptr, &depth.view);
+    VERIFY(result == vk::Result::eSuccess);
+}
+
+
+void vlk::VulkanModule::prepareTextures() {
+    vk::Format const tex_format = vk::Format::eR8G8B8A8Unorm;
+    vk::FormatProperties props;
+    gpu.getFormatProperties(tex_format, &props);
+
+    for (uint32_t i = 0; i < texture_count; i++) {
+        if ((props.linearTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) && !use_staging_buffer) {
+            /* Device can texture using linear textures */
+            textureModule->prepareTextureImage(tex_files[i], &textures[i], vk::ImageTiling::eLinear,
+                                               vk::ImageUsageFlagBits::eSampled,
+                                               vk::MemoryPropertyFlagBits::eHostVisible |
+                                               vk::MemoryPropertyFlagBits::eHostCoherent);
+            // Nothing in the pipeline needs to be complete to start, and don't allow fragment
+            // shader to run until layout transition completes
+            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::ePreinitialized,
+                             textures[i].imageLayout, vk::AccessFlagBits::eHostWrite,
+                             vk::PipelineStageFlagBits::eTopOfPipe,
+                             vk::PipelineStageFlagBits::eFragmentShader);
+            staging_texture.image = vk::Image();
+        } else if (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) {
+            /* Must use staging buffer to copy linear texture to optimized */
+
+            textureModule->prepareTextureImage(tex_files[i], &staging_texture, vk::ImageTiling::eLinear,
+                                               vk::ImageUsageFlagBits::eTransferSrc,
+                                               vk::MemoryPropertyFlagBits::eHostVisible |
+                                               vk::MemoryPropertyFlagBits::eHostCoherent);
+
+            textureModule->prepareTextureImage(tex_files[i], &textures[i], vk::ImageTiling::eOptimal,
+                                               vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                                               vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+            textureModule->setImageLayout(&cmd, staging_texture.image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::ePreinitialized,
+                             vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits::eHostWrite,
+                             vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
+
+            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::ePreinitialized,
+                             vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eHostWrite,
+                             vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
+
+            auto const subresource = vk::ImageSubresourceLayers()
+                    .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                    .setMipLevel(0)
+                    .setBaseArrayLayer(0)
+                    .setLayerCount(1);
+
+            auto const copy_region =
+                    vk::ImageCopy()
+                            .setSrcSubresource(subresource)
+                            .setSrcOffset({0, 0, 0})
+                            .setDstSubresource(subresource)
+                            .setDstOffset({0, 0, 0})
+                            .setExtent(
+                                    {(uint32_t) staging_texture.tex_width, (uint32_t) staging_texture.tex_height, 1});
+
+            cmd.copyImage(staging_texture.image, vk::ImageLayout::eTransferSrcOptimal, textures[i].image,
+                          vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
+
+            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eTransferDstOptimal,
+                             textures[i].imageLayout, vk::AccessFlagBits::eTransferWrite,
+                             vk::PipelineStageFlagBits::eTransfer,
+                             vk::PipelineStageFlagBits::eFragmentShader);
+        } else {
+            assert(!"No support for R8G8B8A8_UNORM as texture image format");
+        }
+
+        auto const samplerInfo = vk::SamplerCreateInfo()
+                .setMagFilter(vk::Filter::eNearest)
+                .setMinFilter(vk::Filter::eNearest)
+                .setMipmapMode(vk::SamplerMipmapMode::eNearest)
+                .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+                .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+                .setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
+                .setMipLodBias(0.0f)
+                .setAnisotropyEnable(VK_FALSE)
+                .setMaxAnisotropy(1)
+                .setCompareEnable(VK_FALSE)
+                .setCompareOp(vk::CompareOp::eNever)
+                .setMinLod(0.0f)
+                .setMaxLod(0.0f)
+                .setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
+                .setUnnormalizedCoordinates(VK_FALSE);
+
+        auto result = device.createSampler(&samplerInfo, nullptr, &textures[i].sampler);
+        VERIFY(result == vk::Result::eSuccess);
+
+        auto const viewInfo = vk::ImageViewCreateInfo()
+                .setImage(textures[i].image)
+                .setViewType(vk::ImageViewType::e2D)
+                .setFormat(tex_format)
+                .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+        result = device.createImageView(&viewInfo, nullptr, &textures[i].view);
+        VERIFY(result == vk::Result::eSuccess);
+    }
+}
+
+void vlk::VulkanModule::prepareCubeDataBuffers(const float* g_vertex_buffer_data, const float * g_uv_buffer_data) {
+    mat4x4 VP;
+    mat4x4_mul(VP, projection_matrix, view_matrix);
+
+    mat4x4 MVP;
+    mat4x4_mul(MVP, VP, model_matrix);
+
+    vktexcube_vs_uniform data;
+    memcpy(data.mvp, MVP, sizeof(MVP));
+    //    dumpMatrix("MVP", MVP)
+
+    for (int32_t i = 0; i < 12 * 3; i++) {
+
+        data.position[i][0] = g_vertex_buffer_data[i * 3];
+        data.position[i][1] = g_vertex_buffer_data[i * 3 + 1];
+        data.position[i][2] = g_vertex_buffer_data[i * 3 + 2];
+        data.position[i][3] = 1.0f;
+        data.attr[i][0] = g_uv_buffer_data[2 * i];
+        data.attr[i][1] = g_uv_buffer_data[2 * i + 1];
+        data.attr[i][2] = 0;
+        data.attr[i][3] = 0;
+    }
+
+    auto const buf_info = vk::BufferCreateInfo().setSize(sizeof(data)).setUsage(
+            vk::BufferUsageFlagBits::eUniformBuffer);
+
+    for (unsigned int i = 0; i < swapchainImageCount; i++) {
+        auto result = device.createBuffer(&buf_info, nullptr, &swapchain_image_resources[i].uniform_buffer);
+        VERIFY(result == vk::Result::eSuccess);
+
+        vk::MemoryRequirements mem_reqs;
+        device.getBufferMemoryRequirements(swapchain_image_resources[i].uniform_buffer, &mem_reqs);
+
+        auto mem_alloc = vk::MemoryAllocateInfo().setAllocationSize(mem_reqs.size).setMemoryTypeIndex(0);
+
+        bool const pass = memoryModule->memoryTypeFromProperties(
+                mem_reqs.memoryTypeBits,
+                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                &mem_alloc.memoryTypeIndex);
+        VERIFY(pass);
+
+        result = device.allocateMemory(&mem_alloc, nullptr, &swapchain_image_resources[i].uniform_memory);
+        VERIFY(result == vk::Result::eSuccess);
+
+        auto pData = device.mapMemory(swapchain_image_resources[i].uniform_memory, 0, VK_WHOLE_SIZE,
+                                      vk::MemoryMapFlags());
+        // TODO Investigate
+        //VERIFY(pData.result == vk::Result::eSuccess);
+
+        memcpy(pData, &data, sizeof data);
+
+        device.unmapMemory(swapchain_image_resources[i].uniform_memory);
+        // TODO Investigate
+        // result =
+        device.bindBufferMemory(swapchain_image_resources[i].uniform_buffer,
+                                swapchain_image_resources[i].uniform_memory, 0);
+        // VERIFY(result == vk::Result::eSuccess);
+    }
+}
+
+void vlk::VulkanModule::prepareDescriptorLayout() {
+    vk::DescriptorSetLayoutBinding const layout_bindings[2] = {vk::DescriptorSetLayoutBinding()
+                                                                       .setBinding(0)
+                                                                       .setDescriptorType(
+                                                                               vk::DescriptorType::eUniformBuffer)
+                                                                       .setDescriptorCount(1)
+                                                                       .setStageFlags(vk::ShaderStageFlagBits::eVertex)
+                                                                       .setPImmutableSamplers(nullptr),
+                                                               vk::DescriptorSetLayoutBinding()
+                                                                       .setBinding(1)
+                                                                       .setDescriptorType(
+                                                                               vk::DescriptorType::eCombinedImageSampler)
+                                                                       .setDescriptorCount(texture_count)
+                                                                       .setStageFlags(
+                                                                               vk::ShaderStageFlagBits::eFragment)
+                                                                       .setPImmutableSamplers(nullptr)};
+
+    auto const descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(2).setPBindings(layout_bindings);
+
+    auto result = device.createDescriptorSetLayout(&descriptor_layout, nullptr, &desc_layout);
+    VERIFY(result == vk::Result::eSuccess);
+
+    auto const pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(
+            &desc_layout);
+
+    result = device.createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &pipeline_layout);
+    VERIFY(result == vk::Result::eSuccess);
+}
+
+void vlk::VulkanModule::prepareDescriptorPool() {
+    vk::DescriptorPoolSize const poolSizes[2] = {
+            vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(
+                    swapchainImageCount),
+            vk::DescriptorPoolSize().setType(vk::DescriptorType::eCombinedImageSampler).setDescriptorCount(
+                    swapchainImageCount * texture_count)};
+
+    auto const descriptor_pool = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount).setPoolSizeCount(
+            2).setPPoolSizes(poolSizes);
+
+    auto result = device.createDescriptorPool(&descriptor_pool, nullptr, &desc_pool);
+    VERIFY(result == vk::Result::eSuccess);
+}
+
+void vlk::VulkanModule::prepareDescriptorSet() {
+    auto const alloc_info =
+            vk::DescriptorSetAllocateInfo().setDescriptorPool(desc_pool).setDescriptorSetCount(1).setPSetLayouts(
+                    &desc_layout);
+
+    auto buffer_info = vk::DescriptorBufferInfo().setOffset(0).setRange(sizeof(struct vktexcube_vs_uniform));
+
+    vk::DescriptorImageInfo tex_descs[texture_count];
+    for (uint32_t i = 0; i < texture_count; i++) {
+        tex_descs[i].setSampler(textures[i].sampler);
+        tex_descs[i].setImageView(textures[i].view);
+        tex_descs[i].setImageLayout(vk::ImageLayout::eGeneral);
+    }
+
+    vk::WriteDescriptorSet writes[2];
+
+    writes[0].setDescriptorCount(1);
+    writes[0].setDescriptorType(vk::DescriptorType::eUniformBuffer);
+    writes[0].setPBufferInfo(&buffer_info);
+
+    writes[1].setDstBinding(1);
+    writes[1].setDescriptorCount(texture_count);
+    writes[1].setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+    writes[1].setPImageInfo(tex_descs);
+
+    for (unsigned int i = 0; i < swapchainImageCount; i++) {
+        auto result = device.allocateDescriptorSets(&alloc_info, &swapchain_image_resources[i].descriptor_set);
+        VERIFY(result == vk::Result::eSuccess);
+
+        buffer_info.setBuffer(swapchain_image_resources[i].uniform_buffer);
+        writes[0].setDstSet(swapchain_image_resources[i].descriptor_set);
+        writes[1].setDstSet(swapchain_image_resources[i].descriptor_set);
+        device.updateDescriptorSets(2, writes, 0, nullptr);
+    }
+}
+
+void vlk::VulkanModule::prepareFramebuffers() {
+    vk::ImageView attachments[2];
+    attachments[1] = depth.view;
+
+    auto const fb_info = vk::FramebufferCreateInfo()
+            .setRenderPass(render_pass)
+            .setAttachmentCount(2)
+            .setPAttachments(attachments)
+            .setWidth((uint32_t) width)
+            .setHeight((uint32_t) height)
+            .setLayers(1);
+
+    for (uint32_t i = 0; i < swapchainImageCount; i++) {
+        attachments[0] = swapchain_image_resources[i].view;
+        auto const result = device.createFramebuffer(&fb_info, nullptr, &swapchain_image_resources[i].framebuffer);
+        VERIFY(result == vk::Result::eSuccess);
+    }
+}
+
+void vlk::VulkanModule::preparePipeline() {
+    vk::PipelineCacheCreateInfo const pipelineCacheInfo;
+    auto result = device.createPipelineCache(&pipelineCacheInfo, nullptr, &pipelineCache);
+    VERIFY(result == vk::Result::eSuccess);
+
+    vk::PipelineShaderStageCreateInfo const shaderStageInfo[2] = {
+            vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eVertex).setModule(
+                    prepare_vs()).setPName("main"),
+            vk::PipelineShaderStageCreateInfo()
+                    .setStage(vk::ShaderStageFlagBits::eFragment)
+                    .setModule(prepare_fs())
+                    .setPName("main")};
+
+    vk::PipelineVertexInputStateCreateInfo const vertexInputInfo;
+
+    auto const inputAssemblyInfo = vk::PipelineInputAssemblyStateCreateInfo().setTopology(
+            vk::PrimitiveTopology::eTriangleList);
+
+    // TODO: Where are pViewports and pScissors set?
+    auto const viewportInfo = vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
+
+    auto const rasterizationInfo = vk::PipelineRasterizationStateCreateInfo()
+            .setDepthClampEnable(VK_FALSE)
+            .setRasterizerDiscardEnable(VK_FALSE)
+            .setPolygonMode(vk::PolygonMode::eFill)
+            .setCullMode(vk::CullModeFlagBits::eBack)
+            .setFrontFace(vk::FrontFace::eCounterClockwise)
+            .setDepthBiasEnable(VK_FALSE)
+            .setLineWidth(1.0f);
+
+    auto const multisampleInfo = vk::PipelineMultisampleStateCreateInfo();
+
+    auto const stencilOp = vk::StencilOpState()
+            .setFailOp(vk::StencilOp::eKeep)
+            .setPassOp(vk::StencilOp::eKeep)
+            .setCompareOp(vk::CompareOp::eAlways);
+
+    auto const depthStencilInfo = vk::PipelineDepthStencilStateCreateInfo()
+            .setDepthTestEnable(VK_TRUE)
+            .setDepthWriteEnable(VK_TRUE)
+            .setDepthCompareOp(vk::CompareOp::eLessOrEqual)
+            .setDepthBoundsTestEnable(VK_FALSE)
+            .setStencilTestEnable(VK_FALSE)
+            .setFront(stencilOp)
+            .setBack(stencilOp);
+
+    vk::PipelineColorBlendAttachmentState const colorBlendAttachments[1] = {
+            vk::PipelineColorBlendAttachmentState().setColorWriteMask(
+                    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB |
+                    vk::ColorComponentFlagBits::eA)};
+
+    auto const colorBlendInfo =
+            vk::PipelineColorBlendStateCreateInfo().setAttachmentCount(1).setPAttachments(colorBlendAttachments);
+
+    vk::DynamicState const dynamicStates[2] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+
+    auto const dynamicStateInfo = vk::PipelineDynamicStateCreateInfo().setPDynamicStates(
+            dynamicStates).setDynamicStateCount(2);
+
+    auto const pipeline = vk::GraphicsPipelineCreateInfo()
+            .setStageCount(2)
+            .setPStages(shaderStageInfo)
+            .setPVertexInputState(&vertexInputInfo)
+            .setPInputAssemblyState(&inputAssemblyInfo)
+            .setPViewportState(&viewportInfo)
+            .setPRasterizationState(&rasterizationInfo)
+            .setPMultisampleState(&multisampleInfo)
+            .setPDepthStencilState(&depthStencilInfo)
+            .setPColorBlendState(&colorBlendInfo)
+            .setPDynamicState(&dynamicStateInfo)
+            .setLayout(pipeline_layout)
+            .setRenderPass(render_pass);
+
+    result = device.createGraphicsPipelines(pipelineCache, 1, &pipeline, nullptr, &this->pipeline);
+    VERIFY(result == vk::Result::eSuccess);
+
+    device.destroyShaderModule(frag_shader_module, nullptr);
+    device.destroyShaderModule(vert_shader_module, nullptr);
+}
+
+void vlk::VulkanModule::prepareRenderPass() {
+    // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
+    // because at the start of the renderpass, we don't care about their contents.
+    // At the start of the subpass, the color attachment's layout will be transitioned
+    // to LAYOUT_COLOR_ATTACHMENT_OPTIMAL and the depth stencil attachment's layout
+    // will be transitioned to LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL.  At the end of
+    // the renderpass, the color attachment's layout will be transitioned to
+    // LAYOUT_PRESENT_SRC_KHR to be ready to present.  This is all done as part of
+    // the renderpass, no barriers are necessary.
+    const vk::AttachmentDescription attachments[2] = {vk::AttachmentDescription()
+                                                              .setFormat(format)
+                                                              .setSamples(vk::SampleCountFlagBits::e1)
+                                                              .setLoadOp(vk::AttachmentLoadOp::eClear)
+                                                              .setStoreOp(vk::AttachmentStoreOp::eStore)
+                                                              .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+                                                              .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                                                              .setInitialLayout(vk::ImageLayout::eUndefined)
+                                                              .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
+                                                      vk::AttachmentDescription()
+                                                              .setFormat(depth.format)
+                                                              .setSamples(vk::SampleCountFlagBits::e1)
+                                                              .setLoadOp(vk::AttachmentLoadOp::eClear)
+                                                              .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+                                                              .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+                                                              .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                                                              .setInitialLayout(vk::ImageLayout::eUndefined)
+                                                              .setFinalLayout(
+                                                                      vk::ImageLayout::eDepthStencilAttachmentOptimal)};
+
+    auto const color_reference = vk::AttachmentReference().setAttachment(0).setLayout(
+            vk::ImageLayout::eColorAttachmentOptimal);
+
+    auto const depth_reference =
+            vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+    auto const subpass = vk::SubpassDescription()
+            .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+            .setInputAttachmentCount(0)
+            .setPInputAttachments(nullptr)
+            .setColorAttachmentCount(1)
+            .setPColorAttachments(&color_reference)
+            .setPResolveAttachments(nullptr)
+            .setPDepthStencilAttachment(&depth_reference)
+            .setPreserveAttachmentCount(0)
+            .setPPreserveAttachments(nullptr);
+
+    auto const rp_info = vk::RenderPassCreateInfo()
+            .setAttachmentCount(2)
+            .setPAttachments(attachments)
+            .setSubpassCount(1)
+            .setPSubpasses(&subpass)
+            .setDependencyCount(0)
+            .setPDependencies(nullptr);
+
+    auto result = device.createRenderPass(&rp_info, nullptr, &render_pass);
+    VERIFY(result == vk::Result::eSuccess);
+}
+
+
+void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer) {
+    auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+
+    vk::ClearValue const clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}})),
+                                           vk::ClearDepthStencilValue(1.0f, 0u)};
+
+    auto const passInfo = vk::RenderPassBeginInfo()
+            .setRenderPass(render_pass)
+            .setFramebuffer(swapchain_image_resources[current_buffer].framebuffer)
+            .setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D((uint32_t) width, (uint32_t) height)))
+            .setClearValueCount(2)
+            .setPClearValues(clearValues);
+
+    auto result = commandBuffer.begin(&commandInfo);
+    VERIFY(result == vk::Result::eSuccess);
+
+    commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_layout, 0, 1,
+                                     &swapchain_image_resources[current_buffer].descriptor_set, 0, nullptr);
+
+    auto const viewport =
+            vk::Viewport().setWidth((float) width).setHeight((float) height).setMinDepth((float) 0.0f).setMaxDepth(
+                    (float) 1.0f);
+    commandBuffer.setViewport(0, 1, &viewport);
+
+    vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(width, height));
+    commandBuffer.setScissor(0, 1, &scissor);
+    commandBuffer.draw(12 * 3, 1, 0, 0);
+    // Note that ending the renderpass changes the image's layout from
+    // COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
+    commandBuffer.endRenderPass();
+
+    if (separate_present_queue) {
+        // We have to transfer ownership from the graphics queue family to
+        // the
+        // present queue family to be able to present.  Note that we don't
+        // have
+        // to transfer from present queue family back to graphics queue
+        // family at
+        // the start of the next frame because we don't care about the
+        // image's
+        // contents at that point.
+        auto const image_ownership_barrier =
+                vk::ImageMemoryBarrier()
+                        .setSrcAccessMask(vk::AccessFlags())
+                        .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+                        .setOldLayout(vk::ImageLayout::ePresentSrcKHR)
+                        .setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+                        .setSrcQueueFamilyIndex(graphics_queue_family_index)
+                        .setDstQueueFamilyIndex(present_queue_family_index)
+                        .setImage(swapchain_image_resources[current_buffer].image)
+                        .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+        commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                      vk::PipelineStageFlagBits::eBottomOfPipe, vk::DependencyFlagBits(), 0, nullptr, 0,
+                                      nullptr, 1, &image_ownership_barrier);
+    }
+    // TODO Investigate
+    //    result =
+    commandBuffer.end();
+    //    VERIFY(result == vk::Result::eSuccess);
+}
+
+void vlk::VulkanModule::flushInitCmd() {
+    // TODO: hmm.
+    // This function could get called twice if the texture uses a staging
+    // buffer
+    // In that case the second call should be ignored
+    if (!cmd) {
+        return;
+    }
+
+    // TODO Investigate this change
+    //auto result =
+    cmd.end();
+    //VERIFY(result == vk::Result::eSuccess);
+
+    auto const fenceInfo = vk::FenceCreateInfo();
+    vk::Fence fence;
+    auto result = device.createFence(&fenceInfo, nullptr, &fence);
+    VERIFY(result == vk::Result::eSuccess);
+
+    vk::CommandBuffer const commandBuffers[] = {cmd};
+    auto const submitInfo = vk::SubmitInfo().setCommandBufferCount(1).setPCommandBuffers(commandBuffers);
+
+    result = graphics_queue.submit(1, &submitInfo, fence);
+    VERIFY(result == vk::Result::eSuccess);
+
+    result = device.waitForFences(1, &fence, VK_TRUE, UINT64_MAX);
+    VERIFY(result == vk::Result::eSuccess);
+
+    device.freeCommandBuffers(cmd_pool, 1, commandBuffers);
+    device.destroyFence(fence, nullptr);
+
+    cmd = vk::CommandBuffer();
+}
+
+void vlk::VulkanModule::buildImageOwnershipCmd(uint32_t const &i) {
+    auto const cmd_buf_info = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+    auto result = swapchain_image_resources[i].graphics_to_present_cmd.begin(&cmd_buf_info);
+    VERIFY(result == vk::Result::eSuccess);
+
+    auto const image_ownership_barrier =
+            vk::ImageMemoryBarrier()
+                    .setSrcAccessMask(vk::AccessFlags())
+                    .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+                    .setOldLayout(vk::ImageLayout::ePresentSrcKHR)
+                    .setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+                    .setSrcQueueFamilyIndex(graphics_queue_family_index)
+                    .setDstQueueFamilyIndex(present_queue_family_index)
+                    .setImage(swapchain_image_resources[i].image)
+                    .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+    swapchain_image_resources[i].graphics_to_present_cmd.pipelineBarrier(
+            vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput,
+            vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &image_ownership_barrier);
+    // TODO Investigate
+    // result =
+    swapchain_image_resources[i].graphics_to_present_cmd.end();
+    //VERIFY(result == vk::Result::eSuccess);
+}
+
+char const *const vlk::VulkanModule::tex_files[] = {"lunarg.ppm"};
+
+vk::ShaderModule vlk::VulkanModule::prepare_fs() {
+
+    size_t size = 0;
+    char *fragShaderCode = shaderModule->readSpv("cube-frag.spv", &size);
+    if (!fragShaderCode) {
+        ERR_EXIT("Failed to load cube-frag.spv", "Load Shader Failure");
+    }
+
+    frag_shader_module = shaderModule->prepareShaderModule(fragShaderCode, size);
+
+    free(fragShaderCode);
+
+    return frag_shader_module;
+}
+
+vk::ShaderModule vlk::VulkanModule::prepare_vs() {
+    size_t size = 0;
+    char *vertShaderCode = shaderModule->readSpv("cube-vert.spv", &size);
+    if (!vertShaderCode) {
+        ERR_EXIT("Failed to load cube-vert.spv", "Load Shader Failure");
+    }
+
+    vert_shader_module = shaderModule->prepareShaderModule(vertShaderCode, size);
+
+    free(vertShaderCode);
+
+    return vert_shader_module;
 }

@@ -48,3 +48,7 @@ void vlk::Renderer::initSwapChain() {
     vulkanModule->initSurface(xcbModule->getConnection(), xcbModule->getWindow() );
     vulkanModule->initSwapChain();
 }
+
+void vlk::Renderer::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data) {
+    this->vulkanModule->prepare(g_vertex_buffer_data, g_uv_buffer_data);
+}

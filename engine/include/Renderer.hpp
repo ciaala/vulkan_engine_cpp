@@ -40,6 +40,8 @@ namespace vlk {
 
         void initSwapChain();
 
+        void prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data);
+
     };
 }
 
