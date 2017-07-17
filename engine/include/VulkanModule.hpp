@@ -65,13 +65,13 @@ namespace vlk {
         vk::Bool32 checkLayers(uint32_t check_count, const char *const *const check_names, uint32_t layer_count,
                                vk::LayerProperties *layers);
 
-        void initSwapChain(vk::SurfaceKHR surface);
+        void initSwapChain();
 
         void initSurface(xcb_connection_t *connection, unsigned int xcb_window);
 
         vk::SurfaceKHR surface;
 
-        void create_device();
+        void createDevice();
 
     private:
 

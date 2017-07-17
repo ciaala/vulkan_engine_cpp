@@ -209,8 +209,9 @@ void vlk::VulkanModule::init() {
                  "vkCreateInstance Failure");
 #endif
     }
+    auto name = engine->getApplication()->getName();
     auto const app = vk::ApplicationInfo()
-            .setPApplicationName(engine->getApplication()->getName().c_str())
+            .setPApplicationName(name.c_str())
             .setApplicationVersion(0)
             .setPEngineName(engine->getName().c_str())
             .setEngineVersion(0)
@@ -381,7 +382,7 @@ void vlk::VulkanModule::initSurface(xcb_connection_t *connection, xcb_window_t x
 #endif
 }
 
-void vlk::VulkanModule::initSwapChain(vk::SurfaceKHR surface) {
+void vlk::VulkanModule::initSwapChain() {
 
     // Iterate over each queue to learn whether it supports presenting:
     std::unique_ptr<vk::Bool32[]> supportsPresent(new vk::Bool32[queue_family_count]);
@@ -426,7 +427,7 @@ void vlk::VulkanModule::initSwapChain(vk::SurfaceKHR surface) {
     present_queue_family_index = presentQueueFamilyIndex;
     separate_present_queue = (graphics_queue_family_index != present_queue_family_index);
 
-    this->create_device();
+    this->createDevice();
 
     device.getQueue(graphics_queue_family_index, 0, &graphics_queue);
     if (!separate_present_queue) {
@@ -486,7 +487,30 @@ void vlk::VulkanModule::initSwapChain(vk::SurfaceKHR surface) {
     gpu.getMemoryProperties(&memory_properties);
 }
 
-void vlk::VulkanModule::create_device() {
-    // TODO Copy the code of the create device
+void vlk::VulkanModule::createDevice() {
+    float const priorities[1] = {0.0};
 
+    vk::DeviceQueueCreateInfo queues[2];
+    queues[0].setQueueFamilyIndex(graphics_queue_family_index);
+    queues[0].setQueueCount(1);
+    queues[0].setPQueuePriorities(priorities);
+
+    auto deviceInfo = vk::DeviceCreateInfo()
+            .setQueueCreateInfoCount(1)
+            .setPQueueCreateInfos(queues)
+            .setEnabledLayerCount(0)
+            .setPpEnabledLayerNames(nullptr)
+            .setEnabledExtensionCount(enabled_extension_count)
+            .setPpEnabledExtensionNames((const char *const *)extension_names)
+            .setPEnabledFeatures(nullptr);
+
+    if (separate_present_queue) {
+        queues[1].setQueueFamilyIndex(present_queue_family_index);
+        queues[1].setQueueCount(1);
+        queues[1].setPQueuePriorities(priorities);
+        deviceInfo.setQueueCreateInfoCount(2);
+    }
+
+    auto result = gpu.createDevice(&deviceInfo, nullptr, &device);
+    VERIFY(result == vk::Result::eSuccess);
 }

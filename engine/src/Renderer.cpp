@@ -46,5 +46,5 @@ vlk::XCBModule* vlk::Renderer::getXCBModule() {
 
 void vlk::Renderer::initSwapChain() {
     vulkanModule->initSurface(xcbModule->getConnection(), xcbModule->getWindow() );
-    vulkanModule->initSwapChain(vk::SurfaceKHR());
+    vulkanModule->initSwapChain();
 }
