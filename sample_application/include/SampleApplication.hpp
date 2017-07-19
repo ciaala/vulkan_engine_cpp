@@ -6,7 +6,7 @@
 #define VULKAN_ENGINE_CPP_SAMPLEAPPLICATION_HPP
 
 #include <string>
-#include "Application.hpp"
+#include "core/Application.hpp"
 
 
 class SampleApplication : public Application {

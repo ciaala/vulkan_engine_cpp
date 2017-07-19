@@ -8,7 +8,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vk_sdk_platform.h>
 #include "MemoryModule.hpp"
-#include "CommonMacro.hpp"
+#include "core/CommonMacro.hpp"
 
 namespace vlk {
     struct texture_object {

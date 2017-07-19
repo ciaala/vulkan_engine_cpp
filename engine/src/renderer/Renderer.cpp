@@ -3,8 +3,8 @@
 //
 
 #include <iostream>
-#include "../include/Renderer.hpp"
-#include "../include/XCBModule.hpp"
+#include "../../include/renderer/Renderer.hpp"
+#include "../../include/renderer/XCBModule.hpp"
 vlk::Renderer::Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule) {
     this->engine = engine;
     this->vulkanModule = vulkanModule;

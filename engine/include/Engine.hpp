@@ -6,10 +6,10 @@
 #define VULKAN_ENGINE_CPP_ENGINE_H
 
 #include <string>
-#include "Application.hpp"
-#include "Renderer.hpp"
-#include "XCBModule.hpp"
-#include "VulkanModule.hpp"
+#include "core/Application.hpp"
+#include "renderer/Renderer.hpp"
+#include "renderer/XCBModule.hpp"
+#include "renderer/VulkanModule.hpp"
 
 namespace vlk {
     class Renderer;

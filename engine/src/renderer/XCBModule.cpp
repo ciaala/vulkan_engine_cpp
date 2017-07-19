@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include <unistd.h>
-#include "../../include/XCBModule.hpp"
+#include "../../include/renderer/XCBModule.hpp"
 #include "../../include/Engine.hpp"
 #include <iostream>
 

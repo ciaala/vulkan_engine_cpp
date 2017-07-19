@@ -3,8 +3,8 @@
 //
 
 #include <iostream>
-#include "../../include/ShaderModule.hpp"
-#include "../../include/CommonMacro.hpp"
+#include "../../include/renderer/ShaderModule.hpp"
+#include "../../include/core/CommonMacro.hpp"
 
 vk::ShaderModule vlk::ShaderModule::prepareShaderModule(const void *code, size_t size) {
     auto const moduleCreateInfo = vk::ShaderModuleCreateInfo().setCodeSize(size).setPCode((uint32_t const *) code);

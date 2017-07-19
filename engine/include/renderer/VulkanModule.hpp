@@ -18,11 +18,11 @@ namespace vlk {
 
 #include "vulkan/vulkan.hpp"
 #include <vulkan/vk_sdk_platform.h>
-#include "linmath.h"
+#include "core/linmath.h"
 
 #include "Engine.hpp"
 #include "TextureModule.hpp"
-#include "CommonMacro.hpp"
+#include "core/CommonMacro.hpp"
 #include "ShaderModule.hpp"
 
 // Definition used in prepare

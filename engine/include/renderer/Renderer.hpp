@@ -8,6 +8,7 @@
 
 #include <X11/Xutil.h>
 #include "VulkanModule.hpp"
+#include "XCBModule.hpp"
 
 namespace vlk {
     class XCBModule;

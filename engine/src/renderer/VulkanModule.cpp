@@ -3,10 +3,10 @@
 //
 
 #include <iostream>
-#include "../../include/VulkanModule.hpp"
+#include "../../include/renderer/VulkanModule.hpp"
 #include "../../include/Engine.hpp"
-#include "../../include/CommonMacro.hpp"
-#include "../../include/ShaderModule.hpp"
+#include "../../include/core/CommonMacro.hpp"
+#include "../../include/renderer/ShaderModule.hpp"
 
 
 vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) {

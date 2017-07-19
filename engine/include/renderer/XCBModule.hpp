@@ -9,7 +9,7 @@ namespace vlk {
     class Engine;
 }
 #include <xcb/xcb.h>
-#include "Engine.hpp"
+#include "../Engine.hpp"
 namespace vlk {
 
     class XCBModule {
@@ -37,10 +37,6 @@ namespace vlk {
         void handleXCBEvent(const xcb_generic_event_t *event);
 
         void runXCB();
-
-        void innerCode(uint16_t width, uint16_t height);
-
-        void initSwapChain();
 
         xcb_connection_t *getConnection();
 

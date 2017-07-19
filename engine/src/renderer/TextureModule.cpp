@@ -2,8 +2,8 @@
 // Created by crypt on 17/07/17.
 //
 
-#include "../../include/TextureModule.hpp"
-#include "../../include/CommonMacro.hpp"
+#include "../../include/renderer/TextureModule.hpp"
+#include "../../include/core/CommonMacro.hpp"
 
 void vlk::TextureModule::prepareTextureImage(const char *filename, texture_object *tex_obj, vk::ImageTiling tiling,
                                              vk::ImageUsageFlags usage,
