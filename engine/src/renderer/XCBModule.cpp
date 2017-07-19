@@ -7,7 +7,10 @@
 #include "../../include/XCBModule.hpp"
 #include "../../include/Engine.hpp"
 #include <iostream>
+
 #define VERIFY(x) assert(x)
+
+#include <xcb/xcb_keysyms.h>
 
 void vlk::XCBModule::initXCBLibrary() {
     std::cout << "Init Window" << std::endl;
@@ -80,6 +83,17 @@ void vlk::XCBModule::createWindow(uint16_t width, uint16_t height) {
     xcb_configure_window(connection, xcb_window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, coords);
 }
 
+/* wrapper to get xcb keysymbol from keycode */
+static xcb_keysym_t xcb_get_keysym(xcb_connection_t *connection, xcb_keycode_t keycode) {
+    xcb_key_symbols_t *keysyms;
+    xcb_keysym_t keysym;
+
+    if (!(keysyms = xcb_key_symbols_alloc(connection))) return 0;
+    keysym = xcb_key_symbols_get_keysym(keysyms, keycode, 0);
+    xcb_key_symbols_free(keysyms);
+
+    return keysym;
+}
 
 void vlk::XCBModule::handleXCBEvent(const xcb_generic_event_t *event) {
     uint8_t event_code = event->response_type & 0x7f;
@@ -96,23 +110,26 @@ void vlk::XCBModule::handleXCBEvent(const xcb_generic_event_t *event) {
             }
             break;
         case XCB_KEY_RELEASE: {
-            std::cout << "Event XCB_KEY_RELEASE" << std::endl;
 
             const xcb_key_release_event_t *key = (const xcb_key_release_event_t *) event;
+            xcb_keysym_t sym = xcb_get_keysym(connection, key->detail);
 
-            switch (key->detail) {
-                case 0x9:  // Escape
+            switch (sym) {
+                case XK_Escape:
                     quit = true;
                     break;
-                case 0x71:  // left arrow key
+                case XK_Left:
                     spin_angle -= spin_increment;
                     break;
-                case 0x72:  // right arrow key
+                case XK_Right:
                     spin_angle += spin_increment;
                     break;
-                case 0x41:  // space bar
+                case XK_space:
                     isPaused = !isPaused;
                     break;
+                default:
+                    std::cout << "Event XCB_KEY_RELEASE not mapped (code: " << (char) key->detail << ", sym: " << sym << ")" << std::endl;
+
             }
         }
             break;
