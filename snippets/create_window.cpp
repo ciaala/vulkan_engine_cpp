@@ -37,7 +37,7 @@ main ()
     xcb_flush (connection);
 
 
-    pause ();    /* hold client until Ctrl-C */
+    triggerPause();    /* hold client until Ctrl-C */
 
     xcb_disconnect (connection);
 

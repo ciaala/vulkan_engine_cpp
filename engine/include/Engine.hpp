@@ -6,10 +6,11 @@
 #define VULKAN_ENGINE_CPP_ENGINE_H
 
 #include <string>
-#include "core/Application.hpp"
+#include "game/Application.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/XCBModule.hpp"
 #include "renderer/VulkanModule.hpp"
+#include "core/InputModule.hpp"
 
 namespace vlk {
     class Renderer;
@@ -17,6 +18,8 @@ namespace vlk {
     class XCBModule;
 
     class VulkanModule;
+    class InputModule;
+
 
     class Engine {
     private:
@@ -28,7 +31,7 @@ namespace vlk {
 #if defined(VK_USE_PLATFORM_XCB_KHR)
         XCBModule *xcbModule;
 #endif
-
+        InputModule *inputModule;
         VulkanModule *vulkanModule;
     public:
         //engine(int argc = 0, char** argv = nullptr);
@@ -49,6 +52,7 @@ namespace vlk {
 
         Application *getApplication() { return this->application; }
 
+        InputModule *getInputModule() { return this->inputModule; };
     public:
         // ---- STATIC
 

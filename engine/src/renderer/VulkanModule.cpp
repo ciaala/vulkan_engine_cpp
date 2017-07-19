@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <game/GameObject.hpp>
 #include "../../include/renderer/VulkanModule.hpp"
 #include "../../include/Engine.hpp"
 #include "../../include/core/CommonMacro.hpp"
@@ -512,7 +513,7 @@ void vlk::VulkanModule::createDevice() {
     this->shaderModule = new ShaderModule(&device);
 }
 
-void vlk::VulkanModule::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data) {
+void vlk::VulkanModule::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data, GameObject *object) {
 
     this->width = 500;
     this->height = 500;
@@ -520,13 +521,13 @@ void vlk::VulkanModule::prepare(const float *g_vertex_buffer_data, const float *
     vec3 origin = {0, 0, 0};
     vec3 up = {0.0f, 1.0f, 0.0};
 
-    this->spin_angle = 4.0f;
-    this->spin_increment = 0.2f;
-    this->pause = false;
+    //this->spin_angle = 4.0f;
+    //this->spin_increment = 0.2f;
+    // this->pause = false;
 
-    mat4x4_perspective(projection_matrix, (float)degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
+    mat4x4_perspective(projection_matrix, (float) degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
     mat4x4_look_at(view_matrix, eye, origin, up);
-    mat4x4_identity(model_matrix);
+    // mat4x4_identity(model_matrix);
 
     projection_matrix[1][1] *= -1;
 
@@ -550,7 +551,7 @@ void vlk::VulkanModule::prepare(const float *g_vertex_buffer_data, const float *
     this->prepareBuffers();
     this->prepareDepth();
     this->prepareTextures();
-    this->prepareCubeDataBuffers(g_vertex_buffer_data, g_uv_buffer_data);
+    this->prepareCubeDataBuffers(g_vertex_buffer_data, g_uv_buffer_data, object);
 
     this->prepareDescriptorLayout();
     this->prepareRenderPass();
@@ -837,10 +838,11 @@ void vlk::VulkanModule::prepareTextures() {
                                                vk::MemoryPropertyFlagBits::eHostCoherent);
             // Nothing in the pipeline needs to be complete to start, and don't allow fragment
             // shader to run until layout transition completes
-            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::ePreinitialized,
-                             textures[i].imageLayout, vk::AccessFlagBits::eHostWrite,
-                             vk::PipelineStageFlagBits::eTopOfPipe,
-                             vk::PipelineStageFlagBits::eFragmentShader);
+            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor,
+                                          vk::ImageLayout::ePreinitialized,
+                                          textures[i].imageLayout, vk::AccessFlagBits::eHostWrite,
+                                          vk::PipelineStageFlagBits::eTopOfPipe,
+                                          vk::PipelineStageFlagBits::eFragmentShader);
             staging_texture.image = vk::Image();
         } else if (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) {
             /* Must use staging buffer to copy linear texture to optimized */
@@ -854,13 +856,15 @@ void vlk::VulkanModule::prepareTextures() {
                                                vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
                                                vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-            textureModule->setImageLayout(&cmd, staging_texture.image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::ePreinitialized,
-                             vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits::eHostWrite,
-                             vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
+            textureModule->setImageLayout(&cmd, staging_texture.image, vk::ImageAspectFlagBits::eColor,
+                                          vk::ImageLayout::ePreinitialized,
+                                          vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits::eHostWrite,
+                                          vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
 
-            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::ePreinitialized,
-                             vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eHostWrite,
-                             vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
+            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor,
+                                          vk::ImageLayout::ePreinitialized,
+                                          vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eHostWrite,
+                                          vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
 
             auto const subresource = vk::ImageSubresourceLayers()
                     .setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -880,10 +884,11 @@ void vlk::VulkanModule::prepareTextures() {
             cmd.copyImage(staging_texture.image, vk::ImageLayout::eTransferSrcOptimal, textures[i].image,
                           vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
 
-            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eTransferDstOptimal,
-                             textures[i].imageLayout, vk::AccessFlagBits::eTransferWrite,
-                             vk::PipelineStageFlagBits::eTransfer,
-                             vk::PipelineStageFlagBits::eFragmentShader);
+            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor,
+                                          vk::ImageLayout::eTransferDstOptimal,
+                                          textures[i].imageLayout, vk::AccessFlagBits::eTransferWrite,
+                                          vk::PipelineStageFlagBits::eTransfer,
+                                          vk::PipelineStageFlagBits::eFragmentShader);
         } else {
             assert(!"No support for R8G8B8A8_UNORM as texture image format");
         }
@@ -919,12 +924,13 @@ void vlk::VulkanModule::prepareTextures() {
     }
 }
 
-void vlk::VulkanModule::prepareCubeDataBuffers(const float* g_vertex_buffer_data, const float * g_uv_buffer_data) {
+void vlk::VulkanModule::prepareCubeDataBuffers(const float *g_vertex_buffer_data, const float *g_uv_buffer_data,
+                                               GameObject *object) {
     mat4x4 VP;
     mat4x4_mul(VP, projection_matrix, view_matrix);
 
     mat4x4 MVP;
-    mat4x4_mul(MVP, VP, model_matrix);
+    mat4x4_mul(MVP, VP, object->getModelMatrix());
 
     vktexcube_vs_uniform data;
     memcpy(data.mvp, MVP, sizeof(MVP));
@@ -1370,28 +1376,30 @@ vk::ShaderModule vlk::VulkanModule::prepare_vs() {
     return vert_shader_module;
 }
 
-void vlk::VulkanModule::updateDataBuffer() {
+void vlk::VulkanModule::updateDataBuffer(GameObject *object) {
     mat4x4 VP;
     mat4x4_mul(VP, projection_matrix, view_matrix);
 
     // Rotate around the Y axis
     mat4x4 Model;
-    mat4x4_dup(Model, model_matrix);
-    mat4x4_rotate(model_matrix, Model, 0.0f, 1.0f, 0.0f, (float)degreesToRadians(spin_angle));
+    mat4x4_dup(Model, object->getModelMatrix());
+    mat4x4_rotate(object->getModelMatrix(), Model, 0.0f, 1.0f, 0.0f,
+                  (float) degreesToRadians(object->getSpinningAngle()));
 
-    mat4x4 MVP;
-    mat4x4_mul(MVP, VP, model_matrix);
-
-    auto data = device.mapMemory(swapchain_image_resources[current_buffer].uniform_memory, 0, VK_WHOLE_SIZE, vk::MemoryMapFlags());
-    // TODO i API changes
+    auto data = device.mapMemory(swapchain_image_resources[current_buffer].uniform_memory, 0, VK_WHOLE_SIZE,
+                                 vk::MemoryMapFlags());
+    // TODO investigate API changes
 //    VERIFY(data.result == vk::Result::eSuccess);
 
-    memcpy(data, (const void *)&MVP[0][0], sizeof(MVP));
+    mat4x4 MVP;
+    mat4x4_mul(MVP, VP, object->getModelMatrix());
+
+    memcpy(data, (const void *) &MVP[0][0], sizeof(MVP));
 
     device.unmapMemory(swapchain_image_resources[current_buffer].uniform_memory);
 }
 
-void vlk::VulkanModule::draw() {
+void vlk::VulkanModule::draw(GameObject *object) {
     // Ensure no more than FRAME_LAG renderings are outstanding
     device.waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
     device.resetFences(1, &fences[frame_index]);
@@ -1413,7 +1421,7 @@ void vlk::VulkanModule::draw() {
         }
     } while (result != vk::Result::eSuccess);
 
-    this->updateDataBuffer();
+    this->updateDataBuffer(object);
 
     // Wait for the image acquired semaphore to be signaled to ensure
     // that the image won't be rendered to until the presentation
@@ -1490,7 +1498,7 @@ void vlk::VulkanModule::resize() {
     // First, perform part of the cleanup() function:
     prepared = false;
 //    auto result =
-            device.waitIdle();
+    device.waitIdle();
 //    VERIFY(result == vk::Result::eSuccess);
 
     for (i = 0; i < swapchainImageCount; i++) {

@@ -2,7 +2,7 @@
 // Created by crypt on 17/07/17.
 //
 
-#include "../../include/renderer/MemoryModule.hpp"
+#include "renderer/MemoryModule.hpp"
 
 bool vlk::MemoryModule::memoryTypeFromProperties(uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask,
                                                  uint32_t *typeIndex) {

@@ -116,21 +116,26 @@ void vlk::XCBModule::handleXCBEvent(const xcb_generic_event_t *event) {
 
             switch (sym) {
                 case XK_Escape:
-                    quit = true;
+                    //quit = true;
+                    this->inputModule->sendKeyReleased(Keys::ESCAPE);
                     break;
                 case XK_Left:
-                    spin_angle -= spin_increment;
+                    //spin_angle -= spin_increment;
+                    this->inputModule->sendKeyReleased(Keys::ARROW_LEFT);
                     break;
                 case XK_Right:
-                    spin_angle += spin_increment;
+                    this->inputModule->sendKeyReleased(Keys::ARROW_RIGHT);
+                    //spin_angle += spin_increment;
                     break;
                 case XK_space:
-                    isPaused = !isPaused;
+                    this->inputModule->sendKeyReleased(Keys::SPACE_BAR);
+                    //isPaused = !isPaused;
                     break;
                 default:
-                    std::cout << "Event XCB_KEY_RELEASE not mapped (code: " << (char) key->detail << ", sym: " << sym << ")" << std::endl;
-
+                    std::cout << "Event XCB_KEY_RELEASE not mapped (code: " << (char) key->detail << ", sym: " << sym
+                              << ")" << std::endl;
             }
+
         }
             break;
         case XCB_CONFIGURE_NOTIFY: {
@@ -150,6 +155,7 @@ void vlk::XCBModule::handleXCBEvent(const xcb_generic_event_t *event) {
 }
 
 void vlk::XCBModule::runXCB() {
+    std::cout << "Start XCB busy loop" << std::endl;
     xcb_flush(connection);
 
     while (!quit) {
@@ -176,6 +182,7 @@ void vlk::XCBModule::runXCB() {
 
 vlk::XCBModule::XCBModule(vlk::Engine *engine) {
     this->engine = engine;
+    this->inputModule = engine->getInputModule();
 
 }
 

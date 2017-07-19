@@ -3,8 +3,8 @@
 //
 
 #include <iostream>
-#include "../../include/renderer/Renderer.hpp"
-#include "../../include/renderer/XCBModule.hpp"
+#include "renderer/Renderer.hpp"
+
 vlk::Renderer::Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule) {
     this->engine = engine;
     this->vulkanModule = vulkanModule;
@@ -49,6 +49,6 @@ void vlk::Renderer::initSwapChain() {
     vulkanModule->initSwapChain();
 }
 
-void vlk::Renderer::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data) {
-    this->vulkanModule->prepare(g_vertex_buffer_data, g_uv_buffer_data);
+void vlk::Renderer::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data, GameObject *object) {
+    this->vulkanModule->prepare(g_vertex_buffer_data, g_uv_buffer_data, object);
 }

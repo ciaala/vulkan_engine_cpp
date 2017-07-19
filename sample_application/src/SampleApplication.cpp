@@ -6,7 +6,8 @@
 #include <string>
 
 SampleApplication::SampleApplication() : applicationName("SampleApplication") {
-
+    this->game = new SampleGame();
+    this->inputController = new SampleInputController(game);
 }
 
 std::string SampleApplication::getName() {
@@ -108,4 +109,11 @@ const float SampleApplication::g_uv_buffer_data[] = {
         1.0f, 1.0f,
         1.0f, 0.0f,
 };
-// clang-format on
+
+InputController *SampleApplication::getInputController() {
+    return this->inputController;
+}
+
+vlk::GameObject *SampleApplication::getWorld() {
+    return this->game->getCube();
+}

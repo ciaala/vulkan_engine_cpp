@@ -18,6 +18,7 @@ namespace vlk {
 
 #include "vulkan/vulkan.hpp"
 #include <vulkan/vk_sdk_platform.h>
+#include <game/GameObject.hpp>
 #include "core/linmath.h"
 
 #include "Engine.hpp"
@@ -100,7 +101,7 @@ namespace vlk {
 
         void createDevice();
 
-        void prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data);
+        void prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data, GameObject *object);
 
     private:
 
@@ -133,7 +134,7 @@ namespace vlk {
 
         mat4x4 projection_matrix;
         mat4x4 view_matrix;
-        mat4x4 model_matrix;
+        //mat4x4 model_matrix;
 
         uint32_t swapchainImageCount;
         vk::SwapchainKHR swapchain;
@@ -154,6 +155,7 @@ namespace vlk {
         void prepareRenderPass();
 
         void preparePipeline();
+
         struct {
             vk::Format format;
             vk::Image image;
@@ -165,8 +167,7 @@ namespace vlk {
         uint32_t current_buffer;
         vk::DescriptorPool desc_pool;
         bool prepared{false};
-        vk::PresentModeKHR presentMode {vk::PresentModeKHR::eFifo};
-
+        vk::PresentModeKHR presentMode{vk::PresentModeKHR::eFifo};
 
 
         uint32_t width;
@@ -176,12 +177,15 @@ namespace vlk {
 
         void flushInitCmd();
 
-        TextureModule* textureModule;
+        TextureModule *textureModule;
+
         void buildImageOwnershipCmd(uint32_t const &i);
 
         static char const *const tex_files[];
         bool use_staging_buffer;
+
         vk::ShaderModule prepare_fs();
+
         vk::ShaderModule prepare_vs();
 
         ShaderModule *shaderModule;
@@ -189,17 +193,22 @@ namespace vlk {
         vk::ShaderModule vert_shader_module;
         vk::ShaderModule frag_shader_module;
 
-        void prepareCubeDataBuffers(const float *g_vertex_buffer_data, const float *g_uv_buffer_data);
+        void
+        prepareCubeDataBuffers(const float *g_vertex_buffer_data,
+                               const float *g_uv_buffer_data,
+                               GameObject *object);
 
         // prepare the draw
     private:
-        float spin_angle;
-        void updateDataBuffer();
-        float spin_increment;
+        // float spin_angle;
+        void updateDataBuffer(GameObject *Object);
+
+        // float spin_increment;
         bool pause{false};
     public:
         void resize();
-        void draw();
+
+        void draw(GameObject *object);
 
     };
 }
