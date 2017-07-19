@@ -27,6 +27,9 @@ namespace vlk {
 
         VulkanModule *vulkanModule;
         Engine *engine;
+
+        void prepareObject(GameObject *gameObject);
+
     public:
         XCBModule *getXCBModule();
 
@@ -41,8 +44,9 @@ namespace vlk {
 
         void initSwapChain();
 
-        void prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data, GameObject *object);
+        void prepare(GameWorld *gameWorld);
 
+        void draw(GameWorld *gameWorld);
     };
 }
 

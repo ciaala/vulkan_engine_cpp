@@ -4,10 +4,11 @@
 
 #include <iostream>
 #include <game/GameObject.hpp>
-#include "../../include/renderer/VulkanModule.hpp"
-#include "../../include/Engine.hpp"
-#include "../../include/core/CommonMacro.hpp"
-#include "../../include/renderer/ShaderModule.hpp"
+#include <game/Camera.hpp>
+#include "renderer/VulkanModule.hpp"
+#include "Engine.hpp"
+#include "core/CommonMacro.hpp"
+#include "renderer/ShaderModule.hpp"
 
 
 vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) {
@@ -513,34 +514,34 @@ void vlk::VulkanModule::createDevice() {
     this->shaderModule = new ShaderModule(&device);
 }
 
-void vlk::VulkanModule::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data, GameObject *object) {
+void vlk::VulkanModule::prepare() {
 
     this->width = 500;
     this->height = 500;
-    vec3 eye = {0.0f, 3.0f, 5.0f};
-    vec3 origin = {0, 0, 0};
-    vec3 up = {0.0f, 1.0f, 0.0};
 
+
+    // DISABLED in GameObject Refactor
     //this->spin_angle = 4.0f;
     //this->spin_increment = 0.2f;
     // this->pause = false;
 
-    mat4x4_perspective(projection_matrix, (float) degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
-    mat4x4_look_at(view_matrix, eye, origin, up);
+    // DISABLED in GameWorld Refactor
+    // mat4x4_perspective(projection_matrix, (float) degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
+    // mat4x4_look_at(view_matrix, eye, origin, up);
     // mat4x4_identity(model_matrix);
 
-    projection_matrix[1][1] *= -1;
+    // projection_matrix[1][1] *= -1;
 
     auto const cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(graphics_queue_family_index);
     auto result = device.createCommandPool(&cmd_pool_info, nullptr, &cmd_pool);
     VERIFY(result == vk::Result::eSuccess);
 
-    auto const cmd = vk::CommandBufferAllocateInfo()
+    auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
             .setCommandPool(cmd_pool)
             .setLevel(vk::CommandBufferLevel::ePrimary)
             .setCommandBufferCount(1);
 
-    result = device.allocateCommandBuffers(&cmd, &this->cmd);
+    result = device.allocateCommandBuffers(&commandBufferAllocateInfo, &this->cmd);
     VERIFY(result == vk::Result::eSuccess);
 
     auto const cmd_buf_info = vk::CommandBufferBeginInfo().setPInheritanceInfo(nullptr);
@@ -550,22 +551,33 @@ void vlk::VulkanModule::prepare(const float *g_vertex_buffer_data, const float *
 
     this->prepareBuffers();
     this->prepareDepth();
+
+    // Initialize texture properties;
     this->prepareTextures();
-    this->prepareCubeDataBuffers(g_vertex_buffer_data, g_uv_buffer_data, object);
+
+}
+
+void vlk::VulkanModule::prepareDescriptors() {
+    // DISABLED in GameWorld Refactor
+    //this->prepareCubeDataBuffers(g_vertex_buffer_data, g_uv_buffer_data, object);
 
     this->prepareDescriptorLayout();
     this->prepareRenderPass();
     this->preparePipeline();
+    auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
+            .setCommandPool(cmd_pool)
+            .setLevel(vk::CommandBufferLevel::ePrimary)
+            .setCommandBufferCount(1);
 
-    for (uint32_t i = 0; i < swapchainImageCount; ++i) {
-        result = device.allocateCommandBuffers(&cmd, &swapchain_image_resources[i].cmd);
+    for (uint32_t i = 0; i < this->swapchainImageCount; ++i) {
+        auto result = device.allocateCommandBuffers(&commandBufferAllocateInfo, &swapchain_image_resources[i].cmd);
         VERIFY(result == vk::Result::eSuccess);
     }
 
     if (separate_present_queue) {
         auto const present_cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(present_queue_family_index);
 
-        result = device.createCommandPool(&present_cmd_pool_info, nullptr, &present_cmd_pool);
+        auto result = device.createCommandPool(&present_cmd_pool_info, nullptr, &present_cmd_pool);
         VERIFY(result == vk::Result::eSuccess);
 
         auto const present_cmd = vk::CommandBufferAllocateInfo()
@@ -825,109 +837,112 @@ void vlk::VulkanModule::prepareDepth() {
 
 
 void vlk::VulkanModule::prepareTextures() {
-    vk::Format const tex_format = vk::Format::eR8G8B8A8Unorm;
-    vk::FormatProperties props;
-    gpu.getFormatProperties(tex_format, &props);
-
-    for (uint32_t i = 0; i < texture_count; i++) {
-        if ((props.linearTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) && !use_staging_buffer) {
-            /* Device can texture using linear textures */
-            textureModule->prepareTextureImage(tex_files[i], &textures[i], vk::ImageTiling::eLinear,
-                                               vk::ImageUsageFlagBits::eSampled,
-                                               vk::MemoryPropertyFlagBits::eHostVisible |
-                                               vk::MemoryPropertyFlagBits::eHostCoherent);
-            // Nothing in the pipeline needs to be complete to start, and don't allow fragment
-            // shader to run until layout transition completes
-            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor,
-                                          vk::ImageLayout::ePreinitialized,
-                                          textures[i].imageLayout, vk::AccessFlagBits::eHostWrite,
-                                          vk::PipelineStageFlagBits::eTopOfPipe,
-                                          vk::PipelineStageFlagBits::eFragmentShader);
-            staging_texture.image = vk::Image();
-        } else if (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) {
-            /* Must use staging buffer to copy linear texture to optimized */
-
-            textureModule->prepareTextureImage(tex_files[i], &staging_texture, vk::ImageTiling::eLinear,
-                                               vk::ImageUsageFlagBits::eTransferSrc,
-                                               vk::MemoryPropertyFlagBits::eHostVisible |
-                                               vk::MemoryPropertyFlagBits::eHostCoherent);
-
-            textureModule->prepareTextureImage(tex_files[i], &textures[i], vk::ImageTiling::eOptimal,
-                                               vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-                                               vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-            textureModule->setImageLayout(&cmd, staging_texture.image, vk::ImageAspectFlagBits::eColor,
-                                          vk::ImageLayout::ePreinitialized,
-                                          vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits::eHostWrite,
-                                          vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
-
-            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor,
-                                          vk::ImageLayout::ePreinitialized,
-                                          vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eHostWrite,
-                                          vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
-
-            auto const subresource = vk::ImageSubresourceLayers()
-                    .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                    .setMipLevel(0)
-                    .setBaseArrayLayer(0)
-                    .setLayerCount(1);
-
-            auto const copy_region =
-                    vk::ImageCopy()
-                            .setSrcSubresource(subresource)
-                            .setSrcOffset({0, 0, 0})
-                            .setDstSubresource(subresource)
-                            .setDstOffset({0, 0, 0})
-                            .setExtent(
-                                    {(uint32_t) staging_texture.tex_width, (uint32_t) staging_texture.tex_height, 1});
-
-            cmd.copyImage(staging_texture.image, vk::ImageLayout::eTransferSrcOptimal, textures[i].image,
-                          vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
-
-            textureModule->setImageLayout(&cmd, textures[i].image, vk::ImageAspectFlagBits::eColor,
-                                          vk::ImageLayout::eTransferDstOptimal,
-                                          textures[i].imageLayout, vk::AccessFlagBits::eTransferWrite,
-                                          vk::PipelineStageFlagBits::eTransfer,
-                                          vk::PipelineStageFlagBits::eFragmentShader);
-        } else {
-            assert(!"No support for R8G8B8A8_UNORM as texture image format");
-        }
-
-        auto const samplerInfo = vk::SamplerCreateInfo()
-                .setMagFilter(vk::Filter::eNearest)
-                .setMinFilter(vk::Filter::eNearest)
-                .setMipmapMode(vk::SamplerMipmapMode::eNearest)
-                .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-                .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-                .setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
-                .setMipLodBias(0.0f)
-                .setAnisotropyEnable(VK_FALSE)
-                .setMaxAnisotropy(1)
-                .setCompareEnable(VK_FALSE)
-                .setCompareOp(vk::CompareOp::eNever)
-                .setMinLod(0.0f)
-                .setMaxLod(0.0f)
-                .setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
-                .setUnnormalizedCoordinates(VK_FALSE);
-
-        auto result = device.createSampler(&samplerInfo, nullptr, &textures[i].sampler);
-        VERIFY(result == vk::Result::eSuccess);
-
-        auto const viewInfo = vk::ImageViewCreateInfo()
-                .setImage(textures[i].image)
-                .setViewType(vk::ImageViewType::e2D)
-                .setFormat(tex_format)
-                .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
-
-        result = device.createImageView(&viewInfo, nullptr, &textures[i].view);
-        VERIFY(result == vk::Result::eSuccess);
-    }
+    gpu.getFormatProperties(textureFormat, &textureFormatProperties);
 }
 
-void vlk::VulkanModule::prepareCubeDataBuffers(const float *g_vertex_buffer_data, const float *g_uv_buffer_data,
-                                               GameObject *object) {
+//TODO MOVE to TextureModule
+void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format &tex_format, uint32_t i) {
+    if ((this->textureFormatProperties.linearTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) &&
+        !this->use_staging_buffer) {
+        /* Device can texture using linear textures */
+        this->textureModule->prepareTextureImage(textureFile, this->textures[i], vk::ImageTiling::eLinear,
+                                                 vk::ImageUsageFlagBits::eSampled,
+                                                 vk::MemoryPropertyFlagBits::eHostVisible |
+                                                 vk::MemoryPropertyFlagBits::eHostCoherent);
+        // Nothing in the pipeline needs to be complete to start, and don't allow fragment
+        // shader to run until layout transition completes
+        this->textureModule->setImageLayout(&this->cmd, this->textures[i].image, vk::ImageAspectFlagBits::eColor,
+                                            vk::ImageLayout::ePreinitialized,
+                                            this->textures[i].imageLayout, vk::AccessFlagBits::eHostWrite,
+                                            vk::PipelineStageFlagBits::eTopOfPipe,
+                                            vk::PipelineStageFlagBits::eFragmentShader);
+        this->staging_texture.image = vk::Image();
+    } else if (this->textureFormatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) {
+        /* Must use staging buffer to copy linear texture to optimized */
+
+        this->textureModule->prepareTextureImage(textureFile, this->staging_texture, vk::ImageTiling::eLinear,
+                                                 vk::ImageUsageFlagBits::eTransferSrc,
+                                                 vk::MemoryPropertyFlagBits::eHostVisible |
+                                                 vk::MemoryPropertyFlagBits::eHostCoherent);
+
+        this->textureModule->prepareTextureImage(textureFile, this->textures[i], vk::ImageTiling::eOptimal,
+                                                 vk::ImageUsageFlagBits::eTransferDst |
+                                                 vk::ImageUsageFlagBits::eSampled,
+                                                 vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+        this->textureModule->setImageLayout(&this->cmd, this->staging_texture.image, vk::ImageAspectFlagBits::eColor,
+                                            vk::ImageLayout::ePreinitialized,
+                                            vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits::eHostWrite,
+                                            vk::PipelineStageFlagBits::eTopOfPipe,
+                                            vk::PipelineStageFlagBits::eTransfer);
+
+        this->textureModule->setImageLayout(&this->cmd, this->textures[i].image, vk::ImageAspectFlagBits::eColor,
+                                            vk::ImageLayout::ePreinitialized,
+                                            vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eHostWrite,
+                                            vk::PipelineStageFlagBits::eTopOfPipe,
+                                            vk::PipelineStageFlagBits::eTransfer);
+
+        auto const subresource = vk::ImageSubresourceLayers()
+                .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                .setMipLevel(0)
+                .setBaseArrayLayer(0)
+                .setLayerCount(1);
+
+        auto const copy_region =
+                vk::ImageCopy()
+                        .setSrcSubresource(subresource)
+                        .setSrcOffset({0, 0, 0})
+                        .setDstSubresource(subresource)
+                        .setDstOffset({0, 0, 0})
+                        .setExtent(
+                                {(uint32_t) this->staging_texture.tex_width,
+                                 (uint32_t) this->staging_texture.tex_height, 1});
+
+        this->cmd.copyImage(this->staging_texture.image, vk::ImageLayout::eTransferSrcOptimal, this->textures[i].image,
+                            vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
+
+        this->textureModule->setImageLayout(&this->cmd, this->textures[i].image, vk::ImageAspectFlagBits::eColor,
+                                            vk::ImageLayout::eTransferDstOptimal,
+                                            this->textures[i].imageLayout, vk::AccessFlagBits::eTransferWrite,
+                                            vk::PipelineStageFlagBits::eTransfer,
+                                            vk::PipelineStageFlagBits::eFragmentShader);
+    } else {
+        std::cerr << "No support for R8G8B8A8_UNORM as texture image format";
+    }
+
+    auto const samplerInfo = vk::SamplerCreateInfo()
+            .setMagFilter(vk::Filter::eNearest)
+            .setMinFilter(vk::Filter::eNearest)
+            .setMipmapMode(vk::SamplerMipmapMode::eNearest)
+            .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+            .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+            .setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
+            .setMipLodBias(0.0f)
+            .setAnisotropyEnable(VK_FALSE)
+            .setMaxAnisotropy(1)
+            .setCompareEnable(VK_FALSE)
+            .setCompareOp(vk::CompareOp::eNever)
+            .setMinLod(0.0f)
+            .setMaxLod(0.0f)
+            .setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
+            .setUnnormalizedCoordinates(VK_FALSE);
+
+    auto result = this->device.createSampler(&samplerInfo, nullptr, &this->textures[i].sampler);
+    VERIFY(result == vk::Result::eSuccess);
+
+    auto const viewInfo = vk::ImageViewCreateInfo()
+            .setImage(this->textures[i].image)
+            .setViewType(vk::ImageViewType::e2D)
+            .setFormat(tex_format)
+            .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+    result = this->device.createImageView(&viewInfo, nullptr, &this->textures[i].view);
+    VERIFY(result == vk::Result::eSuccess);
+}
+
+void vlk::VulkanModule::prepareCubeDataBuffers(Camera *camera, GameObject *object) {
     mat4x4 VP;
-    mat4x4_mul(VP, projection_matrix, view_matrix);
+    mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
 
     mat4x4 MVP;
     mat4x4_mul(MVP, VP, object->getModelMatrix());
@@ -938,12 +953,12 @@ void vlk::VulkanModule::prepareCubeDataBuffers(const float *g_vertex_buffer_data
 
     for (int32_t i = 0; i < 12 * 3; i++) {
 
-        data.position[i][0] = g_vertex_buffer_data[i * 3];
-        data.position[i][1] = g_vertex_buffer_data[i * 3 + 1];
-        data.position[i][2] = g_vertex_buffer_data[i * 3 + 2];
+        data.position[i][0] = object->getVertexBufferData()[i * 3];
+        data.position[i][1] = object->getVertexBufferData()[i * 3 + 1];
+        data.position[i][2] = object->getVertexBufferData()[i * 3 + 2];
         data.position[i][3] = 1.0f;
-        data.attr[i][0] = g_uv_buffer_data[2 * i];
-        data.attr[i][1] = g_uv_buffer_data[2 * i + 1];
+        data.attr[i][0] = object->getUVBufferData()[2 * i];
+        data.attr[i][1] = object->getUVBufferData()[2 * i + 1];
         data.attr[i][2] = 0;
         data.attr[i][3] = 0;
     }
@@ -1221,7 +1236,6 @@ void vlk::VulkanModule::prepareRenderPass() {
     VERIFY(result == vk::Result::eSuccess);
 }
 
-
 void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer) {
     auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 
@@ -1345,12 +1359,11 @@ void vlk::VulkanModule::buildImageOwnershipCmd(uint32_t const &i) {
     //VERIFY(result == vk::Result::eSuccess);
 }
 
-char const *const vlk::VulkanModule::tex_files[] = {"lunarg.ppm"};
-
+// TODO Move shaders outside of Vulkan
 vk::ShaderModule vlk::VulkanModule::prepare_fs() {
 
     size_t size = 0;
-    char *fragShaderCode = shaderModule->readSpv("cube-frag.spv", &size);
+    char *fragShaderCode = shaderModule->readSpv("sample_application/resources/cube-frag.spv", &size);
     if (!fragShaderCode) {
         ERR_EXIT("Failed to load cube-frag.spv", "Load Shader Failure");
     }
@@ -1364,7 +1377,7 @@ vk::ShaderModule vlk::VulkanModule::prepare_fs() {
 
 vk::ShaderModule vlk::VulkanModule::prepare_vs() {
     size_t size = 0;
-    char *vertShaderCode = shaderModule->readSpv("cube-vert.spv", &size);
+    char *vertShaderCode = shaderModule->readSpv("sample_application/resources/cube-vert.spv", &size);
     if (!vertShaderCode) {
         ERR_EXIT("Failed to load cube-vert.spv", "Load Shader Failure");
     }
@@ -1376,9 +1389,9 @@ vk::ShaderModule vlk::VulkanModule::prepare_vs() {
     return vert_shader_module;
 }
 
-void vlk::VulkanModule::updateDataBuffer(GameObject *object) {
+void vlk::VulkanModule::updateDataBuffer(Camera *camera, GameObject *object) {
     mat4x4 VP;
-    mat4x4_mul(VP, projection_matrix, view_matrix);
+    mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
 
     // Rotate around the Y axis
     mat4x4 Model;
@@ -1386,20 +1399,20 @@ void vlk::VulkanModule::updateDataBuffer(GameObject *object) {
     mat4x4_rotate(object->getModelMatrix(), Model, 0.0f, 1.0f, 0.0f,
                   (float) degreesToRadians(object->getSpinningAngle()));
 
+    mat4x4 MVP;
+    mat4x4_mul(MVP, VP, object->getModelMatrix());
+
     auto data = device.mapMemory(swapchain_image_resources[current_buffer].uniform_memory, 0, VK_WHOLE_SIZE,
                                  vk::MemoryMapFlags());
     // TODO investigate API changes
 //    VERIFY(data.result == vk::Result::eSuccess);
-
-    mat4x4 MVP;
-    mat4x4_mul(MVP, VP, object->getModelMatrix());
 
     memcpy(data, (const void *) &MVP[0][0], sizeof(MVP));
 
     device.unmapMemory(swapchain_image_resources[current_buffer].uniform_memory);
 }
 
-void vlk::VulkanModule::draw(GameObject *object) {
+void vlk::VulkanModule::draw(GameWorld *gameWorld) {
     // Ensure no more than FRAME_LAG renderings are outstanding
     device.waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
     device.resetFences(1, &fences[frame_index]);
@@ -1421,7 +1434,12 @@ void vlk::VulkanModule::draw(GameObject *object) {
         }
     } while (result != vk::Result::eSuccess);
 
-    this->updateDataBuffer(object);
+    // TODO Move this block outside of the vulkanmodule
+    // Keep only memory operations
+    for (auto &&gameObject : gameWorld->getGameObjects()) {
+
+        this->updateDataBuffer(gameWorld->getCamera(), gameObject);
+    }
 
     // Wait for the image acquired semaphore to be signaled to ensure
     // that the image won't be rendered to until the presentation
@@ -1539,4 +1557,15 @@ void vlk::VulkanModule::resize() {
     // Second, re-perform the prepare() function, which will re-create the
     // swapchain.
     engine->prepare();
+}
+
+void vlk::VulkanModule::prepareTexture(std::string &filename) {
+    this->prepareTexture(filename.c_str(), this->textureFormat, 0);
+}
+
+void vlk::VulkanModule::prepareCamera(Camera *camera) {
+
+    mat4x4_perspective(camera->getProjectionMatrix(), (float) degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
+    mat4x4_look_at(camera->getViewMatrix(), camera->getEye(), camera->getOrigin(), camera->getUp());
+    camera->getProjectionMatrix()[1][1] *= -1;
 }

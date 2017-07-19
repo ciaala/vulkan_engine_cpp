@@ -8,14 +8,22 @@
 
 #include <game/GameObject.hpp>
 
-class SampleCube : public vlk::GameObject {
+class SampleObject : public vlk::GameObject {
 
 public:
+    SampleObject();
+
     void rotateLeft();
 
     void rotateRight();
 
+protected:
+    static float g_vertex_buffer_data[];
+
+    static float g_uv_buffer_data[];
+
     float spinningStep = 0.2;
+
 };
 
 

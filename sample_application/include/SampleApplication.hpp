@@ -6,34 +6,27 @@
 #define VULKAN_ENGINE_CPP_SAMPLEAPPLICATION_HPP
 
 #include <string>
+#include <game/GameWorld.hpp>
 #include "game/Application.hpp"
 #include "SampleInputController.hpp"
 
 
-class SampleApplication : public Application {
+class SampleApplication : public vlk::Application {
 private:
     std::string applicationName;
+    SampleInputController *inputController;
+    SampleGame *game;
 public:
     SampleApplication();
 
-    static const float g_uv_buffer_data[];
-    static const float g_vertex_buffer_data[];
+    std::string getName() override;
 
-    virtual const float *getBufferData() override;
-
-    virtual const float *getUVBufferData() override;
-
-    virtual std::string getName() override;
-
-    virtual InputController *getInputController() override;
+    vlk::InputController *getInputController() override;
 
     ~SampleApplication() {};
 
-    SampleGame *game;
+    vlk::GameWorld *getWorld() override;
 
-    virtual vlk::GameObject *getWorld() override;
-
-    SampleInputController *inputController;
 };
 
 

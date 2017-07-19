@@ -5,7 +5,9 @@
 #include "../../include/renderer/TextureModule.hpp"
 #include "../../include/core/CommonMacro.hpp"
 
-void vlk::TextureModule::prepareTextureImage(const char *filename, texture_object *tex_obj, vk::ImageTiling tiling,
+void vlk::TextureModule::prepareTextureImage(const char *filename,
+                                             texture_object &tex_obj,
+                                             vk::ImageTiling tiling,
                                              vk::ImageUsageFlags usage,
                                              vk::MemoryPropertyFlags required_props) {
     int32_t tex_width;
@@ -14,8 +16,8 @@ void vlk::TextureModule::prepareTextureImage(const char *filename, texture_objec
         ERR_EXIT("Failed to load textures", "Load Texture Failure");
     }
 
-    tex_obj->tex_width = tex_width;
-    tex_obj->tex_height = tex_height;
+    tex_obj.tex_width = tex_width;
+    tex_obj.tex_height = tex_height;
 
     auto const image_create_info = vk::ImageCreateInfo()
             .setImageType(vk::ImageType::e2D)
@@ -31,35 +33,35 @@ void vlk::TextureModule::prepareTextureImage(const char *filename, texture_objec
             .setPQueueFamilyIndices(nullptr)
             .setInitialLayout(vk::ImageLayout::ePreinitialized);
 
-    auto result = device->createImage(&image_create_info, nullptr, &tex_obj->image);
+    auto result = device->createImage(&image_create_info, nullptr, &tex_obj.image);
     VERIFY(result == vk::Result::eSuccess);
 
     vk::MemoryRequirements mem_reqs;
-    device->getImageMemoryRequirements(tex_obj->image, &mem_reqs);
+    device->getImageMemoryRequirements(tex_obj.image, &mem_reqs);
 
-    tex_obj->mem_alloc.setAllocationSize(mem_reqs.size);
-    tex_obj->mem_alloc.setMemoryTypeIndex(0);
+    tex_obj.mem_alloc.setAllocationSize(mem_reqs.size);
+    tex_obj.mem_alloc.setMemoryTypeIndex(0);
 
     auto pass = memoryModule->memoryTypeFromProperties(mem_reqs.memoryTypeBits, required_props,
-                                                       &tex_obj->mem_alloc.memoryTypeIndex);
+                                                       &tex_obj.mem_alloc.memoryTypeIndex);
     VERIFY(pass == true);
 
-    result = device->allocateMemory(&tex_obj->mem_alloc, nullptr, &(tex_obj->mem));
+    result = device->allocateMemory(&tex_obj.mem_alloc, nullptr, &(tex_obj.mem));
     VERIFY(result == vk::Result::eSuccess);
 
 
     // TODO investigate this void value
     // result =
-    device->bindImageMemory(tex_obj->image, tex_obj->mem, 0);
+    device->bindImageMemory(tex_obj.image, tex_obj.mem, 0);
     //VERIFY(result == vk::Result::eSuccess);
 
     if (required_props & vk::MemoryPropertyFlagBits::eHostVisible) {
         auto const subres =
                 vk::ImageSubresource().setAspectMask(vk::ImageAspectFlagBits::eColor).setMipLevel(0).setArrayLayer(0);
         vk::SubresourceLayout layout;
-        device->getImageSubresourceLayout(tex_obj->image, &subres, &layout);
+        device->getImageSubresourceLayout(tex_obj.image, &subres, &layout);
 
-        auto data = device->mapMemory(tex_obj->mem, 0, tex_obj->mem_alloc.allocationSize);
+        auto data = device->mapMemory(tex_obj.mem, 0, tex_obj.mem_alloc.allocationSize);
 // TODO investigate this result type
 //        VERIFY(data.result == vk::Result::eSuccess);
         // TODO investigate if an api change has happened here
@@ -67,10 +69,10 @@ void vlk::TextureModule::prepareTextureImage(const char *filename, texture_objec
             fprintf(stderr, "Error loading texture: %s\n", filename);
         }
 
-        device->unmapMemory(tex_obj->mem);
+        device->unmapMemory(tex_obj.mem);
     }
 
-    tex_obj->imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    tex_obj.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 }
 
 bool
@@ -138,7 +140,7 @@ vlk::TextureModule::TextureModule(vk::Device *device, vlk::MemoryModule *memoryM
     this->memoryModule = memoryModule;
 }
 
-void vlk::TextureModule::setImageLayout(vk::CommandBuffer *cmd, vk::Image image, vk::ImageAspectFlags aspectMask,
+void vlk::TextureModule::setImageLayout(const vk::CommandBuffer *cmd, vk::Image image, vk::ImageAspectFlags aspectMask,
                                         vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
                                         vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages,
                                         vk::PipelineStageFlags dest_stages) {

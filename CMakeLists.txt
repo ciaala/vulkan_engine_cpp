@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.8)
 
 project(vulkan_engine_cpp)
 
 set(CMAKE_CXX_STANDARD 14)
-
+#set(CMAKE_CXX_FLAGS -ferror-limit=9001)
 set(SOURCE_FILES src/main.cpp)
 add_subdirectory(engine)
 add_subdirectory(sample_application)

@@ -18,6 +18,7 @@ namespace vlk {
     class XCBModule;
 
     class VulkanModule;
+
     class InputModule;
 
 
@@ -36,7 +37,7 @@ namespace vlk {
     public:
         //engine(int argc = 0, char** argv = nullptr);
 
-        Engine(Application *application);
+        explicit Engine(Application *application);
 
         void setupModules();
 
@@ -53,13 +54,12 @@ namespace vlk {
         Application *getApplication() { return this->application; }
 
         InputModule *getInputModule() { return this->inputModule; };
+
     public:
         // ---- STATIC
-
         static std::string getVulkanVersion();
 
         static std::string getName();
-
 
     };
 }

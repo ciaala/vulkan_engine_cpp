@@ -15,10 +15,10 @@ namespace vlk {
 #include <xcb/xcb.h>
 
 #define VK_USE_PLATFORM_XCB_KHR
-
 #include "vulkan/vulkan.hpp"
 #include <vulkan/vk_sdk_platform.h>
 #include <game/GameObject.hpp>
+#include <game/Camera.hpp>
 #include "core/linmath.h"
 
 #include "Engine.hpp"
@@ -101,7 +101,10 @@ namespace vlk {
 
         void createDevice();
 
-        void prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data, GameObject *object);
+        void prepare();
+
+        void
+        prepareCubeDataBuffers(Camera *camera, GameObject *object);
 
     private:
 
@@ -118,9 +121,6 @@ namespace vlk {
 
         void prepareDepth();
 
-        void prepareTextures();
-
-
         // Data used inside the prepare phase
         vk::CommandPool cmd_pool;
         vk::CommandPool present_cmd_pool;
@@ -132,16 +132,22 @@ namespace vlk {
         vk::RenderPass render_pass;
         vk::Pipeline pipeline;
 
-        mat4x4 projection_matrix;
-        mat4x4 view_matrix;
-        //mat4x4 model_matrix;
+        // DISABLED when on switch to GameWorld
+        //mat4x4 projection_matrix;
+        // mat4x4 view_matrix;
+
+        // DISABLED when on switch to GameObject
+        // mat4x4 model_matrix;
 
         uint32_t swapchainImageCount;
         vk::SwapchainKHR swapchain;
         std::unique_ptr<SwapchainImageResources[]> swapchain_image_resources;
 
+        //TODO Use std::vector
         static int32_t const texture_count = 1;
+        //TODO Use std::vector
         texture_object textures[texture_count];
+
         texture_object staging_texture;
 
         void prepareDescriptorLayout();
@@ -181,7 +187,7 @@ namespace vlk {
 
         void buildImageOwnershipCmd(uint32_t const &i);
 
-        static char const *const tex_files[];
+        //static char const *const tex_files[];
         bool use_staging_buffer;
 
         vk::ShaderModule prepare_fs();
@@ -193,23 +199,33 @@ namespace vlk {
         vk::ShaderModule vert_shader_module;
         vk::ShaderModule frag_shader_module;
 
-        void
-        prepareCubeDataBuffers(const float *g_vertex_buffer_data,
-                               const float *g_uv_buffer_data,
-                               GameObject *object);
-
         // prepare the draw
     private:
         // float spin_angle;
-        void updateDataBuffer(GameObject *Object);
+        void updateDataBuffer(Camera *camera, GameObject *Object);
 
         // float spin_increment;
         bool pause{false};
     public:
         void resize();
 
-        void draw(GameObject *object);
+        // Game World Refactor
+    public:
+        // TODO Move to Texture Module
+        vk::FormatProperties textureFormatProperties;
+        vk::Format const textureFormat = vk::Format::eR8G8B8A8Unorm;
 
+        void draw(GameWorld *world);
+
+        void prepareTextures();
+
+        void prepareTexture(const char *textureFile, const vk::Format &tex_format, uint32_t i);
+
+        void prepareTexture(std::string &basic_string);
+
+        void prepareCamera(vlk::Camera *camera);
+
+        void prepareDescriptors();
     };
 }
 

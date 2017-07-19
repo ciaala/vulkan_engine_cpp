@@ -9,21 +9,24 @@
 
 #include "InputController.hpp"
 #include "GameObject.hpp"
+#include "GameWorld.hpp"
 
-class InputController;
-namespace vlk { class GameObject; };
 
-class Application {
-public:
-    virtual const float *getUVBufferData() = 0;
+namespace vlk {
+    class InputController;
 
-    virtual const float *getBufferData() = 0;
+    class GameObject;
 
-    virtual std::string getName() = 0;
+    class GameWorld;
 
-    virtual InputController *getInputController() = 0;
+    class Application {
+    public:
 
-    virtual vlk::GameObject *getWorld() = 0;
-};
+        virtual std::string getName() = 0;
 
+        virtual InputController *getInputController() = 0;
+
+        virtual GameWorld *getWorld() = 0;
+    };
+}
 #endif //VULKAN_ENGINE_CPP_APPLICATION_H

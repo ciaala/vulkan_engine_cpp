@@ -9,13 +9,17 @@
 #include <game/InputController.hpp>
 #include "SampleGame.hpp"
 
-class SampleInputController : public InputController{
+class SampleInputController : public vlk::InputController {
 public:
     SampleInputController(SampleGame *game);
 
+    void setWorldObject(SampleObject *sampleObject);
+
     virtual void keyReleased(vlk::Keys key) override;
 
+private:
     SampleGame *game;
+    SampleObject *object;
 };
 
 

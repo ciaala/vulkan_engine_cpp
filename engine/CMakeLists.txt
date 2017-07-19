@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.8)
 set(CMAKE_MODULE_PATH ../cmake)
 project(vkengine)
 set(CMAKE_CXX_STANDARD 14)
@@ -29,7 +29,7 @@ set(SOURCE_FILES
         include/core/linmath.h
         include/game/Application.hpp
 
-        include/game/InputController.hpp include/game/GameObject.hpp)
+        include/game/InputController.hpp include/game/GameObject.hpp include/game/GameWorld.hpp include/game/Camera.hpp)
 add_library(vkengine STATIC ${SOURCE_FILES})
 target_link_libraries(vkengine ${VULKAN_LIBRARY_DIR} xcb xcb-keysyms)
 target_include_directories(vkengine

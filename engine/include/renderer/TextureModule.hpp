@@ -28,22 +28,34 @@ namespace vlk {
     class TextureModule {
     public:
         void
-        prepareTextureImage(const char *filename, texture_object *tex_obj, vk::ImageTiling tiling,
+        prepareTextureImage(const char *filename,
+                            texture_object &tex_obj,
+                            vk::ImageTiling tiling,
                             vk::ImageUsageFlags usage,
                             vk::MemoryPropertyFlags required_props);
 
         bool
-        loadTexture(const char *filename, uint8_t *rgba_data, vk::SubresourceLayout *layout, int32_t *width,
+        loadTexture(const char *filename,
+                    uint8_t *rgba_data,
+                    vk::SubresourceLayout *layout,
+                    int32_t *width,
                     int32_t *height);
+
         TextureModule(vk::Device *device, MemoryModule *memoryModule);
 
 
         void destroyTextureImage(texture_object *tex_objs);
 
 
-        void setImageLayout(vk::CommandBuffer *cmd, vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldLayout,
-                                    vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask,
-                                    vk::PipelineStageFlags src_stages, vk::PipelineStageFlags dest_stages);
+        void setImageLayout(const vk::CommandBuffer *cmd,
+                            vk::Image image,
+                            vk::ImageAspectFlags aspectMask,
+                            vk::ImageLayout oldLayout,
+                            vk::ImageLayout newLayout,
+                            vk::AccessFlags srcAccessMask,
+                            vk::PipelineStageFlags src_stages,
+                            vk::PipelineStageFlags dest_stages);
+
     private:
         vk::Device *device;
         MemoryModule *memoryModule;

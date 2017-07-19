@@ -8,7 +8,7 @@
 vlk::Renderer::Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule) {
     this->engine = engine;
     this->vulkanModule = vulkanModule;
-    this-> xcbModule = xcbModule;
+    this->xcbModule = xcbModule;
     //this->initWindowLibrary();
     //this->initVulkan();
 }
@@ -35,20 +35,39 @@ void vlk::Renderer::createWindow() {
     std::cout << "Unable to idenfiy window library. Supported {xcb}" << std::endl;
 #endif
 }
+
 void vlk::Renderer::initVulkan() {
     std::cout << "Init Vulkan" << std::endl;
     this->vulkanModule->init();
 }
 
-vlk::XCBModule* vlk::Renderer::getXCBModule() {
+vlk::XCBModule *vlk::Renderer::getXCBModule() {
     return this->xcbModule;
 }
 
 void vlk::Renderer::initSwapChain() {
-    vulkanModule->initSurface(xcbModule->getConnection(), xcbModule->getWindow() );
+    vulkanModule->initSurface(xcbModule->getConnection(), xcbModule->getWindow());
     vulkanModule->initSwapChain();
 }
 
-void vlk::Renderer::prepare(const float *g_vertex_buffer_data, const float *g_uv_buffer_data, GameObject *object) {
-    this->vulkanModule->prepare(g_vertex_buffer_data, g_uv_buffer_data, object);
+void vlk::Renderer::prepare(GameWorld *gameWorld) {
+    this->vulkanModule->prepare();
+
+    this->vulkanModule->prepareCamera(gameWorld->getCamera());
+
+    for (auto gameObject :gameWorld->getGameObjects()) {
+        this->vulkanModule->prepareCubeDataBuffers(gameWorld->getCamera(), gameObject);
+        for (std::string &textureFile : gameObject->getTextureFiles()) {
+            this->vulkanModule->prepareTexture(textureFile);
+        }
+
+    }
+
+    this->vulkanModule->prepareDescriptors();
+}
+
+void vlk::Renderer::draw(vlk::GameWorld *gameWorld) {
+    this->vulkanModule->draw(gameWorld);
+
+
 }

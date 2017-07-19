@@ -2,6 +2,11 @@
 // Created by crypt on 19/07/17.
 //
 
+// PRE-DECLARATION BLOCK
+namespace vlk {
+    enum Keys : uint64_t;
+    class InputModule;
+}
 #ifndef VULKAN_ENGINE_CPP_INPUTMODULE_HPP
 #define VULKAN_ENGINE_CPP_INPUTMODULE_HPP
 

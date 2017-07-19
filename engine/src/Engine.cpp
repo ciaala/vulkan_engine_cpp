@@ -22,7 +22,7 @@ vlk::Engine::Engine(Application *application) {
 void vlk::Engine::setupModules() {
     this->inputModule = new InputModule(this);
 
-    this->vulkanModule = new VulkanModule(this, false);
+    this->vulkanModule = new VulkanModule(this, true);
     this->xcbModule = new XCBModule(this);
 
     this->renderer = new Renderer(this, vulkanModule, xcbModule);
@@ -37,7 +37,7 @@ void vlk::Engine::init() {
     this->renderer->createWindow();
     this->renderer->initSwapChain();
     this->prepare();
-    this->renderer->prepare(this->application->getBufferData(), this->application->getUVBufferData(), this->application->getWorld());
+
     this->xcbModule->runXCB();
 }
 
@@ -45,13 +45,14 @@ void vlk::Engine::draw() {
     static int c = 0;
     static int gc = 0;
     if (c == 1000000) {
-        gc ++;
+        gc++;
         std::cout << "Engine.draw " << gc << " x 10^6" << std::endl;
         c = 0;
     } else {
-        c ++;
+        c++;
     }
-    this->vulkanModule->draw(this->getApplication()->getWorld());
+    this->renderer->draw(this->application->getWorld());
+    this->application->getWorld()->updateWorld();
 }
 
 void vlk::Engine::resize() {
@@ -64,6 +65,7 @@ std::string vlk::Engine::getName() {
 
 void vlk::Engine::prepare() {
     std::cout << "Engine.prepare" << std::endl;
+    this->renderer->prepare(this->application->getWorld());
 
 }
 

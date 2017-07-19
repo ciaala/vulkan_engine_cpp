@@ -6,13 +6,17 @@
 #define VULKAN_ENGINE_CPP_SAMPLEGAME_HPP
 
 
-#include "SampleCube.hpp"
+#include "SampleObject.hpp"
+#include "SampleGameWorld.hpp"
 
 class SampleGame {
 private:
     bool _quit = false;
 
     bool pause = false;
+
+    SampleGameWorld *gameWorld;
+
 public:
     SampleGame();
 
@@ -20,9 +24,8 @@ public:
 
     void triggerPause();
 
-    SampleCube *getCube();
+    vlk::GameWorld *getWorld();
 
-    SampleCube *cube;
 };
 
 

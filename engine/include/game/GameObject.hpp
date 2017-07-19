@@ -6,25 +6,52 @@
 #define VULKAN_ENGINE_CPP_GAMEOBJECT_HPP
 
 #include <core/linmath.h>
+#include <vector>
+#include <string>
 
 namespace vlk {
     class GameObject {
 
     public:
         GameObject() {
-            mat4x4_identity(mat4x4);
+            mat4x4_identity(this->modelMatrix);
+            this->spinningAngle = 4.0;
+            this->vertexBufferData = nullptr;
+            this->uvBufferData = nullptr;
+            this->vertexShader = "";
+            this->fragmentShader = "";;
+
         }
+
         mat4x4 &getModelMatrix() {
-            return this->mat4x4;
+            return this->modelMatrix;
         };
 
         float getSpinningAngle() {
             return this->spinningAngle;
         }
 
+        std::vector<std::string> getTextureFiles() {
+            return textureFiles;
+        }
+
+        float *getVertexBufferData() {
+            return vertexBufferData;
+        }
+
+        float *getUVBufferData() {
+            return uvBufferData;
+        }
+
     protected:
         float spinningAngle;
-        mat4x4 mat4x4;
+        mat4x4 modelMatrix;
+        std::vector<std::string> textureFiles;
+        float *vertexBufferData;
+        float *uvBufferData;
+
+        std::string vertexShader;
+        std::string fragmentShader;
     };
 
 }

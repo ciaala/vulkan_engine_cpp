@@ -9,11 +9,11 @@ void SampleInputController::keyReleased(vlk::Keys key) {
 
     switch (key) {
         case vlk::Keys::ARROW_LEFT: {
-            this->game->getCube()->rotateLeft();
+            this->object->rotateLeft();
             break;
         }
         case vlk::Keys::ARROW_RIGHT: {
-            this->game->getCube()->rotateRight();
+            this->object->rotateRight();
             break;
         }
         case vlk::Keys::SPACE_BAR: {
@@ -32,4 +32,8 @@ void SampleInputController::keyReleased(vlk::Keys key) {
 
 SampleInputController::SampleInputController(SampleGame *game) : game(game) {
 
+}
+
+void SampleInputController::setWorldObject(SampleObject *sampleObject) {
+    this->object = sampleObject;
 }

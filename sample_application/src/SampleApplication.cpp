@@ -8,112 +8,21 @@
 SampleApplication::SampleApplication() : applicationName("SampleApplication") {
     this->game = new SampleGame();
     this->inputController = new SampleInputController(game);
+    this->inputController->setWorldObject(static_cast<SampleObject *>(this->getWorld()->getGameObjects().at(0)));
 }
 
 std::string SampleApplication::getName() {
     return this->applicationName;
 }
-
-const float *SampleApplication::getBufferData() { return SampleApplication::g_vertex_buffer_data; }
-
-const float *SampleApplication::getUVBufferData() { return SampleApplication::g_uv_buffer_data; }
-
 //--------------------------------------------------------------------------------------
 // Mesh and VertexFormat Data
 //--------------------------------------------------------------------------------------
 // clang-format off
-const float SampleApplication::g_vertex_buffer_data[] = {
-        -1.0f, -1.0f, -1.0f,  // -X side
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
 
-        -1.0f, -1.0f, -1.0f,  // -Z side
-        1.0f, 1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,  // -Y side
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
-
-        -1.0f, 1.0f, -1.0f,  // +Y side
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, -1.0f,
-
-        1.0f, 1.0f, -1.0f,  // +X side
-        1.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-
-        -1.0f, 1.0f, 1.0f,  // +Z side
-        -1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-};
-
-const float SampleApplication::g_uv_buffer_data[] = {
-        0.0f, 1.0f,  // -X side
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-
-        1.0f, 1.0f,  // -Z side
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-
-        1.0f, 0.0f,  // -Y side
-        1.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 0.0f,
-
-        1.0f, 0.0f,  // +Y side
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-
-        1.0f, 0.0f,  // +X side
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-
-        0.0f, 0.0f,  // +Z side
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-};
-
-InputController *SampleApplication::getInputController() {
+vlk::InputController *SampleApplication::getInputController() {
     return this->inputController;
 }
 
-vlk::GameObject *SampleApplication::getWorld() {
-    return this->game->getCube();
+vlk::GameWorld *SampleApplication::getWorld() {
+    return this->game->getWorld();
 }
