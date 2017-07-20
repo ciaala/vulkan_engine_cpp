@@ -3,10 +3,11 @@
 //
 
 #include <iostream>
-#include "../../include/renderer/ShaderModule.hpp"
-#include "../../include/core/CommonMacro.hpp"
+#include "renderer/ShaderModule.hpp"
+#include "core/CommonMacro.hpp"
 
 vk::ShaderModule vlk::ShaderModule::prepareShaderModule(const void *code, size_t size) {
+
     auto const moduleCreateInfo = vk::ShaderModuleCreateInfo().setCodeSize(size).setPCode((uint32_t const *) code);
 
     vk::ShaderModule module;
@@ -18,7 +19,16 @@ vk::ShaderModule vlk::ShaderModule::prepareShaderModule(const void *code, size_t
 
 vlk::ShaderModule::ShaderModule(vk::Device *device) {
     this->device = device;
+}
 
+vk::ShaderModule vlk::ShaderModule::readAndPrepare(const char *filename) {
+    size_t size;
+    auto code = this->readSpv(filename, &size);
+    if (code != nullptr) {
+        this->prepareShaderModule(code, size);
+    } else {
+        std::cerr << "Loading shader from file: '" << filename << "' has failed" << std::endl;
+    }
 }
 
 char *vlk::ShaderModule::readSpv(const char *filename, size_t *psize) {
@@ -28,7 +38,7 @@ char *vlk::ShaderModule::readSpv(const char *filename, size_t *psize) {
     if (!fp) {
         return nullptr;
     }
-
+    // TODO Consider using ftello which could be configured to be 64bit
     fseek(fp, 0L, SEEK_END);
     long int size = ftell(fp);
 
@@ -43,5 +53,13 @@ char *vlk::ShaderModule::readSpv(const char *filename, size_t *psize) {
     fclose(fp);
 
     return (char *) shader_code;
+}
+
+std::vector<vk::ShaderModule> vlk::ShaderModule::prepareShaderFromFiles(std::vector<std::string> filenames) {
+    std::vector<vk::ShaderModule> shaders;
+    for (auto &&filename : filenames) {
+        shaders.emplace_back(readAndPrepare(filename.c_str()));
+    }
+    return shaders;
 }
 

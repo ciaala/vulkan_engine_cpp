@@ -47,6 +47,10 @@ namespace vlk {
         void prepare(GameWorld *gameWorld);
 
         void draw(GameWorld *gameWorld);
+
+        void
+    prepareShaders(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfo, std::vector<vk::ShaderModule> &vertexes,
+                   std::vector<vk::ShaderModule> &fragments);
     };
 }
 

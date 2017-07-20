@@ -557,13 +557,15 @@ void vlk::VulkanModule::prepare() {
 
 }
 
-void vlk::VulkanModule::prepareDescriptors() {
+void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList) {
     // DISABLED in GameWorld Refactor
     //this->prepareCubeDataBuffers(g_vertex_buffer_data, g_uv_buffer_data, object);
 
     this->prepareDescriptorLayout();
     this->prepareRenderPass();
-    this->preparePipeline();
+
+    this->preparePipeline(shaderStageInfoList);
+
     auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
             .setCommandPool(cmd_pool)
             .setLevel(vk::CommandBufferLevel::ePrimary)
@@ -1098,25 +1100,21 @@ void vlk::VulkanModule::prepareFramebuffers() {
     }
 }
 
-void vlk::VulkanModule::preparePipeline() {
+void
+vlk::VulkanModule::preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> & shaderStageInfoList) {
     vk::PipelineCacheCreateInfo const pipelineCacheInfo;
     auto result = device.createPipelineCache(&pipelineCacheInfo, nullptr, &pipelineCache);
     VERIFY(result == vk::Result::eSuccess);
 
-    vk::PipelineShaderStageCreateInfo const shaderStageInfo[2] = {
-            vk::PipelineShaderStageCreateInfo().setStage(vk::ShaderStageFlagBits::eVertex).setModule(
-                    prepare_vs()).setPName("main"),
-            vk::PipelineShaderStageCreateInfo()
-                    .setStage(vk::ShaderStageFlagBits::eFragment)
-                    .setModule(prepare_fs())
-                    .setPName("main")};
+
+
 
     vk::PipelineVertexInputStateCreateInfo const vertexInputInfo;
 
     auto const inputAssemblyInfo = vk::PipelineInputAssemblyStateCreateInfo().setTopology(
             vk::PrimitiveTopology::eTriangleList);
 
-    // TODO: Where are pViewports and pScissors set?
+// TODO: Where are pViewports and pScissors set?
     auto const viewportInfo = vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
 
     auto const rasterizationInfo = vk::PipelineRasterizationStateCreateInfo()
@@ -1159,7 +1157,7 @@ void vlk::VulkanModule::preparePipeline() {
 
     auto const pipeline = vk::GraphicsPipelineCreateInfo()
             .setStageCount(2)
-            .setPStages(shaderStageInfo)
+            .setPStages(shaderStageInfoList.data())
             .setPVertexInputState(&vertexInputInfo)
             .setPInputAssemblyState(&inputAssemblyInfo)
             .setPViewportState(&viewportInfo)
@@ -1174,8 +1172,12 @@ void vlk::VulkanModule::preparePipeline() {
     result = device.createGraphicsPipelines(pipelineCache, 1, &pipeline, nullptr, &this->pipeline);
     VERIFY(result == vk::Result::eSuccess);
 
-    device.destroyShaderModule(frag_shader_module, nullptr);
-    device.destroyShaderModule(vert_shader_module, nullptr);
+    device.
+            destroyShaderModule(frag_shader_module,
+                                nullptr);
+    device.
+            destroyShaderModule(vert_shader_module,
+                                nullptr);
 }
 
 void vlk::VulkanModule::prepareRenderPass() {
@@ -1359,36 +1361,6 @@ void vlk::VulkanModule::buildImageOwnershipCmd(uint32_t const &i) {
     //VERIFY(result == vk::Result::eSuccess);
 }
 
-// TODO Move shaders outside of Vulkan
-vk::ShaderModule vlk::VulkanModule::prepare_fs() {
-
-    size_t size = 0;
-    char *fragShaderCode = shaderModule->readSpv("sample_application/resources/cube-frag.spv", &size);
-    if (!fragShaderCode) {
-        ERR_EXIT("Failed to load cube-frag.spv", "Load Shader Failure");
-    }
-
-    frag_shader_module = shaderModule->prepareShaderModule(fragShaderCode, size);
-
-    free(fragShaderCode);
-
-    return frag_shader_module;
-}
-
-vk::ShaderModule vlk::VulkanModule::prepare_vs() {
-    size_t size = 0;
-    char *vertShaderCode = shaderModule->readSpv("sample_application/resources/cube-vert.spv", &size);
-    if (!vertShaderCode) {
-        ERR_EXIT("Failed to load cube-vert.spv", "Load Shader Failure");
-    }
-
-    vert_shader_module = shaderModule->prepareShaderModule(vertShaderCode, size);
-
-    free(vertShaderCode);
-
-    return vert_shader_module;
-}
-
 void vlk::VulkanModule::updateDataBuffer(Camera *camera, GameObject *object) {
     mat4x4 VP;
     mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
@@ -1568,4 +1540,8 @@ void vlk::VulkanModule::prepareCamera(Camera *camera) {
     mat4x4_perspective(camera->getProjectionMatrix(), (float) degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
     mat4x4_look_at(camera->getViewMatrix(), camera->getEye(), camera->getOrigin(), camera->getUp());
     camera->getProjectionMatrix()[1][1] *= -1;
+}
+
+vlk::ShaderModule *vlk::VulkanModule::getShaderModule() {
+    return this->shaderModule;
 }

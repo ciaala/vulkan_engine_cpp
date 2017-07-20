@@ -104,6 +104,6 @@ SampleObject::SampleObject() {
     this->vertexBufferData = SampleObject::g_vertex_buffer_data;
     this->uvBufferData = SampleObject::g_uv_buffer_data;
     this->textureFiles.emplace_back("sample_application/resources/lunarg.ppm");
-    this->vertexShader = "sample_application/resources/cube-vert.spv";
-    this->fragmentShader = "sample_application/resources/cube-frag.spv";
+    this->vertexShaderFiles = {"sample_application/resources/cube-vert.spv"};
+    this->fragmentShaderFiles = {"sample_application/resources/cube-frag.spv"};
 }

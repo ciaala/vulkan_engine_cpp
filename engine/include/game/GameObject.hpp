@@ -18,8 +18,7 @@ namespace vlk {
             this->spinningAngle = 4.0;
             this->vertexBufferData = nullptr;
             this->uvBufferData = nullptr;
-            this->vertexShader = "";
-            this->fragmentShader = "";;
+
 
         }
 
@@ -43,6 +42,14 @@ namespace vlk {
             return uvBufferData;
         }
 
+        std::vector<std::string> &getVertexShaderFiles() {
+            return vertexShaderFiles;
+        }
+
+        std::vector<std::string> &getFragmentShaderFiles() {
+            return fragmentShaderFiles;
+        }
+
     protected:
         float spinningAngle;
         mat4x4 modelMatrix;
@@ -50,8 +57,8 @@ namespace vlk {
         float *vertexBufferData;
         float *uvBufferData;
 
-        std::string vertexShader;
-        std::string fragmentShader;
+        std::vector<std::string> vertexShaderFiles;
+        std::vector<std::string> fragmentShaderFiles;
     };
 
 }

@@ -10,13 +10,20 @@
 
 namespace vlk {
     class ShaderModule {
-    public:
+    private:
         vk::ShaderModule prepareShaderModule(const void *code, size_t size);
 
         vk::Device *device;
+
         char *readSpv(const char *filename, size_t *psize);
 
-        ShaderModule(vk::Device *device);
+    public:
+
+        explicit ShaderModule(vk::Device *device);
+
+        vk::ShaderModule readAndPrepare(const char *filename);
+
+        std::vector<vk::ShaderModule> prepareShaderFromFiles(std::vector<std::string> filenames);
     };
 }
 

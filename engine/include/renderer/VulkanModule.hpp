@@ -15,6 +15,7 @@ namespace vlk {
 #include <xcb/xcb.h>
 
 #define VK_USE_PLATFORM_XCB_KHR
+
 #include "vulkan/vulkan.hpp"
 #include <vulkan/vk_sdk_platform.h>
 #include <game/GameObject.hpp>
@@ -160,7 +161,7 @@ namespace vlk {
 
         void prepareRenderPass();
 
-        void preparePipeline();
+        //void preparePipeline();
 
         struct {
             vk::Format format;
@@ -190,9 +191,6 @@ namespace vlk {
         //static char const *const tex_files[];
         bool use_staging_buffer;
 
-        vk::ShaderModule prepare_fs();
-
-        vk::ShaderModule prepare_vs();
 
         ShaderModule *shaderModule;
         MemoryModule *memoryModule;
@@ -225,7 +223,11 @@ namespace vlk {
 
         void prepareCamera(vlk::Camera *camera);
 
-        void prepareDescriptors();
+        void prepareDescriptors(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
+
+        void preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> & shaderStageInfoList);
+
+        ShaderModule *getShaderModule();
     };
 }
 
