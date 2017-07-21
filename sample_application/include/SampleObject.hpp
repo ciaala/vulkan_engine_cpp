@@ -23,7 +23,6 @@ protected:
     static float g_uv_buffer_data[];
 
     float spinningStep = 0.2;
-
 };
 
 

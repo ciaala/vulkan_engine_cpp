@@ -22,6 +22,8 @@ namespace vlk {
 
         void playAudio(Audio* audio);
 
+        void cleanup();
+
     private:
         std::unordered_map<Audio*, Audio*> buffers;
         ALCdevice *device;

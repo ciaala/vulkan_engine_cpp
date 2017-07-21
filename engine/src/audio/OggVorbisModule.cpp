@@ -25,8 +25,9 @@ vlk::Audio *vlk::OggVorbisModule::load(const char *filename) {
     FILE *file = fopen(filename, "rb");
 
     OggVorbis_File vorbis{0};
-    if (ov_open(file, &vorbis, nullptr, 0) > 0) {
-        std::cerr << "Could not read %s" << filename << std::endl;
+    if (ov_open(file, &vorbis, nullptr, 0) != 0) {
+        std::cerr << "Could not read " << filename << std::endl;
+        return nullptr;
     };
 
     vorbis_info *info = ov_info(&vorbis, -1);

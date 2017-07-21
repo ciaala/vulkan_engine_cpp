@@ -35,10 +35,12 @@ namespace vlk {
 #endif
         InputModule *inputModule;
         VulkanModule *vulkanModule;
+        AudioModule *audioModule;
+
     public:
         //engine(int argc = 0, char** argv = nullptr);
 
-        explicit Engine(Application *application);
+        explicit Engine();
 
         void setupModules();
 
@@ -62,7 +64,9 @@ namespace vlk {
 
         static std::string getName();
 
-        AudioModule *audioModule;
+        void queue_audio_effect(GameObject *gameObject, const std::string audioFilename);
+
+        void setApplication(Application *application) { this->application = application; }
     };
 }
 

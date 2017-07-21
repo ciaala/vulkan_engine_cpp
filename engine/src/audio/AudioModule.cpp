@@ -52,3 +52,9 @@ void vlk::AudioModule::playAudio(vlk::Audio *audio) {
     alSourcei(source, AL_BUFFER, audio->getBuffer());
     alSourcePlay(source);
 }
+
+void vlk::AudioModule::cleanup() {
+    if (this->device != nullptr) {
+        alcCloseDevice(this->device);
+    }
+}

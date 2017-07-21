@@ -11,13 +11,14 @@
 
 class SampleInputController : public vlk::InputController {
 public:
-    SampleInputController(SampleGame *game);
+    explicit SampleInputController(vlk::Engine *engine, SampleGame *game);
 
     void setWorldObject(SampleObject *sampleObject);
 
     virtual void keyReleased(vlk::Keys key) override;
 
 private:
+    vlk::Engine *engine;
     SampleGame *game;
     SampleObject *object;
 };

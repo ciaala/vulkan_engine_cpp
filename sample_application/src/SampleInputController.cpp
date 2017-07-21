@@ -10,10 +10,12 @@ void SampleInputController::keyReleased(vlk::Keys key) {
     switch (key) {
         case vlk::Keys::ARROW_LEFT: {
             this->object->rotateLeft();
+            this->engine->queue_audio_effect(this->object, "sample_application/resources/arrow-right-to-left.ogg");
             break;
         }
         case vlk::Keys::ARROW_RIGHT: {
             this->object->rotateRight();
+            this->engine->queue_audio_effect(this->object, "sample_application/resources/arrow-left-to-right.ogg");
             break;
         }
         case vlk::Keys::SPACE_BAR: {
@@ -30,10 +32,13 @@ void SampleInputController::keyReleased(vlk::Keys key) {
     }
 }
 
-SampleInputController::SampleInputController(SampleGame *game) : game(game) {
+SampleInputController::SampleInputController(vlk::Engine *engine, SampleGame *game) :
+        engine(engine),
+        game(game) {
 
 }
 
 void SampleInputController::setWorldObject(SampleObject *sampleObject) {
     this->object = sampleObject;
 }
+

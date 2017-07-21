@@ -5,9 +5,12 @@
 #include "../include/SampleApplication.hpp"
 #include <string>
 
-SampleApplication::SampleApplication() : applicationName("SampleApplication") {
+SampleApplication::SampleApplication(vlk::Engine *engine) :
+        applicationName("SampleApplication") {
+    this->engine = engine;
+    this->engine->setApplication(this);
     this->game = new SampleGame();
-    this->inputController = new SampleInputController(game);
+    this->inputController = new SampleInputController(engine, game);
     this->inputController->setWorldObject(static_cast<SampleObject *>(this->getWorld()->getGameObjects().at(0)));
 }
 
@@ -26,3 +29,4 @@ vlk::InputController *SampleApplication::getInputController() {
 vlk::GameWorld *SampleApplication::getWorld() {
     return this->game->getWorld();
 }
+

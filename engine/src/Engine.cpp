@@ -14,8 +14,7 @@ std::string vlk::Engine::getVulkanVersion() {
     return std::to_string(VK_HEADER_VERSION);
 }
 
-vlk::Engine::Engine(Application *application) {
-    this->application = application;
+vlk::Engine::Engine() {
     this->setupModules();
 }
 
@@ -73,5 +72,10 @@ void vlk::Engine::prepare() {
 
 void vlk::Engine::cleanup() {
     std::cout << "Engine.cleanup" << std::endl;
+    this->audioModule->cleanup();
+}
 
+void vlk::Engine::queue_audio_effect(vlk::GameObject *gameObject, const std::string audioFilename) {
+    auto audio = this->audioModule->loadAudio(audioFilename);
+    this->audioModule->playAudio(audio);
 }
