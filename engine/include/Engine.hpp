@@ -11,6 +11,7 @@
 #include "renderer/XCBModule.hpp"
 #include "renderer/VulkanModule.hpp"
 #include "core/InputModule.hpp"
+#include "../src/audio/AudioModule.hpp"
 
 namespace vlk {
     class Renderer;
@@ -34,10 +35,12 @@ namespace vlk {
 #endif
         InputModule *inputModule;
         VulkanModule *vulkanModule;
+        AudioModule *audioModule;
+
     public:
         //engine(int argc = 0, char** argv = nullptr);
 
-        explicit Engine(Application *application);
+        explicit Engine();
 
         void setupModules();
 
@@ -61,6 +64,9 @@ namespace vlk {
 
         static std::string getName();
 
+        void queue_audio_effect(GameObject *gameObject, const std::string audioFilename);
+
+        void setApplication(Application *application) { this->application = application; }
     };
 }
 

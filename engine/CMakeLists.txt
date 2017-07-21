@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.8)
 set(CMAKE_MODULE_PATH ../cmake)
 project(vkengine)
 set(CMAKE_CXX_STANDARD 14)
+
+
 find_package(XCB REQUIRED)
 find_package(Vulkan REQUIRED)
 
@@ -29,10 +31,32 @@ set(SOURCE_FILES
         include/core/linmath.h
         include/game/Application.hpp
 
-        include/game/InputController.hpp include/game/GameObject.hpp include/game/GameWorld.hpp include/game/Camera.hpp)
+        include/game/InputController.hpp
+        include/game/GameObject.hpp
+        include/game/GameWorld.hpp
+        include/game/Camera.hpp
+        src/audio/AudioModule.cpp
+        src/audio/AudioModule.hpp
+        src/audio/Audio.cpp
+        src/audio/Audio.hpp
+        src/audio/OggVorbisModule.cpp
+        src/audio/OggVorbisModule.hpp)
+
+
 add_library(vkengine STATIC ${SOURCE_FILES})
-target_link_libraries(vkengine ${VULKAN_LIBRARY_DIR} xcb xcb-keysyms)
+target_link_libraries(vkengine ${VULKAN_LIBRARY_DIR}
+        xcb
+        xcb-keysyms
+        openal
+        vorbis
+        ogg
+        vorbisfile)
 target_include_directories(vkengine
         PUBLIC ${VULKAN_INCLUDE_DIR}
         PUBLIC xcb
+        PUBLIC openal
+        PUBLIC xcb-keysyms
+        PUBLIC vorbis
+        PUBLIC ogg
+        PUBLIC vorbisfile
         PRIVATE include)

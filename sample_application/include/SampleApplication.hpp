@@ -16,8 +16,9 @@ private:
     std::string applicationName;
     SampleInputController *inputController;
     SampleGame *game;
+    vlk::Engine *engine;
 public:
-    SampleApplication();
+    explicit SampleApplication(vlk::Engine *engine);
 
     std::string getName() override;
 
