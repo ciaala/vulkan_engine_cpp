@@ -11,6 +11,7 @@
 #include "renderer/XCBModule.hpp"
 #include "renderer/VulkanModule.hpp"
 #include "core/InputModule.hpp"
+#include "../src/audio/AudioModule.hpp"
 
 namespace vlk {
     class Renderer;
@@ -61,6 +62,7 @@ namespace vlk {
 
         static std::string getName();
 
+        AudioModule *audioModule;
     };
 }
 

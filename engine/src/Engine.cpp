@@ -21,7 +21,7 @@ vlk::Engine::Engine(Application *application) {
 
 void vlk::Engine::setupModules() {
     this->inputModule = new InputModule(this);
-
+    this->audioModule = new AudioModule();
     this->vulkanModule = new VulkanModule(this, true);
     this->xcbModule = new XCBModule(this);
 
@@ -32,6 +32,7 @@ void vlk::Engine::init() {
     if (this->DEBUG_LEVEL) {
         std::cout << "Starting up sample_application: " << this->application->getName() << std::endl;
     }
+    this->audioModule->init();
     this->renderer->initWindowLibrary();
     this->renderer->initVulkan();
     this->renderer->createWindow();
@@ -66,7 +67,8 @@ std::string vlk::Engine::getName() {
 void vlk::Engine::prepare() {
     std::cout << "Engine.prepare" << std::endl;
     this->renderer->prepare(this->application->getWorld());
-
+    Audio *audio = this->audioModule->loadAudio("sample_application/resources/elysium.ogg");
+    this->audioModule->playAudio(audio);
 }
 
 void vlk::Engine::cleanup() {
