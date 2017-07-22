@@ -1,6 +1,8 @@
 //
 // Created by crypt on 17/07/17.
 //
+#include "gflags/gflags.h"
+#include "glog/logging.h"
 
 #ifndef VULKAN_ENGINE_CPP_COMMONMACRO_HPP
 #define VULKAN_ENGINE_CPP_COMMONMACRO_HPP
@@ -14,10 +16,4 @@
 #define VERIFY(x) assert(x)
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
-struct vktexcube_vs_uniform {
-    // Must start with MVP
-    float mvp[4][4];
-    float position[12 * 3][4];
-    float attr[12 * 3][4];
-};
 #endif //VULKAN_ENGINE_CPP_COMMONMACRO_HPP

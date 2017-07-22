@@ -50,8 +50,10 @@ target_link_libraries(vkengine ${VULKAN_LIBRARY_DIR}
         openal
         vorbis
         ogg
-        vorbisfile)
+        vorbisfile
+        glog)
 target_include_directories(vkengine
+        PRIVATE include
         PUBLIC ${VULKAN_INCLUDE_DIR}
         PUBLIC xcb
         PUBLIC openal
@@ -59,4 +61,4 @@ target_include_directories(vkengine
         PUBLIC vorbis
         PUBLIC ogg
         PUBLIC vorbisfile
-        PRIVATE include)
+        PUBLIC glog)

@@ -16,8 +16,10 @@ namespace vlk {
 
 #define VK_USE_PLATFORM_XCB_KHR
 
-#include "vulkan/vulkan.hpp"
+#include <vulkan/vulkan.hpp>
 #include <vulkan/vk_sdk_platform.h>
+#include "RendererDefinition.hpp"
+
 #include <game/GameObject.hpp>
 #include <game/Camera.hpp>
 #include "core/linmath.h"
@@ -28,25 +30,6 @@ namespace vlk {
 #include "ShaderModule.hpp"
 
 // Definition used in prepare
-
-struct vkcube_vs_uniform {
-    // Must start with MVP
-    float mvp[4][4];
-    float position[12 * 3][4];
-    float color[12 * 3][4];
-};
-
-
-typedef struct {
-    vk::Image image;
-    vk::CommandBuffer cmd;
-    vk::CommandBuffer graphics_to_present_cmd;
-    vk::ImageView view;
-    vk::Buffer uniform_buffer;
-    vk::DeviceMemory uniform_memory;
-    vk::Framebuffer framebuffer;
-    vk::DescriptorSet descriptor_set;
-} SwapchainImageResources;
 
 namespace vlk {
     class VulkanModule {

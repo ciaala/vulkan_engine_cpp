@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "../include/Engine.hpp"
+#include "Engine.hpp"
 
 //    vlk::Engine::Engine(int argc, char **argv) {
 //        this->argc = argc;
@@ -28,9 +28,12 @@ void vlk::Engine::setupModules() {
 }
 
 void vlk::Engine::init() {
-    if (this->DEBUG_LEVEL) {
-        std::cout << "Starting up sample_application: " << this->application->getName() << std::endl;
-    }
+
+    google::InitGoogleLogging("vlkengine");
+    FLAGS_logtostderr = 1;
+
+    LOG(INFO) << "Starting up sample_application: " << this->application->getName() << std::endl;
+
     this->audioModule->init();
     this->renderer->initWindowLibrary();
     this->renderer->initVulkan();
@@ -71,7 +74,7 @@ void vlk::Engine::prepare() {
 }
 
 void vlk::Engine::cleanup() {
-    std::cout << "Engine.cleanup" << std::endl;
+    LOG(INFO) << "Engine.cleanup" << std::endl;
     this->audioModule->cleanup();
 }
 

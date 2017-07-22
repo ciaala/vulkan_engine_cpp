@@ -6,6 +6,14 @@
 #define VULKAN_ENGINE_CPP_RENDERERDEFINITION_HPP
 
 #include <vulkan/vulkan.hpp>
+
+struct vktexcube_vs_uniform {
+    // Must start with MVP
+    float mvp[4][4];
+    float position[12 * 3][4];
+    float attr[12 * 3][4];
+};
+
 typedef struct {
     vk::Image image;
     vk::CommandBuffer cmd;
