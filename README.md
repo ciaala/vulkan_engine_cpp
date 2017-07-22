@@ -9,3 +9,5 @@ Runs on Vulkan of course.
 ## The Audio
 The audio module is based on OpenAL and the current supported stream are Ogg/Vorbis. 
 
+## Foundation
+Logging service through Google's glog library 
