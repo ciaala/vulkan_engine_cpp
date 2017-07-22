@@ -3,8 +3,8 @@ Snakes: a clone of Nibbler
 
 Sections
 
-1- Flow of idea
-2- Snake V1
+#. Flow of idea
+#. Snake V1
 
 1- Flow of Idea
 ===============
