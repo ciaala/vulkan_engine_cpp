@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(XCB REQUIRED)
 find_package(Vulkan REQUIRED)
-
+add_subdirectory(doc)
 set(SOURCE_FILES
         src/Engine.cpp
         src/renderer/Renderer.cpp
@@ -62,3 +62,5 @@ target_include_directories(vkengine
         PUBLIC ogg
         PUBLIC vorbisfile
         PUBLIC glog)
+
+add_dependencies(vkengine DOCUMENTATION)
