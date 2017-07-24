@@ -40,7 +40,7 @@ set(SOURCE_FILES
         src/audio/Audio.cpp
         src/audio/Audio.hpp
         src/audio/OggVorbisModule.cpp
-        src/audio/OggVorbisModule.hpp)
+        src/audio/OggVorbisModule.hpp src/resource/ResourceManager.cpp src/resource/ResourceManager.hpp src/resource/ResourceModel.cpp src/resource/ResourceModel.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})

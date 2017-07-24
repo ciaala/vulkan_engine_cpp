@@ -23,7 +23,7 @@ void vlk::Engine::setupModules() {
     this->audioModule = new AudioModule();
     this->vulkanModule = new VulkanModule(this, true);
     this->xcbModule = new XCBModule(this);
-
+    this->resourceManager = new ResourceManager("sample_application/resources");
     this->renderer = new Renderer(this, vulkanModule, xcbModule);
 }
 
@@ -32,7 +32,7 @@ void vlk::Engine::init() {
     google::InitGoogleLogging("vlkengine");
     FLAGS_logtostderr = 1;
 
-    LOG(INFO) << "Starting up sample_application: " << this->application->getName() << std::endl;
+    LOG(INFO) << "Starting up application: " << this->application->getName() << std::endl;
 
     this->audioModule->init();
     this->renderer->initWindowLibrary();
