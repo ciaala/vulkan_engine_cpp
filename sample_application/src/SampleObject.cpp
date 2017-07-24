@@ -106,7 +106,7 @@ SampleObject::SampleObject(vlk::ResourceModel *resourceModel) {
     this->vertexBufferData = resourceModel->getVertex();
     this->uvBufferData = resourceModel->getUV();
 
-    this->textureFiles.emplace_back("sample_application/resources/lunarg.ppm");
+    this->textureFiles = resourceModel->getTextures();
     //this->textureFiles.emplace_back("sample_application/resources/Martini.ppm");
     this->vertexShaderFiles = {"sample_application/resources/cube-vert.spv"};
     this->fragmentShaderFiles = {"sample_application/resources/cube-frag.spv"};

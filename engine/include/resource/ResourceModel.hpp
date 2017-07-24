@@ -11,16 +11,33 @@ namespace vlk {
     class ResourceModel {
 
     public:
-        ResourceModel(const std::vector<float> &vertex, const std::vector<float> &uv);
+        ResourceModel();
 
         float *getVertex();
 
+        ResourceModel *setVertex(std::vector<float> &vertex);
+
         float *getUV();
+
+        ResourceModel *setUV(std::vector<float> &uv);
+
+
+        ResourceModel *setTextures(std::vector<std::string> &textures);
+
+        vlk::ResourceModel *setVertexShaders(std::vector<std::string> &vertexShaders);
+
+        vlk::ResourceModel *setFragmentShaders(std::vector<std::string> &fragmentShaders);
+
+        std::vector<std::string> &getTextures();
 
     private:
 
         std::vector<float> vertex;
         std::vector<float> uv;
+
+        std::vector<std::string> textures;
+        std::vector<std::string> vertexShaders;
+        std::vector<std::string> fragmentShaders;
     };
 }
 

@@ -34,8 +34,22 @@ vlk::ResourceManager::ResourceManager(const std::string &customPath) {
     }
 }
 
+namespace vlk {
+
+    bool containsAllPropertiesTypeArray(json &json, std::vector<std::string> properties) {
+        for (auto &&property : properties) {
+            if (!json.at(property).is_array()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+}
+
 vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifier) {
-    std::ifstream file(this->loadPath + "/" + identifier);
+    std::string fullname = this->loadPath + "/" + identifier;
+    std::ifstream file(fullname);
     std::stringstream ss;
     if (file.is_open()) {
 
@@ -55,14 +69,27 @@ vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifie
         file.close();
         p << ss;
         //std::cout << p << std::endl;
-        if (p.at("vertex").is_array() &&
-            p.at("uv").is_array()) {
+
+        std::vector<std::string> properties = {"vertex", "uv", "textures", "vertexShaders", "fragmentShaders"};
+        if (containsAllPropertiesTypeArray(p, properties)) {
             std::vector<float> vertex = p["vertex"];
             std::vector<float> uv = p["uv"];
-            return new ResourceModel(vertex, uv);
+            std::vector<std::string> textures = p["textures"];
+            std::vector<std::string> vertexShaders = p["vertexShaders"];
+            std::vector<std::string> fragmentShaders = p["fragmentShaders"];
+
+            return (new ResourceModel())->setVertex(vertex)
+                    ->setUV(uv)
+                    ->setTextures(textures)
+                    ->setVertexShaders(vertexShaders)
+                    ->setFragmentShaders(fragmentShaders);
+
+        } else {
+            LOG(ERROR) << "Check propertie: at least one is missing." << std::endl;
+
         }
     }
-    LOG(ERROR) << "Unable to open the file" << std::endl;
+    LOG(ERROR) << "Unable to open the file: '" << fullname << "'" << std::endl;
     // TODO Discuss Engine API behaviour on exception
     return nullptr;
 }

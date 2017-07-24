@@ -196,12 +196,12 @@
     0.0
   ],
   "textures": [
-    "lunarg.ppm"
+    "sample_application/resources/lunarg.ppm"
   ],
-  "vertex-shaders": [
-    "cube-vert.spv"
+  "vertexShaders": [
+    "sample_application/resources/cube-vert.spv"
   ],
-  "fragment-shaders": [
-    "cube-frag.spv"
+  "fragmentShaders": [
+    "sample_application/resources/cube-frag.spv"
   ]
 }
