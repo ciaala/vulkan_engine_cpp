@@ -18,7 +18,7 @@ private:
     SampleGameWorld *gameWorld;
 
 public:
-    SampleGame();
+    SampleGame(vlk::Engine *engine);
 
     void quit();
 

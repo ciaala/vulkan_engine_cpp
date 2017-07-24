@@ -17,7 +17,7 @@ namespace vlk {
     public:
         explicit ResourceManager(const std::string &customPath = emptyPath);
 
-        ResourceModel *loadModel(std::string &identifier);
+        ResourceModel *loadModel(const std::string &identifier);
 
 
     };

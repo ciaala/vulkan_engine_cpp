@@ -82,3 +82,7 @@ void vlk::Engine::queue_audio_effect(vlk::GameObject *gameObject, const std::str
     auto audio = this->audioModule->loadAudio(audioFilename);
     this->audioModule->playAudio(audio);
 }
+
+vlk::ResourceManager *vlk::Engine::getResourceManager() {
+    return this->resourceManager;
+}

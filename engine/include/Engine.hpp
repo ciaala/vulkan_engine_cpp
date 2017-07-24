@@ -12,7 +12,7 @@
 #include "renderer/VulkanModule.hpp"
 #include "core/InputModule.hpp"
 #include "../src/audio/AudioModule.hpp"
-#include "../src/resource/ResourceManager.hpp"
+#include "resource/ResourceManager.hpp"
 
 namespace vlk {
     class Renderer;
@@ -58,6 +58,8 @@ namespace vlk {
         Application *getApplication() { return this->application; }
 
         InputModule *getInputModule() { return this->inputModule; };
+
+        vlk::ResourceManager *getResourceManager();
 
     public:
         // ---- STATIC

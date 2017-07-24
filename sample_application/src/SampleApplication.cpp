@@ -9,7 +9,7 @@ SampleApplication::SampleApplication(vlk::Engine *engine) :
         applicationName("SampleApplication") {
     this->engine = engine;
     this->engine->setApplication(this);
-    this->game = new SampleGame();
+    this->game = new SampleGame(engine);
     this->inputController = new SampleInputController(engine, game);
     this->inputController->setWorldObject(static_cast<SampleObject *>(this->getWorld()->getGameObjects().at(0)));
 }

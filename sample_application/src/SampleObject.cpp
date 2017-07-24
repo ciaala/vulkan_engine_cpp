@@ -4,6 +4,7 @@
 
 #include "../include/SampleObject.hpp"
 
+/*
 float SampleObject::g_vertex_buffer_data[] = {
         -1.0f, -1.0f, -1.0f,  // -X side
         -1.0f, -1.0f, 1.0f,
@@ -91,7 +92,7 @@ float SampleObject::g_uv_buffer_data[] = {
         1.0f, 1.0f,
         1.0f, 0.0f,
 };
-
+*/
 void SampleObject::rotateLeft() {
     this->spinningAngle -= spinningStep;
 }
@@ -100,9 +101,11 @@ void SampleObject::rotateRight() {
     this->spinningAngle += spinningStep;
 }
 
-SampleObject::SampleObject() {
-    this->vertexBufferData = SampleObject::g_vertex_buffer_data;
-    this->uvBufferData = SampleObject::g_uv_buffer_data;
+SampleObject::SampleObject(vlk::ResourceModel *resourceModel) {
+    this->resourceModel = resourceModel;
+    this->vertexBufferData = resourceModel->getVertex();
+    this->uvBufferData = resourceModel->getUV();
+
     this->textureFiles.emplace_back("sample_application/resources/lunarg.ppm");
     //this->textureFiles.emplace_back("sample_application/resources/Martini.ppm");
     this->vertexShaderFiles = {"sample_application/resources/cube-vert.spv"};

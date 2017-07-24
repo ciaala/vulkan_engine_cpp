@@ -13,7 +13,7 @@ void SampleGame::triggerPause() {
     this->pause = !pause;
 }
 
-SampleGame::SampleGame() : gameWorld{new SampleGameWorld()} {}
+SampleGame::SampleGame(vlk::Engine *engine) : gameWorld{new SampleGameWorld(engine)} {}
 
 vlk::GameWorld *SampleGame::getWorld() {
     return this->gameWorld;

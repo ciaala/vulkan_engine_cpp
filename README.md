@@ -11,3 +11,7 @@ The audio module is based on OpenAL and the current supported stream are Ogg/Vor
 
 ## Foundation
 Logging service through Google's glog library 
+
+
+## Third party
+[C++ Modern JSON](https://github.com/nlohmann/json)

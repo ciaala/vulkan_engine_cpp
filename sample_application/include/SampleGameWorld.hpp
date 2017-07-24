@@ -6,16 +6,18 @@
 #define VULKAN_ENGINE_CPP_SAMPLEGAMEWORLD_HPP
 
 #include "game/GameWorld.hpp"
+#include "Engine.hpp"
 
 class SampleGameWorld : public vlk::GameWorld {
 private:
-public:
-    SampleGameWorld();
-
-private:
     vlk::Camera camera;
+
     std::vector<vlk::GameObject *> objects;
+
+    vlk::Engine *engine;
+
 public:
+    explicit SampleGameWorld(vlk::Engine *engine);
 
     vlk::Camera *getCamera() override;
 
