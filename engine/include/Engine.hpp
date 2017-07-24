@@ -12,6 +12,7 @@
 #include "renderer/VulkanModule.hpp"
 #include "core/InputModule.hpp"
 #include "../src/audio/AudioModule.hpp"
+#include "resource/ResourceManager.hpp"
 
 namespace vlk {
     class Renderer;
@@ -58,6 +59,8 @@ namespace vlk {
 
         InputModule *getInputModule() { return this->inputModule; };
 
+        vlk::ResourceManager *getResourceManager();
+
     public:
         // ---- STATIC
         static std::string getVulkanVersion();
@@ -67,6 +70,10 @@ namespace vlk {
         void queue_audio_effect(GameObject *gameObject, const std::string audioFilename);
 
         void setApplication(Application *application) { this->application = application; }
+
+    private:
+
+        ResourceManager *resourceManager;
     };
 }
 

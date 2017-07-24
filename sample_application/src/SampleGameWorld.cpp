@@ -6,7 +6,9 @@
 #include <vector>
 #include <iostream>
 #include <SampleObject.hpp>
+#include <Engine.hpp>
 #include "SampleGameWorld.hpp"
+#include "resource/ResourceModel.hpp"
 
 std::vector<vlk::GameObject *> SampleGameWorld::getGameObjects() {
     return this->objects;
@@ -24,6 +26,8 @@ vlk::Camera *SampleGameWorld::getCamera() {
     return &this->camera;
 }
 
-SampleGameWorld::SampleGameWorld() {
-    this->objects.emplace_back(new SampleObject());
+SampleGameWorld::SampleGameWorld(vlk::Engine *engine) {
+    this->engine = engine;
+    vlk::ResourceModel *resourceModel = this->engine->getResourceManager()->loadModel("cube.json");
+    this->objects.emplace_back(new SampleObject(resourceModel));
 }

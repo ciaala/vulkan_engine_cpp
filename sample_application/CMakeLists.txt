@@ -16,13 +16,14 @@ set(SOURCE_FILES
 include_directories(../engine/include)
 
 add_library(sample_application STATIC ${SOURCE_FILES})
+target_link_libraries(sample_application vkengine)
 target_include_directories(sample_application
         PUBLIC vkengine
         PRIVATE include)
 
 
-set (source "${CMAKE_CURRENT_SOURCE_DIR}/resources")
-set (destination "${CMAKE_CURRENT_BINARY_DIR}/resources")
+set(source "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+set(destination "${CMAKE_CURRENT_BINARY_DIR}/resources")
 
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
