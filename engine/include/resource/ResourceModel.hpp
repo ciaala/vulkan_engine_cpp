@@ -30,6 +30,10 @@ namespace vlk {
 
         std::vector<std::string> &getTextures();
 
+        std::vector<std::string> &getVertexShaders();
+
+        std::vector<std::string> &getFragmentShaders();
+
     private:
 
         std::vector<float> vertex;

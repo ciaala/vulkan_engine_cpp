@@ -50,3 +50,11 @@ vlk::ResourceModel *vlk::ResourceModel::setFragmentShaders(std::vector<std::stri
 std::vector<std::string> &vlk::ResourceModel::getTextures() {
     return this->textures;
 }
+
+std::vector<std::string> &vlk::ResourceModel::getVertexShaders() {
+    return this->vertexShaders;
+}
+
+std::vector<std::string> &vlk::ResourceModel::getFragmentShaders() {
+    return this->fragmentShaders;
+}
