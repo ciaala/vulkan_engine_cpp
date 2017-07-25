@@ -27,7 +27,7 @@ vlk::ResourceManager::ResourceManager(const std::string &customPath) {
         }
     }
 
-    if (stat(loadPath.c_str(), &st) == 0 && (st.st_mode & S_IFDIR != 0)) {
+    if (stat(loadPath.c_str(), &st) == 0 && ((st.st_mode & S_IFDIR) != 0)) {
         LOG(INFO) << "Loading resources from path: '" << loadPath << "'" << std::endl;
     } else {
         LOG(ERROR) << "Unable to open the directory '" << this->loadPath << "' " << std::endl;
@@ -56,7 +56,7 @@ std::string stripJsonComment(std::string &line) {
     return line;
 }
 
-vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifier) {
+vlk::ResourceModel *vlk::ResourceManager::loadJonModel(const std::string &identifier) {
     std::string fullname = this->loadPath + "/" + identifier;
     std::ifstream file(fullname);
     std::stringstream ss;
@@ -95,4 +95,14 @@ vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifie
     LOG(ERROR) << "Unable to open the file: '" << fullname << "'" << std::endl;
     // TODO Discuss Engine API behaviour on exception
     return nullptr;
+}
+
+vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifier) {
+    if (modelCache.count(identifier) == 0) {
+
+        if (identifier.rfind(".json") == (identifier.length() - 5)) {
+            modelCache[identifier] = loadJonModel(identifier);
+        }
+    }
+    return modelCache[identifier];
 }

@@ -55,10 +55,18 @@ void vlk::XCBModule::createWindow(uint16_t width, uint16_t height) {
                       10,
                       XCB_WINDOW_CLASS_INPUT_OUTPUT,
                       screen->root_visual,
-
                       value_mask,
                       value_list);
-
+    /* Change Window Name */
+    auto name = engine->getApplication()->getName();
+    xcb_change_property(connection,
+                        XCB_PROP_MODE_REPLACE,
+                        xcb_window,
+                        XCB_ATOM_WM_NAME,
+                        XCB_ATOM_STRING,
+                        8,
+                        (uint32_t) name.length(),
+                        name.c_str());
     /* Magic code that will send notification when window is destroyed */
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(connection, 1, 12, "WM_PROTOCOLS");
     xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(connection, cookie, 0);
@@ -88,7 +96,7 @@ static xcb_keysym_t xcb_get_keysym(xcb_connection_t *connection, xcb_keycode_t k
     xcb_key_symbols_t *keysyms;
     xcb_keysym_t keysym;
 
-    if (!(keysyms = xcb_key_symbols_alloc(connection))) return 0;
+    if (!(keysyms = xcb_key_symbols_alloc(connection))) { return 0; }
     keysym = xcb_key_symbols_get_keysym(keysyms, keycode, 0);
     xcb_key_symbols_free(keysyms);
 

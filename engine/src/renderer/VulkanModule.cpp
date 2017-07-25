@@ -207,7 +207,7 @@ void vlk::VulkanModule::init() {
     }
     auto name = engine->getApplication()->getName();
     auto const app = vk::ApplicationInfo()
-            .setPApplicationName(name.c_str())
+            .setPApplicationName("stoCazzo")
             .setApplicationVersion(0)
             .setPEngineName(engine->getName().c_str())
             .setEngineVersion(0)
@@ -843,19 +843,20 @@ void vlk::VulkanModule::prepareTextures() {
 }
 
 //TODO MOVE to TextureModule
-void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format &tex_format, uint32_t i) {
+void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format &tex_format) {
+    texture_object currentTexture;
     if ((this->textureFormatProperties.linearTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) &&
         !this->use_staging_buffer) {
         /* Device can texture using linear textures */
-        this->textureModule->prepareTextureImage(textureFile, this->textures[i], vk::ImageTiling::eLinear,
+        this->textureModule->prepareTextureImage(textureFile, currentTexture, vk::ImageTiling::eLinear,
                                                  vk::ImageUsageFlagBits::eSampled,
                                                  vk::MemoryPropertyFlagBits::eHostVisible |
                                                  vk::MemoryPropertyFlagBits::eHostCoherent);
         // Nothing in the pipeline needs to be complete to start, and don't allow fragment
         // shader to run until layout transition completes
-        this->textureModule->setImageLayout(&this->cmd, this->textures[i].image, vk::ImageAspectFlagBits::eColor,
+        this->textureModule->setImageLayout(&this->cmd, currentTexture.image, vk::ImageAspectFlagBits::eColor,
                                             vk::ImageLayout::ePreinitialized,
-                                            this->textures[i].imageLayout, vk::AccessFlagBits::eHostWrite,
+                                            currentTexture.imageLayout, vk::AccessFlagBits::eHostWrite,
                                             vk::PipelineStageFlagBits::eTopOfPipe,
                                             vk::PipelineStageFlagBits::eFragmentShader);
         this->staging_texture.image = vk::Image();
@@ -867,7 +868,7 @@ void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format
                                                  vk::MemoryPropertyFlagBits::eHostVisible |
                                                  vk::MemoryPropertyFlagBits::eHostCoherent);
 
-        this->textureModule->prepareTextureImage(textureFile, this->textures[i], vk::ImageTiling::eOptimal,
+        this->textureModule->prepareTextureImage(textureFile, currentTexture, vk::ImageTiling::eOptimal,
                                                  vk::ImageUsageFlagBits::eTransferDst |
                                                  vk::ImageUsageFlagBits::eSampled,
                                                  vk::MemoryPropertyFlagBits::eDeviceLocal);
@@ -878,7 +879,7 @@ void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format
                                             vk::PipelineStageFlagBits::eTopOfPipe,
                                             vk::PipelineStageFlagBits::eTransfer);
 
-        this->textureModule->setImageLayout(&this->cmd, this->textures[i].image, vk::ImageAspectFlagBits::eColor,
+        this->textureModule->setImageLayout(&this->cmd, currentTexture.image, vk::ImageAspectFlagBits::eColor,
                                             vk::ImageLayout::ePreinitialized,
                                             vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits::eHostWrite,
                                             vk::PipelineStageFlagBits::eTopOfPipe,
@@ -900,12 +901,12 @@ void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format
                                 {(uint32_t) this->staging_texture.tex_width,
                                  (uint32_t) this->staging_texture.tex_height, 1});
 
-        this->cmd.copyImage(this->staging_texture.image, vk::ImageLayout::eTransferSrcOptimal, this->textures[i].image,
+        this->cmd.copyImage(this->staging_texture.image, vk::ImageLayout::eTransferSrcOptimal, currentTexture.image,
                             vk::ImageLayout::eTransferDstOptimal, 1, &copy_region);
 
-        this->textureModule->setImageLayout(&this->cmd, this->textures[i].image, vk::ImageAspectFlagBits::eColor,
+        this->textureModule->setImageLayout(&this->cmd, currentTexture.image, vk::ImageAspectFlagBits::eColor,
                                             vk::ImageLayout::eTransferDstOptimal,
-                                            this->textures[i].imageLayout, vk::AccessFlagBits::eTransferWrite,
+                                            currentTexture.imageLayout, vk::AccessFlagBits::eTransferWrite,
                                             vk::PipelineStageFlagBits::eTransfer,
                                             vk::PipelineStageFlagBits::eFragmentShader);
     } else {
@@ -929,17 +930,18 @@ void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format
             .setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
             .setUnnormalizedCoordinates(VK_FALSE);
 
-    auto result = this->device.createSampler(&samplerInfo, nullptr, &this->textures[i].sampler);
+    auto result = this->device.createSampler(&samplerInfo, nullptr, &currentTexture.sampler);
     VERIFY(result == vk::Result::eSuccess);
 
     auto const viewInfo = vk::ImageViewCreateInfo()
-            .setImage(this->textures[i].image)
+            .setImage(currentTexture.image)
             .setViewType(vk::ImageViewType::e2D)
             .setFormat(tex_format)
             .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
-    result = this->device.createImageView(&viewInfo, nullptr, &this->textures[i].view);
+    result = this->device.createImageView(&viewInfo, nullptr, &currentTexture.view);
     VERIFY(result == vk::Result::eSuccess);
+    this->textures.emplace_back(currentTexture);
 }
 
 void vlk::VulkanModule::prepareCubeDataBuffers(Camera *camera, GameObject *object) {
@@ -1003,6 +1005,8 @@ void vlk::VulkanModule::prepareCubeDataBuffers(Camera *camera, GameObject *objec
 }
 
 void vlk::VulkanModule::prepareDescriptorLayout() {
+    // TODO
+    auto textureImageCount = textures.size();
     vk::DescriptorSetLayoutBinding const layout_bindings[2] = {vk::DescriptorSetLayoutBinding()
                                                                        .setBinding(0)
                                                                        .setDescriptorType(
@@ -1014,7 +1018,7 @@ void vlk::VulkanModule::prepareDescriptorLayout() {
                                                                        .setBinding(1)
                                                                        .setDescriptorType(
                                                                                vk::DescriptorType::eCombinedImageSampler)
-                                                                       .setDescriptorCount(texture_count)
+                                                                       .setDescriptorCount(textureImageCount)
                                                                        .setStageFlags(
                                                                                vk::ShaderStageFlagBits::eFragment)
                                                                        .setPImmutableSamplers(nullptr)};
@@ -1032,6 +1036,8 @@ void vlk::VulkanModule::prepareDescriptorLayout() {
 }
 
 void vlk::VulkanModule::prepareDescriptorPool() {
+    // TODO TextureCount
+    uint32_t texture_count = 2;
     vk::DescriptorPoolSize const poolSizes[2] = {
             vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(
                     swapchainImageCount),
@@ -1047,13 +1053,15 @@ void vlk::VulkanModule::prepareDescriptorPool() {
 
 void vlk::VulkanModule::prepareDescriptorSet() {
     auto const alloc_info =
-            vk::DescriptorSetAllocateInfo().setDescriptorPool(desc_pool).setDescriptorSetCount(1).setPSetLayouts(
-                    &desc_layout);
+            vk::DescriptorSetAllocateInfo()
+                    .setDescriptorPool(desc_pool)
+                    .setDescriptorSetCount(1)
+                    .setPSetLayouts(&desc_layout);
 
     auto buffer_info = vk::DescriptorBufferInfo().setOffset(0).setRange(sizeof(struct vktexcube_vs_uniform));
 
-    vk::DescriptorImageInfo tex_descs[texture_count];
-    for (uint32_t i = 0; i < texture_count; i++) {
+    vk::DescriptorImageInfo tex_descs[textures.size()];
+    for (uint32_t i = 0; i < textures.size(); i++) {
         tex_descs[i].setSampler(textures[i].sampler);
         tex_descs[i].setImageView(textures[i].view);
         tex_descs[i].setImageLayout(vk::ImageLayout::eGeneral);
@@ -1066,7 +1074,7 @@ void vlk::VulkanModule::prepareDescriptorSet() {
     writes[0].setPBufferInfo(&buffer_info);
 
     writes[1].setDstBinding(1);
-    writes[1].setDescriptorCount(texture_count);
+    writes[1].setDescriptorCount(textures.size());
     writes[1].setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
     writes[1].setPImageInfo(tex_descs);
 
@@ -1101,12 +1109,10 @@ void vlk::VulkanModule::prepareFramebuffers() {
 }
 
 void
-vlk::VulkanModule::preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> & shaderStageInfoList) {
+vlk::VulkanModule::preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList) {
     vk::PipelineCacheCreateInfo const pipelineCacheInfo;
     auto result = device.createPipelineCache(&pipelineCacheInfo, nullptr, &pipelineCache);
     VERIFY(result == vk::Result::eSuccess);
-
-
 
 
     vk::PipelineVertexInputStateCreateInfo const vertexInputInfo;
@@ -1503,7 +1509,7 @@ void vlk::VulkanModule::resize() {
     device.destroyPipelineLayout(pipeline_layout, nullptr);
     device.destroyDescriptorSetLayout(desc_layout, nullptr);
 
-    for (i = 0; i < texture_count; i++) {
+    for (i = 0; i < this->textures.size(); i++) {
         device.destroyImageView(textures[i].view, nullptr);
         device.destroyImage(textures[i].image, nullptr);
         device.freeMemory(textures[i].mem, nullptr);
@@ -1532,7 +1538,7 @@ void vlk::VulkanModule::resize() {
 }
 
 void vlk::VulkanModule::prepareTexture(std::string &filename) {
-    this->prepareTexture(filename.c_str(), this->textureFormat, 0);
+    this->prepareTexture(filename.c_str(), this->textureFormat);
 }
 
 void vlk::VulkanModule::prepareCamera(Camera *camera) {

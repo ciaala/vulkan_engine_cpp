@@ -128,9 +128,11 @@ namespace vlk {
         std::unique_ptr<SwapchainImageResources[]> swapchain_image_resources;
 
         //TODO Use std::vector
-        static int32_t const texture_count = 1;
+        //static int32_t const texture_count = 1;
         //TODO Use std::vector
-        texture_object textures[texture_count];
+        //texture_object textures[texture_count];
+
+        std::vector<texture_object> textures;
 
         texture_object staging_texture;
 
@@ -200,7 +202,7 @@ namespace vlk {
 
         void prepareTextures();
 
-        void prepareTexture(const char *textureFile, const vk::Format &tex_format, uint32_t i);
+        void prepareTexture(const char *textureFile, const vk::Format &tex_format);
 
         void prepareTexture(std::string &basic_string);
 
@@ -208,7 +210,7 @@ namespace vlk {
 
         void prepareDescriptors(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
 
-        void preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> & shaderStageInfoList);
+        void preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
 
         ShaderModule *getShaderModule();
     };

@@ -18,8 +18,6 @@ namespace vlk {
             this->spinningAngle = 4.0;
             this->vertexBufferData = nullptr;
             this->uvBufferData = nullptr;
-
-
         }
 
         mat4x4 &getModelMatrix() {

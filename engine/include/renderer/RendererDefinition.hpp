@@ -7,34 +7,37 @@
 
 #include <vulkan/vulkan.hpp>
 
-struct vktexcube_vs_uniform {
-    // Must start with MVP
-    float mvp[4][4];
-    float position[12 * 3][4];
-    float attr[12 * 3][4];
-};
+namespace vlk {
+    struct vktexcube_vs_uniform {
+        // Must start with MVP
+        float mvp[4][4];
+        float position[12 * 3][4];
+        float attr[12 * 3][4];
+    };
 
-typedef struct {
-    vk::Image image;
-    vk::CommandBuffer cmd;
-    vk::CommandBuffer graphics_to_present_cmd;
-    vk::ImageView view;
-    vk::Buffer uniform_buffer;
-    vk::DeviceMemory uniform_memory;
-    vk::Framebuffer framebuffer;
-    vk::DescriptorSet descriptor_set;
-} SwapchainImageResources;
-struct texture_object {
-    vk::Sampler sampler;
+    typedef struct {
+        vk::Image image;
+        vk::CommandBuffer cmd;
+        vk::CommandBuffer graphics_to_present_cmd;
+        vk::ImageView view;
+        vk::Buffer uniform_buffer;
+        vk::DeviceMemory uniform_memory;
+        vk::Framebuffer framebuffer;
+        vk::DescriptorSet descriptor_set;
+    } SwapchainImageResources;
 
-    vk::Image image;
-    vk::ImageLayout imageLayout{vk::ImageLayout::eUndefined};
+    struct texture_object {
+        vk::Sampler sampler;
 
-    vk::MemoryAllocateInfo mem_alloc;
-    vk::DeviceMemory mem;
-    vk::ImageView view;
+        vk::Image image;
+        vk::ImageLayout imageLayout{vk::ImageLayout::eUndefined};
 
-    int32_t tex_width{0};
-    int32_t tex_height{0};
-};
+        vk::MemoryAllocateInfo mem_alloc;
+        vk::DeviceMemory mem;
+        vk::ImageView view;
+
+        int32_t tex_width{0};
+        int32_t tex_height{0};
+    };
+}
 #endif //VULKAN_ENGINE_CPP_RENDERERDEFINITION_HPP

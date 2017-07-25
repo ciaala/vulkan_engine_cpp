@@ -25,10 +25,10 @@ vk::ShaderModule vlk::ShaderModule::readAndPrepare(const char *filename) {
     size_t size;
     auto code = this->readSpv(filename, &size);
     if (code != nullptr) {
-        this->prepareShaderModule(code, size);
-    } else {
-        std::cerr << "Loading shader from file: '" << filename << "' has failed" << std::endl;
+        return this->prepareShaderModule(code, size);
     }
+    LOG(ERROR) << "Loading shader from file: '" << filename << "' has failed" << std::endl;
+    return nullptr;
 }
 
 char *vlk::ShaderModule::readSpv(const char *filename, size_t *psize) {

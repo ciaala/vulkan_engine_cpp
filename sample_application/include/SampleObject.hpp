@@ -18,10 +18,11 @@ public:
 
     void rotateRight();
 
-protected:
-    // static float g_vertex_buffer_data[];
+    void setSpinningAngle(float spinningAngle);
 
-    // static float g_uv_buffer_data[];
+    void setModelMatrix(mat4x4 modelMatrix);
+
+protected:
 
     float spinningStep = 0.2;
     vlk::ResourceModel *resourceModel;

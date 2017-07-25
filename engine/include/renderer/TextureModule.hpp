@@ -9,21 +9,10 @@
 #include <vulkan/vk_sdk_platform.h>
 #include "MemoryModule.hpp"
 #include "core/CommonMacro.hpp"
+#include "RendererDefinition.hpp"
 
 namespace vlk {
-    struct texture_object {
-        vk::Sampler sampler;
 
-        vk::Image image;
-        vk::ImageLayout imageLayout{vk::ImageLayout::eUndefined};
-
-        vk::MemoryAllocateInfo mem_alloc;
-        vk::DeviceMemory mem;
-        vk::ImageView view;
-
-        int32_t tex_width{0};
-        int32_t tex_height{0};
-    };
 
     class TextureModule {
     public:

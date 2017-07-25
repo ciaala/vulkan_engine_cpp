@@ -4,95 +4,6 @@
 
 #include "../include/SampleObject.hpp"
 
-/*
-float SampleObject::g_vertex_buffer_data[] = {
-        -1.0f, -1.0f, -1.0f,  // -X side
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,  // -Z side
-        1.0f, 1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,  // -Y side
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
-
-        -1.0f, 1.0f, -1.0f,  // +Y side
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, -1.0f,
-
-        1.0f, 1.0f, -1.0f,  // +X side
-        1.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-
-        -1.0f, 1.0f, 1.0f,  // +Z side
-        -1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-};
-
-float SampleObject::g_uv_buffer_data[] = {
-        0.0f, 1.0f,  // -X side
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-
-        1.0f, 1.0f,  // -Z side
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-
-        1.0f, 0.0f,  // -Y side
-        1.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 0.0f,
-
-        1.0f, 0.0f,  // +Y side
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-
-        1.0f, 0.0f,  // +X side
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-
-        0.0f, 0.0f,  // +Z side
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-};
-*/
 void SampleObject::rotateLeft() {
     this->spinningAngle -= spinningStep;
 }
@@ -110,4 +21,12 @@ SampleObject::SampleObject(vlk::ResourceModel *resourceModel) {
     //this->textureFiles.emplace_back("sample_application/resources/Martini.ppm");
     this->vertexShaderFiles = resourceModel->getVertexShaders();
     this->fragmentShaderFiles = resourceModel->getFragmentShaders();
+}
+
+void SampleObject::setSpinningAngle(float spinningAngle) {
+    this->spinningAngle = spinningAngle;
+}
+
+void SampleObject::setModelMatrix(mat4x4 modelMatrix) {
+    mat4x4_dup(this->modelMatrix, modelMatrix);
 }

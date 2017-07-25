@@ -26,6 +26,7 @@ vlk::Audio *vlk::AudioModule::loadAudio(const std::string &filename) {
     }
     Audio *audio = this->oggVorbisModule->load(filename.c_str());
     this->audioHandleCache[filename] = audio;
+    return audio;
 }
 
 ALuint generateSource() {

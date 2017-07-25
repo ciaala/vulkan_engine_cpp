@@ -30,4 +30,12 @@ SampleGameWorld::SampleGameWorld(vlk::Engine *engine) {
     this->engine = engine;
     vlk::ResourceModel *resourceModel = this->engine->getResourceManager()->loadModel("cube.json");
     this->objects.emplace_back(new SampleObject(resourceModel));
+
+    auto secondCube = new SampleObject(this->engine->getResourceManager()->loadModel("cube2.json"));
+    secondCube->setSpinningAngle(-4.0f);
+    mat4x4 pos{0};
+    mat4x4_identity(pos);
+    mat4x4_translate(pos, 1.0, 0.0, 0.0);
+    secondCube->setModelMatrix(pos);
+    this->objects.emplace_back(secondCube);
 }

@@ -6,6 +6,7 @@
 #define VULKAN_ENGINE_CPP_RESOURCEMANAGER_HPP
 
 #include <string>
+#include <unordered_map>
 #include "ResourceModel.hpp"
 
 namespace vlk {
@@ -19,7 +20,11 @@ namespace vlk {
 
         ResourceModel *loadModel(const std::string &identifier);
 
+    private:
 
+        ResourceModel *loadJonModel(const std::string &identifier);
+
+        std::unordered_map<std::string, ResourceModel *> modelCache;
     };
 }
 
