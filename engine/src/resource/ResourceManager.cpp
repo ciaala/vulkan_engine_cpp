@@ -47,6 +47,15 @@ namespace vlk {
 
 }
 
+std::string stripJsonComment(std::string &line) {
+    size_t comment_start = line.find_first_of('/');
+    if (comment_start < (line.length() - 1) && line[comment_start + 1] == '/') {
+        LOG(INFO) << "Stripped " << line << " -> " << line.substr(0, comment_start) << std::endl;
+        return line.substr(0, comment_start);
+    }
+    return line;
+}
+
 vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifier) {
     std::string fullname = this->loadPath + "/" + identifier;
     std::ifstream file(fullname);
@@ -57,13 +66,7 @@ vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifie
         json p;
         while (!file.eof()) {
             getline(file, line);
-            size_t left_start = line.find_first_not_of(' ');
-            if (left_start >= line.length() - 1 ||
-                !(line[left_start] == '/' && line[left_start + 1] == '/')) {
-                ss << line;
-            } else {
-                // it is a comment
-            }
+            ss << stripJsonComment(line);
         }
         //std::cout << ss.str() << std::endl;
         file.close();
