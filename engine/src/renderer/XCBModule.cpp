@@ -153,7 +153,7 @@ void vlk::XCBModule::handleXCBEvent(const xcb_generic_event_t *event) {
             if ((width != cfg->width) || (height != cfg->height)) {
                 width = cfg->width;
                 height = cfg->height;
-                engine->resize();
+                engine->resize(width, height);
             }
         }
             break;

@@ -47,9 +47,9 @@ void vlk::Engine::init() {
 void vlk::Engine::draw() {
     static int c = 0;
     static int gc = 0;
-    if (c == 1000000) {
+    if (c == 1000) {
         gc++;
-        std::cout << "Engine.draw " << gc << " x 10^6" << std::endl;
+        LOG(INFO) << "Engine.draw " << gc << " x 10^3" << std::endl;
         c = 0;
     } else {
         c++;
@@ -58,7 +58,7 @@ void vlk::Engine::draw() {
     this->application->getWorld()->updateWorld();
 }
 
-void vlk::Engine::resize() {
+void vlk::Engine::resize(uint32_t width, u_int32_t height) {
     std::cout << "Engine.resize" << std::endl;
 }
 

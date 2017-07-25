@@ -49,7 +49,7 @@ namespace vlk {
 
         void draw();
 
-        void resize();
+        void resize(uint32_t width, u_int32_t height);
 
         void prepare();
 

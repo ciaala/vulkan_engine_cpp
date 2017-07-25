@@ -13,7 +13,6 @@ vlk::Renderer::Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *x
     //this->initVulkan();
 }
 
-
 const uint16_t vlk::Renderer::WINDOW_WIDTH = 500;
 
 const uint16_t vlk::Renderer::WINDOW_HEIGHT = 500;
@@ -51,51 +50,57 @@ void vlk::Renderer::initSwapChain() {
 }
 
 void vlk::Renderer::prepare(GameWorld *gameWorld) {
+    auto shaderModule = this->vulkanModule->getShaderModule();
+
     this->vulkanModule->prepare();
 
-    this->vulkanModule->prepareCamera(gameWorld->getCamera());
+    auto camera = gameWorld->getCamera();
+    this->vulkanModule->prepareCamera(camera);
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfoList;
 
     for (auto gameObject :gameWorld->getGameObjects()) {
-        this->vulkanModule->prepareCubeDataBuffers(gameWorld->getCamera(), gameObject);
-        for (std::string &textureFile : gameObject->getTextureFiles()) {
-            this->vulkanModule->prepareTexture(textureFile);
-        }
-        std::vector<vk::ShaderModule> vertexes = this->vulkanModule->getShaderModule()->prepareShaderFromFiles( gameObject->getVertexShaderFiles());
-        std::vector<vk::ShaderModule> fragments = this->vulkanModule->getShaderModule()->prepareShaderFromFiles( gameObject->getFragmentShaderFiles());
-        this->prepareShaders(shaderStageInfoList, vertexes, fragments);
-
+        this->prepareGameObject(shaderModule, camera, shaderStageInfoList, gameObject);
     }
 
     this->vulkanModule->prepareDescriptors(shaderStageInfoList);
 }
+void vlk::Renderer::prepareGameObject(vlk::ShaderModule *shaderModule,
+                                      vlk::Camera *camera,
+                                      std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
+                                      vlk::GameObject *gameObject) {
+    this->vulkanModule->prepareCubeDataBuffers(camera, gameObject);
+    for (std::string &textureFile : gameObject->getTextureFiles()) {
+        this->vulkanModule->prepareTexture(textureFile);
+    }
+    std::vector<vk::ShaderModule> vertexes = shaderModule->prepareShaderFromFiles(gameObject->getVertexShaderFiles());
+    std::vector<vk::ShaderModule>
+        fragments = shaderModule->prepareShaderFromFiles(gameObject->getFragmentShaderFiles());
+    this->prepareShaders(shaderStageInfoList, vertexes, fragments);
+}
 
 void
 vlk::Renderer::prepareShaders(
-        std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfo,
-        std::vector<vk::ShaderModule> &vertexes,
-        std::vector<vk::ShaderModule> &fragments) {
+    std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfo,
+    std::vector<vk::ShaderModule> &vertexes,
+    std::vector<vk::ShaderModule> &fragments) {
 
     for (auto vertex: vertexes) {
         shaderStageInfo.emplace_back(
-                vk::PipelineShaderStageCreateInfo()
-
-                        .setStage(vk::ShaderStageFlagBits::eVertex)
-                        .setModule(vertex)
-                        .setPName("main"));
+            vk::PipelineShaderStageCreateInfo()
+                .setStage(vk::ShaderStageFlagBits::eVertex)
+                .setModule(vertex)
+                .setPName("main"));
     }
     for (auto fragment: fragments) {
         shaderStageInfo.emplace_back(
-                vk::PipelineShaderStageCreateInfo()
-                        .setStage(vk::ShaderStageFlagBits::eFragment)
-                        .setModule(fragment)
-                        .setPName("main")
+            vk::PipelineShaderStageCreateInfo()
+                .setStage(vk::ShaderStageFlagBits::eFragment)
+                .setModule(fragment)
+                .setPName("main")
         );
     }
 }
 
 void vlk::Renderer::draw(vlk::GameWorld *gameWorld) {
     this->vulkanModule->draw(gameWorld);
-
-
 }

@@ -8,56 +8,56 @@
 #include <core/linmath.h>
 #include <vector>
 #include <string>
+#include <atomic>
 
 namespace vlk {
-    class GameObject {
+typedef unsigned long long sid_t;
+class GameObject {
 
-    public:
-        GameObject() {
-            mat4x4_identity(this->modelMatrix);
-            this->spinningAngle = 4.0;
-            this->vertexBufferData = nullptr;
-            this->uvBufferData = nullptr;
-        }
+ private:
+  static std::atomic<sid_t> GLOBAL_SID;
+  sid_t sid;
+ public:
+  GameObject();
+  sid_t getSid() { return this->sid; }
+  mat4x4 &getModelMatrix() {
+    return this->modelMatrix;
+  };
 
-        mat4x4 &getModelMatrix() {
-            return this->modelMatrix;
-        };
+  float getSpinningAngle() {
+    return this->spinningAngle;
+  }
 
-        float getSpinningAngle() {
-            return this->spinningAngle;
-        }
+  std::vector<std::string> getTextureFiles() {
+    return textureFiles;
+  }
 
-        std::vector<std::string> getTextureFiles() {
-            return textureFiles;
-        }
+  float *getVertexBufferData() {
+    return vertexBufferData;
+  }
 
-        float *getVertexBufferData() {
-            return vertexBufferData;
-        }
+  float *getUVBufferData() {
+    return uvBufferData;
+  }
 
-        float *getUVBufferData() {
-            return uvBufferData;
-        }
+  std::vector<std::string> &getVertexShaderFiles() {
+    return vertexShaderFiles;
+  }
 
-        std::vector<std::string> &getVertexShaderFiles() {
-            return vertexShaderFiles;
-        }
+  std::vector<std::string> &getFragmentShaderFiles() {
+    return fragmentShaderFiles;
+  }
 
-        std::vector<std::string> &getFragmentShaderFiles() {
-            return fragmentShaderFiles;
-        }
+ protected:
+  float spinningAngle;
+  mat4x4 modelMatrix;
+  std::vector<std::string> textureFiles;
+  float *vertexBufferData;
+  float *uvBufferData;
 
-    protected:
-        float spinningAngle;
-        mat4x4 modelMatrix;
-        std::vector<std::string> textureFiles;
-        float *vertexBufferData;
-        float *uvBufferData;
-
-        std::vector<std::string> vertexShaderFiles;
-        std::vector<std::string> fragmentShaderFiles;
-    };
+  std::vector<std::string> vertexShaderFiles;
+  std::vector<std::string> fragmentShaderFiles;
+};
 
 }
 

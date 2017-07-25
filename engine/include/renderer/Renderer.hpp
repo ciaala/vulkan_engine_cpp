@@ -9,49 +9,54 @@
 #include <X11/Xutil.h>
 #include "VulkanModule.hpp"
 #include "XCBModule.hpp"
+#include "ShaderModule.hpp"
 
 namespace vlk {
-    class XCBModule;
+class XCBModule;
 
-    class VulkanModule;
+class VulkanModule;
 
-    class Renderer {
+class Renderer {
 
-    private:
-        static uint16_t const WINDOW_WIDTH;
-        static uint16_t const WINDOW_HEIGHT;
+ private:
+  static uint16_t const WINDOW_WIDTH;
+  static uint16_t const WINDOW_HEIGHT;
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-        XCBModule *xcbModule;
+  XCBModule *xcbModule;
 #endif
 
-        VulkanModule *vulkanModule;
-        Engine *engine;
+  VulkanModule *vulkanModule;
+  Engine *engine;
 
-        void prepareObject(GameObject *gameObject);
+  void prepareObject(GameObject *gameObject);
 
-    public:
-        XCBModule *getXCBModule();
+ public:
+  XCBModule *getXCBModule();
 
-        Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule);
+  Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule);
 
+  void initWindowLibrary();
 
-        void initWindowLibrary();
+  void initVulkan();
 
-        void initVulkan();
+  void createWindow();
 
-        void createWindow();
+  void initSwapChain();
 
-        void initSwapChain();
+  void prepare(GameWorld *gameWorld);
 
-        void prepare(GameWorld *gameWorld);
+  void draw(GameWorld *gameWorld);
 
-        void draw(GameWorld *gameWorld);
-
-        void
-    prepareShaders(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfo, std::vector<vk::ShaderModule> &vertexes,
-                   std::vector<vk::ShaderModule> &fragments);
-    };
+  void
+  prepareShaders(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfo,
+                 std::vector<vk::ShaderModule> &vertexes,
+                 std::vector<vk::ShaderModule> &fragments);
+  void prepareGameObject(ShaderModule *shaderModule,
+                         Camera *camera,
+                         std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
+                         GameObject *gameObject);
+};
 }
 
 #endif //VULKAN_ENGINE_CPP_RENDERER_HPP
