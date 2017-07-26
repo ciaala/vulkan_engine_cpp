@@ -6,7 +6,7 @@
 #define VULKAN_ENGINE_CPP_SHADERMODULE_HPP
 
 
-#include <vulkan/vulkan.hpp>
+#include "RendererDefinition.hpp"
 
 namespace vlk {
     class ShaderModule {

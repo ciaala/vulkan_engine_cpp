@@ -4,8 +4,12 @@
 
 #ifndef VULKAN_ENGINE_CPP_RENDERERDEFINITION_HPP
 #define VULKAN_ENGINE_CPP_RENDERERDEFINITION_HPP
+#define VK_USE_PLATFORM_XCB_KHR 1
 
 #include <vulkan/vulkan.hpp>
+
+#include "core/CommonMacro.hpp"
+
 
 namespace vlk {
     struct vktexcube_vs_uniform {
@@ -18,6 +22,7 @@ namespace vlk {
     typedef struct {
         vk::Image image;
         vk::CommandBuffer cmd;
+        std::vector<vk::CommandBuffer> subCommands;
         vk::CommandBuffer graphics_to_present_cmd;
         vk::ImageView view;
         vk::Buffer uniform_buffer;

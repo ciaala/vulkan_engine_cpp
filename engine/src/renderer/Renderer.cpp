@@ -2,8 +2,8 @@
 // Created by crypt on 15/07/17.
 //
 
-#include <iostream>
 #include "renderer/Renderer.hpp"
+#include <iostream>
 
 vlk::Renderer::Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule) {
     this->engine = engine;

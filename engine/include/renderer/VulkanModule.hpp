@@ -10,15 +10,12 @@
 namespace vlk {
     class Engine;
 };
+#include "RendererDefinition.hpp"
 
 #include <cstdint>
-#include <xcb/xcb.h>
 
-#define VK_USE_PLATFORM_XCB_KHR
 
-#include <vulkan/vulkan.hpp>
 #include <vulkan/vk_sdk_platform.h>
-#include "RendererDefinition.hpp"
 
 #include <game/GameObject.hpp>
 #include <game/Camera.hpp>
@@ -165,7 +162,9 @@ namespace vlk {
         uint32_t width;
         uint32_t height;
 
-        void drawBuildCmd(vk::CommandBuffer buffer);
+        void drawBuildCmd(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands);
+        void prepareSubCommandBuffer(const vk::CommandBuffer &commandBuffer, const vk::Viewport *viewport,
+                                             const vk::Rect2D *scissor);
 
         void flushInitCmd();
 

@@ -8,9 +8,8 @@
 #include "../../include/Engine.hpp"
 #include <iostream>
 
-#define VERIFY(x) assert(x)
-
 #include <xcb/xcb_keysyms.h>
+#include <X11/Xutil.h>
 
 void vlk::XCBModule::initXCBLibrary() {
     std::cout << "Init Window" << std::endl;

@@ -4,9 +4,7 @@
 
 #ifndef VULKAN_ENGINE_CPP_RENDERER_HPP
 #define VULKAN_ENGINE_CPP_RENDERER_HPP
-#define VK_USE_PLATFORM_XCB_KHR
 
-#include <X11/Xutil.h>
 #include "VulkanModule.hpp"
 #include "XCBModule.hpp"
 #include "ShaderModule.hpp"
@@ -28,8 +26,6 @@ class Renderer {
 
   VulkanModule *vulkanModule;
   Engine *engine;
-
-  void prepareObject(GameObject *gameObject);
 
  public:
   XCBModule *getXCBModule();
