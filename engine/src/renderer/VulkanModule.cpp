@@ -3,18 +3,15 @@
 //
 #include "renderer/VulkanModule.hpp"
 #include <iostream>
-#include <game/GameObject.hpp>
-#include <game/Camera.hpp>
-#include <renderer/RendererDefinition.hpp>
 
 
-vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) {
+vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) :
+        enabled_layer_count{0},
+        enabled_extension_count{0},
+        use_staging_buffer{true} {
     this->engine = engine;
     this->validate = validate;
-    enabled_extension_count = 0;
-    enabled_layer_count = 0;
-    this->use_staging_buffer = false;
-
+    this->pipelineModule = new VulkanPipelineModule(&this->device);
 }
 
 void vlk::VulkanModule::initValidation() {
@@ -510,6 +507,7 @@ void vlk::VulkanModule::createDevice() {
     this->memoryModule = new MemoryModule(&memory_properties);
     this->textureModule = new TextureModule(&device, memoryModule);
     this->shaderModule = new ShaderModule(&device);
+    this->pipelineModule = new VulkanPipelineModule(&device);
 }
 
 void vlk::VulkanModule::prepare() {
@@ -546,10 +544,10 @@ void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCr
     // DISABLED in GameWorld Refactor
     //this->prepareCubeDataBuffers(g_vertex_buffer_data, g_uv_buffer_data, object);
 
-    this->prepareDescriptorLayout();
+    auto pipelineLayout = this->pipelineModule->preparePipelineLayout(this->textures, this->desc_layout);
     this->prepareRenderPass();
-
-    this->preparePipeline(shaderStageInfoList);
+    this->globalPipeline = this->pipelineModule->preparePipeline(shaderStageInfoList, pipelineLayout,
+                                                                 this->render_pass);
 
     auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
             .setCommandPool(cmd_pool)
@@ -558,8 +556,7 @@ void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCr
     auto const subCommandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
             .setCommandPool(cmd_pool)
             .setLevel(vk::CommandBufferLevel::eSecondary)
-            .setCommandBufferCount(1)
-    ;
+            .setCommandBufferCount(1);
 
     for (uint32_t i = 0; i < this->swapchainImageCount; ++i) {
         auto result = device.allocateCommandBuffers(&commandBufferAllocateInfo, &swapchain_image_resources[i].cmd);
@@ -596,11 +593,11 @@ void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCr
 
     for (uint32_t i = 0; i < swapchainImageCount; ++i) {
         current_buffer = i;
-        this->drawBuildCmd(swapchain_image_resources[i].cmd, swapchain_image_resources[i].subCommands);
+        this->drawBuildCmd(swapchain_image_resources[i].cmd, swapchain_image_resources[i].subCommands, shaderStageInfoList);
     }
 
     /*
-     * Prepare functions above may generate pipeline commands
+     * Prepare functions above may generate globalPipeline commands
      * that need to be flushed before beginning the render loop.
      */
     this->flushInitCmd();
@@ -845,7 +842,7 @@ void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format
                                                  vk::ImageUsageFlagBits::eSampled,
                                                  vk::MemoryPropertyFlagBits::eHostVisible |
                                                  vk::MemoryPropertyFlagBits::eHostCoherent);
-        // Nothing in the pipeline needs to be complete to start, and don't allow fragment
+        // Nothing in the globalPipeline needs to be complete to start, and don't allow fragment
         // shader to run until layout transition completes
         this->textureModule->setImageLayout(&this->cmd, currentTexture.image, vk::ImageAspectFlagBits::eColor,
                                             vk::ImageLayout::ePreinitialized,
@@ -997,37 +994,6 @@ void vlk::VulkanModule::prepareCubeDataBuffers(Camera *camera, GameObject *objec
     }
 }
 
-void vlk::VulkanModule::prepareDescriptorLayout() {
-    // TODO
-    auto textureImageCount = textures.size();
-    vk::DescriptorSetLayoutBinding const layout_bindings[2] = {vk::DescriptorSetLayoutBinding()
-                                                                       .setBinding(0)
-                                                                       .setDescriptorType(
-                                                                               vk::DescriptorType::eUniformBuffer)
-                                                                       .setDescriptorCount(1)
-                                                                       .setStageFlags(vk::ShaderStageFlagBits::eVertex)
-                                                                       .setPImmutableSamplers(nullptr),
-                                                               vk::DescriptorSetLayoutBinding()
-                                                                       .setBinding(1)
-                                                                       .setDescriptorType(
-                                                                               vk::DescriptorType::eCombinedImageSampler)
-                                                                       .setDescriptorCount(textureImageCount)
-                                                                       .setStageFlags(
-                                                                               vk::ShaderStageFlagBits::eFragment)
-                                                                       .setPImmutableSamplers(nullptr)};
-
-    auto const descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(2).setPBindings(layout_bindings);
-
-    auto result = device.createDescriptorSetLayout(&descriptor_layout, nullptr, &desc_layout);
-    VERIFY(result == vk::Result::eSuccess);
-
-    auto const pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(
-            &desc_layout);
-
-    result = device.createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &pipeline_layout);
-    VERIFY(result == vk::Result::eSuccess);
-}
-
 void vlk::VulkanModule::prepareDescriptorPool() {
     // TODO TextureCount
     uint32_t texture_count = 2;
@@ -1103,82 +1069,6 @@ void vlk::VulkanModule::prepareFramebuffers() {
     }
 }
 
-void
-vlk::VulkanModule::preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList) {
-    vk::PipelineCacheCreateInfo const pipelineCacheInfo;
-    auto result = device.createPipelineCache(&pipelineCacheInfo, nullptr, &pipelineCache);
-    VERIFY(result == vk::Result::eSuccess);
-
-    vk::PipelineVertexInputStateCreateInfo const vertexInputInfo;
-
-    auto const inputAssemblyInfo = vk::PipelineInputAssemblyStateCreateInfo().setTopology(
-            vk::PrimitiveTopology::eTriangleList);
-
-// TODO: Where are pViewports and pScissors set?
-    auto const viewportInfo = vk::PipelineViewportStateCreateInfo().setViewportCount(1).setScissorCount(1);
-
-    auto const rasterizationInfo = vk::PipelineRasterizationStateCreateInfo()
-            .setDepthClampEnable(VK_FALSE)
-            .setRasterizerDiscardEnable(VK_FALSE)
-            .setPolygonMode(vk::PolygonMode::eFill)
-            .setCullMode(vk::CullModeFlagBits::eBack)
-            .setFrontFace(vk::FrontFace::eCounterClockwise)
-            .setDepthBiasEnable(VK_FALSE)
-            .setLineWidth(1.0f);
-
-    auto const multisampleInfo = vk::PipelineMultisampleStateCreateInfo();
-
-    auto const stencilOp = vk::StencilOpState()
-            .setFailOp(vk::StencilOp::eKeep)
-            .setPassOp(vk::StencilOp::eKeep)
-            .setCompareOp(vk::CompareOp::eAlways);
-
-    auto const depthStencilInfo = vk::PipelineDepthStencilStateCreateInfo()
-            .setDepthTestEnable(VK_TRUE)
-            .setDepthWriteEnable(VK_TRUE)
-            .setDepthCompareOp(vk::CompareOp::eLessOrEqual)
-            .setDepthBoundsTestEnable(VK_FALSE)
-            .setStencilTestEnable(VK_FALSE)
-            .setFront(stencilOp)
-            .setBack(stencilOp);
-
-    vk::PipelineColorBlendAttachmentState const colorBlendAttachments[1] = {
-            vk::PipelineColorBlendAttachmentState().setColorWriteMask(
-                    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB |
-                    vk::ColorComponentFlagBits::eA)};
-
-    auto const colorBlendInfo =
-            vk::PipelineColorBlendStateCreateInfo().setAttachmentCount(1).setPAttachments(colorBlendAttachments);
-
-    vk::DynamicState const dynamicStates[2] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
-
-    auto const dynamicStateInfo = vk::PipelineDynamicStateCreateInfo().setPDynamicStates(
-            dynamicStates).setDynamicStateCount(2);
-
-    auto const pipeline = vk::GraphicsPipelineCreateInfo()
-            .setStageCount(2)
-            .setPStages(shaderStageInfoList.data())
-            .setPVertexInputState(&vertexInputInfo)
-            .setPInputAssemblyState(&inputAssemblyInfo)
-            .setPViewportState(&viewportInfo)
-            .setPRasterizationState(&rasterizationInfo)
-            .setPMultisampleState(&multisampleInfo)
-            .setPDepthStencilState(&depthStencilInfo)
-            .setPColorBlendState(&colorBlendInfo)
-            .setPDynamicState(&dynamicStateInfo)
-            .setLayout(pipeline_layout)
-            .setRenderPass(render_pass);
-
-    result = device.createGraphicsPipelines(pipelineCache, 1, &pipeline, nullptr, &this->pipeline);
-    VERIFY(result == vk::Result::eSuccess);
-
-    device.
-            destroyShaderModule(frag_shader_module,
-                                nullptr);
-    device.
-            destroyShaderModule(vert_shader_module,
-                                nullptr);
-}
 
 void vlk::VulkanModule::prepareRenderPass() {
     // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
@@ -1238,7 +1128,8 @@ void vlk::VulkanModule::prepareRenderPass() {
     VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer, std::vector<vk::CommandBuffer> &subCommands) {
+void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer, std::vector<vk::CommandBuffer> &subCommands,
+                                     std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList) {
     auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 
     vk::ClearValue const clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}})),
@@ -1264,10 +1155,10 @@ void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer, std::vecto
 
     vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(width, height));
     commandBuffer.setScissor(0, 1, &scissor);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->pipeline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
 
     //subCommands.resize(1);
-    prepareSubCommandBuffer(subCommands[0], &viewport, &scissor);
+    prepareSubCommandBuffer(subCommands[0], &viewport, &scissor, shaderStageInfoList);
 
     //subCommands[1] =
     commandBuffer.executeCommands((uint32_t) subCommands.size(), subCommands.data());
@@ -1307,16 +1198,23 @@ void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer, std::vecto
 }
 
 void vlk::VulkanModule::prepareSubCommandBuffer(const vk::CommandBuffer &commandBuffer, const vk::Viewport *viewport,
-                                                const vk::Rect2D *scissor) {
+                                                const vk::Rect2D *scissor,
+                                                std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList) {
+    // Initialize the Subordinate Command Buffer with
     auto const inheritanceInfo = vk::CommandBufferInheritanceInfo(this->render_pass, 0,
                                                                   this->swapchain_image_resources[current_buffer].framebuffer);
     auto const commandInfo = vk::CommandBufferBeginInfo()
             .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse |
                       vk::CommandBufferUsageFlagBits::eRenderPassContinue)
             .setPInheritanceInfo(&inheritanceInfo);
-
     commandBuffer.begin(commandInfo);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->pipeline);
+
+    // TODO decide about pipelineLayout;
+    auto __pipeline_layout = this->pipelineModule->preparePipelineLayout(this->textures, this->desc_layout);
+    auto pipeline = this->pipelineModule->preparePipeline(shaderStageInfoList, __pipeline_layout, this->render_pass);
+    //vk::Pipeline pipeline = createSubCommandBufferPipeline();
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+    //commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
     commandBuffer.setViewport(0, 1, viewport);
     commandBuffer.setScissor(0, 1, scissor);
 
@@ -1324,7 +1222,7 @@ void vlk::VulkanModule::prepareSubCommandBuffer(const vk::CommandBuffer &command
     //commandBuffer.beginRenderPass(this->render_pass, vk::SubpassContents::eSecondaryCommandBuffers);
 
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                     this->pipeline_layout,
+                                     __pipeline_layout,
                                      0,
                                      1,
                                      &this->swapchain_image_resources[this->current_buffer].descriptor_set,
@@ -1532,10 +1430,10 @@ void vlk::VulkanModule::resize() {
 
     device.destroyDescriptorPool(desc_pool, nullptr);
 
-    device.destroyPipeline(pipeline, nullptr);
-    device.destroyPipelineCache(pipelineCache, nullptr);
+    device.destroyPipeline(globalPipeline, nullptr);
+    //device.destroyPipelineCache(pipelineCache, nullptr);
     device.destroyRenderPass(render_pass, nullptr);
-    device.destroyPipelineLayout(pipeline_layout, nullptr);
+    //device.destroyPipelineLayout(pipeline_layout, nullptr);
     device.destroyDescriptorSetLayout(desc_layout, nullptr);
 
     for (i = 0; i < this->textures.size(); i++) {
@@ -1552,6 +1450,9 @@ void vlk::VulkanModule::resize() {
     for (i = 0; i < swapchainImageCount; i++) {
         device.destroyImageView(swapchain_image_resources[i].view, nullptr);
         device.freeCommandBuffers(cmd_pool, 1, &swapchain_image_resources[i].cmd);
+        device.freeCommandBuffers(cmd_pool,
+                                  (uint32_t) swapchain_image_resources[i].subCommands.size(),
+                                  swapchain_image_resources[i].subCommands.data());
         device.destroyBuffer(swapchain_image_resources[i].uniform_buffer, nullptr);
         device.freeMemory(swapchain_image_resources[i].uniform_memory, nullptr);
     }
@@ -1580,3 +1481,4 @@ void vlk::VulkanModule::prepareCamera(Camera *camera) {
 vlk::ShaderModule *vlk::VulkanModule::getShaderModule() {
     return this->shaderModule;
 }
+

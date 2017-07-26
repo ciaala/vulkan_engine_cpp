@@ -45,7 +45,7 @@ set(SOURCE_FILES
         include/resource/ResourceManager.hpp
         src/resource/ResourceModel.cpp
         src/resource/json.hpp
-        include/resource/ResourceModel.hpp src/game/GameObject.cpp)
+        include/resource/ResourceModel.hpp src/game/GameObject.cpp src/renderer/VulkanPipelineModule.cpp include/renderer/VulkanPipelineModule.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})

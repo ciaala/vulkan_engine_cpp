@@ -10,6 +10,7 @@
 namespace vlk {
     class Engine;
 };
+
 #include "RendererDefinition.hpp"
 
 #include <cstdint>
@@ -25,6 +26,7 @@ namespace vlk {
 #include "TextureModule.hpp"
 #include "core/CommonMacro.hpp"
 #include "ShaderModule.hpp"
+#include "VulkanPipelineModule.hpp"
 
 // Definition used in prepare
 
@@ -33,7 +35,7 @@ namespace vlk {
     private:
         Engine *engine;
     private:
-
+        VulkanPipelineModule *pipelineModule;
         uint32_t instance_extension_count = 0;
         uint32_t instance_layer_count = 0;
         uint32_t validation_layer_count = 0;
@@ -107,33 +109,17 @@ namespace vlk {
         vk::CommandPool present_cmd_pool;
 
         vk::CommandBuffer cmd;  // Buffer for initialization commands
-        vk::PipelineLayout pipeline_layout;
         vk::DescriptorSetLayout desc_layout;
-        vk::PipelineCache pipelineCache;
         vk::RenderPass render_pass;
-        vk::Pipeline pipeline;
-
-        // DISABLED when on switch to GameWorld
-        //mat4x4 projection_matrix;
-        // mat4x4 view_matrix;
-
-        // DISABLED when on switch to GameObject
-        // mat4x4 model_matrix;
+        vk::Pipeline globalPipeline;
 
         uint32_t swapchainImageCount;
         vk::SwapchainKHR swapchain;
         std::unique_ptr<SwapchainImageResources[]> swapchain_image_resources;
 
-        //TODO Use std::vector
-        //static int32_t const texture_count = 1;
-        //TODO Use std::vector
-        //texture_object textures[texture_count];
-
         std::vector<texture_object> textures;
 
         texture_object staging_texture;
-
-        void prepareDescriptorLayout();
 
         void prepareDescriptorPool();
 
@@ -142,8 +128,6 @@ namespace vlk {
         void prepareFramebuffers();
 
         void prepareRenderPass();
-
-        //void preparePipeline();
 
         struct {
             vk::Format format;
@@ -162,9 +146,12 @@ namespace vlk {
         uint32_t width;
         uint32_t height;
 
-        void drawBuildCmd(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands);
+        void drawBuildCmd(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands,
+                                  std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
+
         void prepareSubCommandBuffer(const vk::CommandBuffer &commandBuffer, const vk::Viewport *viewport,
-                                             const vk::Rect2D *scissor);
+                                             const vk::Rect2D *scissor,
+                                             std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
 
         void flushInitCmd();
 
@@ -178,8 +165,6 @@ namespace vlk {
 
         ShaderModule *shaderModule;
         MemoryModule *memoryModule;
-        vk::ShaderModule vert_shader_module;
-        vk::ShaderModule frag_shader_module;
 
         // prepare the draw
     private:
@@ -209,9 +194,9 @@ namespace vlk {
 
         void prepareDescriptors(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
 
-        void preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
 
         ShaderModule *getShaderModule();
+
     };
 }
 
