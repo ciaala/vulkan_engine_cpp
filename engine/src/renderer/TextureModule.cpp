@@ -76,7 +76,10 @@ void vlk::TextureModule::prepareTextureImage(const char *filename,
 }
 
 bool
-vlk::TextureModule::loadTexture(const char *filename, uint8_t *rgba_data, vk::SubresourceLayout *layout, int32_t *width,
+vlk::TextureModule::loadTexture(const char *filename,
+                                uint8_t *rgba_data,
+                                vk::SubresourceLayout *layout,
+                                int32_t *width,
                                 int32_t *height) {
     FILE *fPtr = fopen(filename, "rb");
     if (!fPtr) {
@@ -140,9 +143,13 @@ vlk::TextureModule::TextureModule(vk::Device *device, vlk::MemoryModule *memoryM
     this->memoryModule = memoryModule;
 }
 
-void vlk::TextureModule::setImageLayout(const vk::CommandBuffer *cmd, vk::Image image, vk::ImageAspectFlags aspectMask,
-                                        vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
-                                        vk::AccessFlags srcAccessMask, vk::PipelineStageFlags src_stages,
+void vlk::TextureModule::setImageLayout(const vk::CommandBuffer *cmd,
+                                        vk::Image image,
+                                        vk::ImageAspectFlags aspectMask,
+                                        vk::ImageLayout oldLayout,
+                                        vk::ImageLayout newLayout,
+                                        vk::AccessFlags srcAccessMask,
+                                        vk::PipelineStageFlags src_stages,
                                         vk::PipelineStageFlags dest_stages) {
 
     assert(cmd != nullptr);

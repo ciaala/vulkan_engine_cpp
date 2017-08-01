@@ -86,8 +86,7 @@ namespace vlk {
 
         void prepare();
 
-        void
-        prepareCubeDataBuffers(Camera *camera, GameObject *object);
+        void prepareCubeDataBuffers(Camera *camera, GameObject *object);
 
     private:
 
@@ -147,11 +146,11 @@ namespace vlk {
         uint32_t height;
 
         void drawBuildCmd(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands,
-                                  std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
+                          std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
 
         void prepareSubCommandBuffer(const vk::CommandBuffer &commandBuffer, const vk::Viewport *viewport,
-                                             const vk::Rect2D *scissor,
-                                             std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
+                                     const vk::Rect2D *scissor,
+                                     std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
 
         void flushInitCmd();
 
@@ -190,13 +189,11 @@ namespace vlk {
 
         void prepareTexture(std::string &basic_string);
 
-        void prepareCamera(vlk::Camera *camera);
-
         void prepareDescriptors(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
-
 
         ShaderModule *getShaderModule();
 
+        void preparePrimaryCommandBuffer();
     };
 }
 

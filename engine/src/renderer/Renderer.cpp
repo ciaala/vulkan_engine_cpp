@@ -55,50 +55,41 @@ void vlk::Renderer::prepare(GameWorld *gameWorld) {
     this->vulkanModule->prepare();
 
     auto camera = gameWorld->getCamera();
-    this->vulkanModule->prepareCamera(camera);
+    camera->update();
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfoList;
 
-    for (auto gameObject :gameWorld->getGameObjects()) {
-        this->prepareGameObject(shaderModule, camera, shaderStageInfoList, gameObject);
-    }
+    // TODO TASK-NEXT prepare the primary command buffer
 
+    this->vulkanModule->preparePrimaryCommandBuffer();
+
+    // this->vulkanModule->prepareDescriptors(shaderStageInfoList);
+    for (auto gameObject :gameWorld->getGameObjects()) {
+
+        // TODO TASK-NEXT What does this function prepare
+        this->prepareGameObject(shaderModule, camera, shaderStageInfoList, gameObject);
+
+        // TODO TASK-NEXT Prepare its own subCommandBuffer
+        // this->vulkanModule->prepareDescriptors(shaderStageInfoList);
+    }
+    // TODO TASK-NEXT Complete the primary command buffer
     this->vulkanModule->prepareDescriptors(shaderStageInfoList);
 }
+
 void vlk::Renderer::prepareGameObject(vlk::ShaderModule *shaderModule,
                                       vlk::Camera *camera,
                                       std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
                                       vlk::GameObject *gameObject) {
+
     this->vulkanModule->prepareCubeDataBuffers(camera, gameObject);
     for (std::string &textureFile : gameObject->getTextureFiles()) {
         this->vulkanModule->prepareTexture(textureFile);
     }
-    std::vector<vk::ShaderModule> vertexes = shaderModule->prepareShaderFromFiles(gameObject->getVertexShaderFiles());
-    std::vector<vk::ShaderModule>
-        fragments = shaderModule->prepareShaderFromFiles(gameObject->getFragmentShaderFiles());
-    this->prepareShaders(shaderStageInfoList, vertexes, fragments);
-}
-
-void
-vlk::Renderer::prepareShaders(
-    std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfo,
-    std::vector<vk::ShaderModule> &vertexes,
-    std::vector<vk::ShaderModule> &fragments) {
-
-    for (auto vertex: vertexes) {
-        shaderStageInfo.emplace_back(
-            vk::PipelineShaderStageCreateInfo()
-                .setStage(vk::ShaderStageFlagBits::eVertex)
-                .setModule(vertex)
-                .setPName("main"));
-    }
-    for (auto fragment: fragments) {
-        shaderStageInfo.emplace_back(
-            vk::PipelineShaderStageCreateInfo()
-                .setStage(vk::ShaderStageFlagBits::eFragment)
-                .setModule(fragment)
-                .setPName("main")
-        );
-    }
+    std::vector<vk::ShaderModule> vertexes = shaderModule->prepareShaderFromFiles(
+            gameObject->getVertexShaderFiles());
+    std::vector<vk::ShaderModule> fragments = shaderModule->prepareShaderFromFiles(
+            gameObject->getFragmentShaderFiles());
+    ModelRendererAdapter modelRendererAdapter;
+    modelRendererAdapter.prepareShaders(shaderStageInfoList, vertexes, fragments);
 }
 
 void vlk::Renderer::draw(vlk::GameWorld *gameWorld) {

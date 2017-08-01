@@ -553,6 +553,8 @@ void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCr
             .setCommandPool(cmd_pool)
             .setLevel(vk::CommandBufferLevel::ePrimary)
             .setCommandBufferCount(1);
+
+    // TODO Next Change the count here
     auto const subCommandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
             .setCommandPool(cmd_pool)
             .setLevel(vk::CommandBufferLevel::eSecondary)
@@ -593,7 +595,8 @@ void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCr
 
     for (uint32_t i = 0; i < swapchainImageCount; ++i) {
         current_buffer = i;
-        this->drawBuildCmd(swapchain_image_resources[i].cmd, swapchain_image_resources[i].subCommands, shaderStageInfoList);
+        this->drawBuildCmd(swapchain_image_resources[i].cmd, swapchain_image_resources[i].subCommands,
+                           shaderStageInfoList);
     }
 
     /*
@@ -1157,8 +1160,9 @@ void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer, std::vecto
     commandBuffer.setScissor(0, 1, &scissor);
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
 
-    //subCommands.resize(1);
+    // subCommands.resize(1);
     prepareSubCommandBuffer(subCommands[0], &viewport, &scissor, shaderStageInfoList);
+    // prepareSubCommandBuffer(subCommands[1], &viewport, &scissor, shaderStageInfoList);
 
     //subCommands[1] =
     commandBuffer.executeCommands((uint32_t) subCommands.size(), subCommands.data());
@@ -1471,14 +1475,11 @@ void vlk::VulkanModule::prepareTexture(std::string &filename) {
     this->prepareTexture(filename.c_str(), this->textureFormat);
 }
 
-void vlk::VulkanModule::prepareCamera(Camera *camera) {
-
-    mat4x4_perspective(camera->getProjectionMatrix(), (float) degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
-    mat4x4_look_at(camera->getViewMatrix(), camera->getEye(), camera->getOrigin(), camera->getUp());
-    camera->getProjectionMatrix()[1][1] *= -1;
-}
-
 vlk::ShaderModule *vlk::VulkanModule::getShaderModule() {
     return this->shaderModule;
+}
+
+void vlk::VulkanModule::preparePrimaryCommandBuffer() {
+//this->swapchain_image_resources
 }
 

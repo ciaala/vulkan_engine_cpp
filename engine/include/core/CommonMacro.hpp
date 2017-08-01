@@ -1,6 +1,8 @@
 //
 // Created by crypt on 17/07/17.
 //
+#include <vector>
+#include <string>
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 

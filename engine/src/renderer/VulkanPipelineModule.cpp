@@ -103,21 +103,22 @@ vlk::VulkanPipelineModule::~VulkanPipelineModule() {
 
 vk::PipelineLayout vlk::VulkanPipelineModule::preparePipelineLayout(std::vector<texture_object> &textures,
                                                                     vk::DescriptorSetLayout &descLayout) {
-    vk::DescriptorSetLayoutBinding const layout_bindings[2] = {vk::DescriptorSetLayoutBinding()
-                                                                       .setBinding(0)
-                                                                       .setDescriptorType(
-                                                                               vk::DescriptorType::eUniformBuffer)
-                                                                       .setDescriptorCount(1)
-                                                                       .setStageFlags(vk::ShaderStageFlagBits::eVertex)
-                                                                       .setPImmutableSamplers(nullptr),
-                                                               vk::DescriptorSetLayoutBinding()
-                                                                       .setBinding(1)
-                                                                       .setDescriptorType(
-                                                                               vk::DescriptorType::eCombinedImageSampler)
-                                                                       .setDescriptorCount((uint32_t) textures.size())
-                                                                       .setStageFlags(
-                                                                               vk::ShaderStageFlagBits::eFragment)
-                                                                       .setPImmutableSamplers(nullptr)};
+    vk::DescriptorSetLayoutBinding const layout_bindings[2] = {
+            vk::DescriptorSetLayoutBinding()
+                    .setBinding(0)
+                    .setDescriptorType(
+                            vk::DescriptorType::eUniformBuffer)
+                    .setDescriptorCount(1)
+                    .setStageFlags(vk::ShaderStageFlagBits::eVertex)
+                    .setPImmutableSamplers(nullptr),
+            vk::DescriptorSetLayoutBinding()
+                    .setBinding(1)
+                    .setDescriptorType(
+                            vk::DescriptorType::eCombinedImageSampler)
+                    .setDescriptorCount((uint32_t) textures.size())
+                    .setStageFlags(
+                            vk::ShaderStageFlagBits::eFragment)
+                    .setPImmutableSamplers(nullptr)};
 
     auto const descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(2).setPBindings(layout_bindings);
 

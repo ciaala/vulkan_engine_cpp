@@ -7,6 +7,8 @@ namespace vlk {
 #ifndef VULKAN_ENGINE_CPP_RESOURCEMODEL_HPP
 #define VULKAN_ENGINE_CPP_RESOURCEMODEL_HPP
 
+#include "../core/CommonMacro.hpp"
+
 namespace vlk {
     class ResourceModel {
 
