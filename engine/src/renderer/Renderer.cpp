@@ -50,46 +50,41 @@ void vlk::Renderer::initSwapChain() {
 }
 
 void vlk::Renderer::prepare(GameWorld *gameWorld) {
-    auto shaderModule = this->vulkanModule->getShaderModule();
 
     this->vulkanModule->prepare();
 
     auto camera = gameWorld->getCamera();
     camera->update();
-    std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfoList;
 
     // TODO TASK-NEXT prepare the primary command buffer
-
     this->vulkanModule->preparePrimaryCommandBuffer();
 
     // this->vulkanModule->prepareDescriptors(shaderStageInfoList);
     for (auto gameObject :gameWorld->getGameObjects()) {
 
         // TODO TASK-NEXT What does this function prepare
-        this->prepareGameObject(shaderModule, camera, shaderStageInfoList, gameObject);
+        this->prepareGameObject(camera, gameObject);
 
         // TODO TASK-NEXT Prepare its own subCommandBuffer
         // this->vulkanModule->prepareDescriptors(shaderStageInfoList);
     }
     // TODO TASK-NEXT Complete the primary command buffer
-    this->vulkanModule->prepareDescriptors(shaderStageInfoList);
+    this->vulkanModule->prepareDescriptors();
 }
 
-void vlk::Renderer::prepareGameObject(vlk::ShaderModule *shaderModule,
-                                      vlk::Camera *camera,
-                                      std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
-                                      vlk::GameObject *gameObject) {
+void vlk::Renderer::prepareGameObject(vlk::Camera *camera, vlk::GameObject *gameObject) {
 
     this->vulkanModule->prepareCubeDataBuffers(camera, gameObject);
-    for (std::string &textureFile : gameObject->getTextureFiles()) {
-        this->vulkanModule->prepareTexture(textureFile);
+
+    // TODO CRITICAL Use a Model identifier.
+    ModelRendererAdapter *adapter = nullptr;
+    if (this->modelRendererAdapters.count("TODO_CONSTANT_NAME_TO_CHANGE") == 0) {
+        adapter = new ModelRendererAdapter(this->vulkanModule);
+        modelRendererAdapters.emplace("TODO_CONSTANT_NAME_TO_CHANGE", adapter);
+    } else {
+        adapter = modelRendererAdapters["TODO_CONSTANT_NAME_TO_CHANGE"];
     }
-    std::vector<vk::ShaderModule> vertexes = shaderModule->prepareShaderFromFiles(
-            gameObject->getVertexShaderFiles());
-    std::vector<vk::ShaderModule> fragments = shaderModule->prepareShaderFromFiles(
-            gameObject->getFragmentShaderFiles());
-    ModelRendererAdapter modelRendererAdapter;
-    modelRendererAdapter.prepareShaders(shaderStageInfoList, vertexes, fragments);
+    adapter->prepare(gameObject);
 }
 
 void vlk::Renderer::draw(vlk::GameWorld *gameWorld) {

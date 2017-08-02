@@ -64,7 +64,7 @@ preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoL
             dynamicStates).setDynamicStateCount(2);
 
     auto const pipeline = vk::GraphicsPipelineCreateInfo()
-            .setStageCount(2)
+            .setStageCount((uint32_t) shaderStageInfoList.size())
             .setPStages(shaderStageInfoList.data())
             .setPVertexInputState(&vertexInputInfo)
             .setPInputAssemblyState(&inputAssemblyInfo)

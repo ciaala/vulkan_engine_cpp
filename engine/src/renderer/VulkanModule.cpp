@@ -536,18 +536,21 @@ void vlk::VulkanModule::prepare() {
     this->prepareDepth();
 
     // Initialize texture properties;
-    this->prepareTextures();
+    this->prepareTextureFormats();
 
 }
 
-void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList) {
+void vlk::VulkanModule::prepareDescriptors() {
     // DISABLED in GameWorld Refactor
     //this->prepareCubeDataBuffers(g_vertex_buffer_data, g_uv_buffer_data, object);
-
-    auto pipelineLayout = this->pipelineModule->preparePipelineLayout(this->textures, this->desc_layout);
+    std::vector<texture_object> emptyTextures;
+    auto pipelineLayout = this->pipelineModule->preparePipelineLayout(textures, this->desc_layout);
     this->prepareRenderPass();
-    this->globalPipeline = this->pipelineModule->preparePipeline(shaderStageInfoList, pipelineLayout,
-                                                                 this->render_pass);
+    std::vector<vk::PipelineShaderStageCreateInfo> emptyShaderStageInfoList;
+    this->globalPipeline = this->pipelineModule->preparePipeline(
+            emptyShaderStageInfoList,
+            pipelineLayout,
+            this->render_pass);
 
     auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
             .setCommandPool(cmd_pool)
@@ -595,8 +598,7 @@ void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCr
 
     for (uint32_t i = 0; i < swapchainImageCount; ++i) {
         current_buffer = i;
-        this->drawBuildCmd(swapchain_image_resources[i].cmd, swapchain_image_resources[i].subCommands,
-                           shaderStageInfoList);
+        this->drawBuildCmd(swapchain_image_resources[i].cmd, swapchain_image_resources[i].subCommands);
     }
 
     /*
@@ -610,7 +612,6 @@ void vlk::VulkanModule::prepareDescriptors(std::vector<vk::PipelineShaderStageCr
 
     current_buffer = 0;
     prepared = true;
-
 }
 
 void vlk::VulkanModule::prepareBuffers() {
@@ -831,7 +832,7 @@ void vlk::VulkanModule::prepareDepth() {
     VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::prepareTextures() {
+void vlk::VulkanModule::prepareTextureFormats() {
     gpu.getFormatProperties(textureFormat, &textureFormatProperties);
 }
 
@@ -944,7 +945,7 @@ void vlk::VulkanModule::prepareCubeDataBuffers(Camera *camera, GameObject *objec
     mat4x4 MVP;
     mat4x4_mul(MVP, VP, object->getModelMatrix());
 
-    vktexcube_vs_uniform data;
+    vktexcube_vs_uniform data{0};
     memcpy(data.mvp, MVP, sizeof(MVP));
     //    dumpMatrix("MVP", MVP)
 
@@ -1131,8 +1132,10 @@ void vlk::VulkanModule::prepareRenderPass() {
     VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer, std::vector<vk::CommandBuffer> &subCommands,
-                                     std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList) {
+void vlk::VulkanModule::drawBuildCmd(
+        vk::CommandBuffer commandBuffer,
+        std::vector<vk::CommandBuffer> &subCommands
+) {
     auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 
     vk::ClearValue const clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}})),
@@ -1161,7 +1164,8 @@ void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer, std::vecto
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
 
     // subCommands.resize(1);
-    prepareSubCommandBuffer(subCommands[0], &viewport, &scissor, shaderStageInfoList);
+    prepareSubCommandBuffers( &viewport, &scissor);
+
     // prepareSubCommandBuffer(subCommands[1], &viewport, &scissor, shaderStageInfoList);
 
     //subCommands[1] =
@@ -1199,42 +1203,6 @@ void vlk::VulkanModule::drawBuildCmd(vk::CommandBuffer commandBuffer, std::vecto
     //    result =
     commandBuffer.end();
     //    VERIFY(result == vk::Result::eSuccess);
-}
-
-void vlk::VulkanModule::prepareSubCommandBuffer(const vk::CommandBuffer &commandBuffer, const vk::Viewport *viewport,
-                                                const vk::Rect2D *scissor,
-                                                std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList) {
-    // Initialize the Subordinate Command Buffer with
-    auto const inheritanceInfo = vk::CommandBufferInheritanceInfo(this->render_pass, 0,
-                                                                  this->swapchain_image_resources[current_buffer].framebuffer);
-    auto const commandInfo = vk::CommandBufferBeginInfo()
-            .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse |
-                      vk::CommandBufferUsageFlagBits::eRenderPassContinue)
-            .setPInheritanceInfo(&inheritanceInfo);
-    commandBuffer.begin(commandInfo);
-
-    // TODO decide about pipelineLayout;
-    auto __pipeline_layout = this->pipelineModule->preparePipelineLayout(this->textures, this->desc_layout);
-    auto pipeline = this->pipelineModule->preparePipeline(shaderStageInfoList, __pipeline_layout, this->render_pass);
-    //vk::Pipeline pipeline = createSubCommandBufferPipeline();
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
-    //commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
-    commandBuffer.setViewport(0, 1, viewport);
-    commandBuffer.setScissor(0, 1, scissor);
-
-    //auto renderPass = vk::SubPass
-    //commandBuffer.beginRenderPass(this->render_pass, vk::SubpassContents::eSecondaryCommandBuffers);
-
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                     __pipeline_layout,
-                                     0,
-                                     1,
-                                     &this->swapchain_image_resources[this->current_buffer].descriptor_set,
-                                     0,
-                                     nullptr);
-
-    commandBuffer.draw(12 * 3, 1, 0, 0);
-    commandBuffer.end();
 }
 
 void vlk::VulkanModule::flushInitCmd() {
@@ -1301,9 +1269,9 @@ void vlk::VulkanModule::updateDataBuffer(Camera *camera, GameObject *object) {
     mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
 
     // Rotate around the Y axis
-    mat4x4 Model;
-    mat4x4_dup(Model, object->getModelMatrix());
-    mat4x4_rotate(object->getModelMatrix(), Model, 0.0f, 1.0f, 0.0f,
+    mat4x4 model{0};
+    mat4x4_dup(model, object->getModelMatrix());
+    mat4x4_rotate(object->getModelMatrix(), model, 0.0f, 1.0f, 0.0f,
                   (float) degreesToRadians(object->getSpinningAngle()));
 
     mat4x4 MVP;
@@ -1481,5 +1449,14 @@ vlk::ShaderModule *vlk::VulkanModule::getShaderModule() {
 
 void vlk::VulkanModule::preparePrimaryCommandBuffer() {
 //this->swapchain_image_resources
+}
+
+vlk::VulkanPipelineModule *vlk::VulkanModule::getPipelineModule() {
+    return this->pipelineModule;
+}
+
+void vlk::VulkanModule::prepareSubCommandBuffers(const vk::Viewport *viewport,
+                                                 const vk::Rect2D *scissor) {
+
 }
 

@@ -1,7 +1,9 @@
 //
 // Created by crypt on 26/07/17.
 //
-
+namespace vlk {
+    class VulkanPipelineModule;
+}
 #ifndef VULKAN_ENGINE_CPP_VULKANPIPELINEMODULE_H
 #define VULKAN_ENGINE_CPP_VULKANPIPELINEMODULE_H
 

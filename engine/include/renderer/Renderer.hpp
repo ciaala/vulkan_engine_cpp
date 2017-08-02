@@ -20,6 +20,8 @@ namespace vlk {
     private:
         static uint16_t const WINDOW_WIDTH;
         static uint16_t const WINDOW_HEIGHT;
+        std::unordered_map<std::string, ModelRendererAdapter *>
+                modelRendererAdapters;
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
         XCBModule *xcbModule;
@@ -45,15 +47,7 @@ namespace vlk {
 
         void draw(GameWorld *gameWorld);
 
-        void
-        prepareShaders(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfo,
-                       std::vector<vk::ShaderModule> &vertexes,
-                       std::vector<vk::ShaderModule> &fragments);
-
-        void prepareGameObject(ShaderModule *shaderModule,
-                               Camera *camera,
-                               std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
-                               GameObject *gameObject);
+        void prepareGameObject(vlk::Camera *camera, vlk::GameObject *gameObject);
     };
 }
 

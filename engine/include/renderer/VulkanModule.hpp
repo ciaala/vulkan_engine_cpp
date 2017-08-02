@@ -1,6 +1,9 @@
 //
 // Created by crypt on 16/07/17.
 //
+namespace vlk {
+    class VulkanModule;
+}
 
 #ifndef VULKAN_ENGINE_CPP_VULKANMODULE_HPP
 #define VULKAN_ENGINE_CPP_VULKANMODULE_HPP
@@ -145,12 +148,12 @@ namespace vlk {
         uint32_t width;
         uint32_t height;
 
-        void drawBuildCmd(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands,
-                          std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
+        void drawBuildCmd(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands);
 
-        void prepareSubCommandBuffer(const vk::CommandBuffer &commandBuffer, const vk::Viewport *viewport,
-                                     const vk::Rect2D *scissor,
-                                     std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
+        void prepareSubCommandBuffer(
+                const vk::Viewport *viewport,
+                const vk::Rect2D *scissor
+        );
 
         void flushInitCmd();
 
@@ -183,17 +186,21 @@ namespace vlk {
 
         void draw(GameWorld *world);
 
-        void prepareTextures();
+        void prepareTextureFormats();
 
         void prepareTexture(const char *textureFile, const vk::Format &tex_format);
 
         void prepareTexture(std::string &basic_string);
 
-        void prepareDescriptors(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList);
+        void prepareDescriptors();
 
         ShaderModule *getShaderModule();
 
         void preparePrimaryCommandBuffer();
+
+        VulkanPipelineModule *getPipelineModule();
+
+        void prepareSubCommandBuffers(const vk::Viewport *viewport, const vk::Rect2D *scissor);
     };
 }
 
