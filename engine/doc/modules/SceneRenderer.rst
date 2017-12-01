@@ -2,7 +2,7 @@ SceneRenderer
 =============
 
 From top to down this is a documentation of the approach used in this engine.
-Currently the approach that is used depends on the current knowledge of these topic:
+Currently the approach that is used depends on the current knowledge of these following topics:
 
 - 3D Graphic Rendering
 - The Vulkan API
@@ -10,22 +10,23 @@ Currently the approach that is used depends on the current knowledge of these to
 - Shaders Language
 - Modelling
 
-The engine would anyway plays catchup with my current knowledge level.
+The engine and myself we would keep playing catchup between my current knowledge level and the bugs I encounter and features I wants.
 An other limitation would come from the Models used in the game which they might be more complex than what the engine would be currently be able to render.
 
 For all this reason I consider that maintaining this document is the most important part of the engine.
 
-General Support
----------------
-In this stage the engine support loading of vertices and textures and render the vertices as triangles.
-There's support to load a Vertex and Fragment shaders.
+Features of the engine
+----------------------
 
+In this stage the engine support loading of vertices and textures and render the vertices as triangles.
+There's support to load both Vertex and Fragment shaders.
+
+Loading 3D Model
+----------------
+
+In the current status we are importing object as both resources compiled in and
 On the horizon there's the use of a loader library that would load any format.
 
-
-
-3D Model
---------
 The current implementation of the JSon Loader
 
 {
@@ -52,15 +53,13 @@ You can describe per pipeline a binding like a parameter of vertices and attribu
 A set of vertices are drawn as a surface and are mapped into a texture through the UV map.
 Some of the vertices can be part of another surface.
 Multiple surfaces can use the same texture if we unroll the 3d to a single image file.
-**what is the name of this technique ?**
+**What is the name of this technique ?**
 
-In a complex object, there can be part with different textures attached togheter.
+In a complex object, there can be part with different textures attached together.
 
 *Should we write/use a fragment shader that supports multiple textures ?*
 *Should we just split the object in multiple sub blocks connected together.*
-Up town both these problems should be resolved with composition of multiple rendering block.
-
-
+Up to now both these problems should be resolved with composition of multiple rendering block.
 
 Binding {VX, UV, TX}
 --------------------
