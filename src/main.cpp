@@ -3,9 +3,7 @@
 #include "SampleApplication.hpp"
 
 int main() {
-    std::cout << "VulkanEngine startup." << std::endl;
-    // vlk::engine engine;
-    std::cout << "Vulkan version: " << vlk::Engine::getVulkanVersion() << std::endl;
+    vlk::Engine::static_initialization();
 
     vlk::Engine engine;
     SampleApplication sampleApplication(&engine);

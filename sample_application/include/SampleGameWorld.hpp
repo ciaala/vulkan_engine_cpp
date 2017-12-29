@@ -9,23 +9,25 @@
 #include "Engine.hpp"
 
 class SampleGameWorld : public vlk::GameWorld {
-private:
-    vlk::Camera camera;
+ private:
+  vlk::Camera camera;
 
-    std::vector<vlk::GameObject *> objects;
+  std::vector<vlk::GameObject *> objects;
+  std::vector<vlk::AudioObject *> audioObjects;
 
-    vlk::Engine *engine;
+  vlk::Engine *engine;
 
-public:
-    explicit SampleGameWorld(vlk::Engine *engine);
+ public:
+  explicit SampleGameWorld(vlk::Engine *engine);
 
-    vlk::Camera *getCamera() override;
+  vlk::Camera *getCamera() override;
 
-    void updateWorld() override;
+  void updateWorld() override;
 
-    std::vector<vlk::GameObject *> getGameObjects() override;
+  std::vector<vlk::GameObject *> getGameObjects() override;
 
+  std::vector<vlk::AudioObject *> getAudioObjects() override;
+  void fillWorld();
 };
-
 
 #endif //VULKAN_ENGINE_CPP_SAMPLEGAMEWORLD_HPP

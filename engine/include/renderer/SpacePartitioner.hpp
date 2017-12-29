@@ -1,0 +1,14 @@
+//
+// Created by crypt on 02/12/17.
+//
+
+#ifndef VULKAN_ENGINE_CPP_SPACEPARTITIONER_HPP
+#define VULKAN_ENGINE_CPP_SPACEPARTITIONER_HPP
+
+
+class SpacePartitioner {
+
+};
+
+
+#endif //VULKAN_ENGINE_CPP_SPACEPARTITIONER_HPP

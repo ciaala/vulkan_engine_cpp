@@ -8,7 +8,8 @@
 #include "VulkanModule.hpp"
 #include "XCBModule.hpp"
 #include "ShaderModule.hpp"
-#include "ModelRendererAdapter.hpp"
+#include "VulkanDrawableObject.hpp"
+// #include "SpacePartitioner.hpp"
 
 namespace vlk {
     class XCBModule;
@@ -20,9 +21,9 @@ namespace vlk {
     private:
         static uint16_t const WINDOW_WIDTH;
         static uint16_t const WINDOW_HEIGHT;
-        std::unordered_map<std::string, ModelRendererAdapter *>
-                modelRendererAdapters;
-
+        std::unordered_map<GameObject::SID, VulkanDrawableObject *>
+                vulkanDrawables;
+        //SpacePartitioner *spacePartitioner = ScenePartitionerFactory.createBSPScenePartitioner();
 #if defined(VK_USE_PLATFORM_XCB_KHR)
         XCBModule *xcbModule;
 #endif
@@ -47,7 +48,7 @@ namespace vlk {
 
         void draw(GameWorld *gameWorld);
 
-        void prepareGameObject(vlk::Camera *camera, vlk::GameObject *gameObject);
+        void prepareDrawableObject(vlk::Camera *camera, vlk::GameObject *gameObject);
     };
 }
 

@@ -113,9 +113,8 @@ Game Camera
 - Scripted/Animated Camera
 - Debug Camera
 
-
 AI
---
+----
 
 - decision making
 - actions (engine interface)

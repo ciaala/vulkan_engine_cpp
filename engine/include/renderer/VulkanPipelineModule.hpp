@@ -23,9 +23,9 @@ namespace vlk {
         ~VulkanPipelineModule();
 
     public:
-        vk::Pipeline preparePipeline(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
-                                     vk::PipelineLayout &__pipeline_layout,
-                                     vk::RenderPass __render_pass);
+        vk::Pipeline prepareGraphicPipeline(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
+                                            vk::PipelineLayout &__pipeline_layout,
+                                            vk::RenderPass __render_pass);
 
         //vk::Pipeline createSubCommandBufferPipeline();
 

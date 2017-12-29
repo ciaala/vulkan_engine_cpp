@@ -45,7 +45,6 @@ namespace vlk {
             mat4x4_look_at(this->getViewMatrix(), this->getEye(), this->getOrigin(), this->getUp());
             this->getProjectionMatrix()[1][1] *= -1;
         }
-
     };
 }
 

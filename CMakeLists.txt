@@ -8,6 +8,7 @@ set(SOURCE_FILES src/main.cpp)
 add_subdirectory(engine)
 add_subdirectory(sample_application)
 add_subdirectory(snippets)
+add_subdirectory(doc)
 include_directories(engine/include
         sample_application/include)
 add_executable(vulkan_engine_cpp ${SOURCE_FILES})

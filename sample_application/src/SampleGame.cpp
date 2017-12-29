@@ -6,16 +6,18 @@
 #include "../include/SampleGame.hpp"
 
 void SampleGame::quit() {
-    this->_quit = true;
+  this->_quit = true;
 }
 
 void SampleGame::triggerPause() {
-    this->pause = !pause;
+  this->pause = !pause;
 }
 
-SampleGame::SampleGame(vlk::Engine *engine) : gameWorld{new SampleGameWorld(engine)} {}
+SampleGame::SampleGame(vlk::Engine *engine) : gameWorld{new SampleGameWorld(engine)} {
+
+}
 
 vlk::GameWorld *SampleGame::getWorld() {
-    return this->gameWorld;
+  return this->gameWorld;
 }
 

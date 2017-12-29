@@ -37,6 +37,7 @@ namespace vlk {
         InputModule *inputModule;
         VulkanModule *vulkanModule;
         AudioModule *audioModule;
+        ResourceManager *resourceManager;
 
     public:
         //engine(int argc = 0, char** argv = nullptr);
@@ -63,6 +64,8 @@ namespace vlk {
 
     public:
         // ---- STATIC
+
+        static void static_initialization();
         static std::string getVulkanVersion();
 
         static std::string getName();
@@ -71,9 +74,7 @@ namespace vlk {
 
         void setApplication(Application *application) { this->application = application; }
 
-    private:
 
-        ResourceManager *resourceManager;
     };
 }
 

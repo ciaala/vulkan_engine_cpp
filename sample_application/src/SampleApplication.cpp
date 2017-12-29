@@ -6,16 +6,21 @@
 #include <string>
 
 SampleApplication::SampleApplication(vlk::Engine *engine) :
-        applicationName("SampleApplication") {
-    this->engine = engine;
-    this->engine->setApplication(this);
-    this->game = new SampleGame(engine);
-    this->inputController = new SampleInputController(engine, game);
-    this->inputController->setWorldObject(static_cast<SampleObject *>(this->getWorld()->getGameObjects().at(0)));
+    applicationName("SampleApplication") {
+  this->engine = engine;
+  this->engine->setApplication(this);
+  this->game = new SampleGame(engine);
+  this->inputController = new SampleInputController(engine, game);
+  // TODO remove this IF CHECK
+  if (this->getWorld()->getGameObjects().size() > 0) {
+    this->inputController->setWorldObject(
+        static_cast<SampleObject *>(this->getWorld()->getGameObjects().at(0))
+    );
+  }
 }
 
 std::string SampleApplication::getName() {
-    return this->applicationName;
+  return this->applicationName;
 }
 //--------------------------------------------------------------------------------------
 // Mesh and VertexFormat Data
@@ -23,10 +28,10 @@ std::string SampleApplication::getName() {
 // clang-format off
 
 vlk::InputController *SampleApplication::getInputController() {
-    return this->inputController;
+  return this->inputController;
 }
 
 vlk::GameWorld *SampleApplication::getWorld() {
-    return this->game->getWorld();
+  return this->game->getWorld();
 }
 

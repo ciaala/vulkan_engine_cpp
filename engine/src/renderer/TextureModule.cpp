@@ -10,6 +10,8 @@ void vlk::TextureModule::prepareTextureImage(const char *filename,
                                              vk::ImageTiling tiling,
                                              vk::ImageUsageFlags usage,
                                              vk::MemoryPropertyFlags required_props) {
+
+        FLOG(INFO);
     int32_t tex_width;
     int32_t tex_height;
     if (!loadTexture(filename, nullptr, nullptr, &tex_width, &tex_height)) {
@@ -81,6 +83,7 @@ vlk::TextureModule::loadTexture(const char *filename,
                                 vk::SubresourceLayout *layout,
                                 int32_t *width,
                                 int32_t *height) {
+    FLOG(INFO);
     FILE *fPtr = fopen(filename, "rb");
     if (!fPtr) {
         return false;
@@ -109,7 +112,7 @@ vlk::TextureModule::loadTexture(const char *filename,
 
     char *result = fgets(header, 256, fPtr);  // Format
     VERIFY(result != nullptr);
-    if (cPtr == nullptr || strncmp(header, "255\n", 3)) {
+    if (cPtr == nullptr || strncmp(header, "255\n", 3) != 0) {
         fclose(fPtr);
         return false;
     }
@@ -132,12 +135,15 @@ vlk::TextureModule::loadTexture(const char *filename,
 }
 
 void vlk::TextureModule::destroyTextureImage(vlk::texture_object *tex_objs) {
+    FLOG(INFO);
+
     // clean up staging resources
     device->freeMemory(tex_objs->mem, nullptr);
     device->destroyImage(tex_objs->image, nullptr);
 }
 
 vlk::TextureModule::TextureModule(vk::Device *device, vlk::MemoryModule *memoryModule) {
+    FLOG(INFO);
 
     this->device = device;
     this->memoryModule = memoryModule;
@@ -151,6 +157,7 @@ void vlk::TextureModule::setImageLayout(const vk::CommandBuffer *cmd,
                                         vk::AccessFlags srcAccessMask,
                                         vk::PipelineStageFlags src_stages,
                                         vk::PipelineStageFlags dest_stages) {
+    FLOG(INFO);
 
     assert(cmd != nullptr);
 

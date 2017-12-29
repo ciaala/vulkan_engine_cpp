@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include "Audio.hpp"
 #include "OggVorbisModule.hpp"
-
+#include "core/CommonMacro.hpp"
 
 namespace vlk {
     class AudioModule {
@@ -24,6 +24,8 @@ namespace vlk {
 
         void cleanup();
 
+        void prepare(GameWorld *world);
+        void render(GameWorld *world);
     private:
         std::unordered_map<Audio*, Audio*> buffers;
         ALCdevice *device;

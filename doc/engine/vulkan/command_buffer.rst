@@ -1,9 +1,11 @@
+==============
 Command Buffer
 ==============
 
-The command buffer is a collection of commands that the application builds and submits to the graphic/processing driver.
+The command buffer is a collection of commands that the application builds and submits to the  vulkan's graphic/processing driver.
 The driver receives and bakes them: it validates and compiles the command buffers to make them ready for the execution on the device.
-The device will then just have run all the commands in a single buffer.
+The device will then just have run all the commands in a main primary buffer.
+
 
 Example of Operation
 --------------------
@@ -20,19 +22,24 @@ Type Of Commands
 
 Commands can be organized in three macro categories
 - Action
+
     - draw
     - dispatch
     - clear
     - copy
     - query / timestamp ( what is timestamp ? )
     - start / end subCommands
+
 - State Management
+
     - descriptor sets
     - binding pipelines and buffers
     - set dynamic state ( What are dynamic states ? )
     - push constants
     - render pass to sub-pass state
+
 - Synchronization
+
     - pipeline barriers
     - set events
     - wait events

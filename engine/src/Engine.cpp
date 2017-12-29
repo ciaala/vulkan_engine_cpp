@@ -9,80 +9,85 @@
 //        this->argc = argc;
 //        this->argv = argv;
 //    }
+void vlk::Engine::static_initialization() {
+  google::InitGoogleLogging(vlk::Engine::getName().c_str());
 
+  FLOG(INFO) << "VulkanEngine startup." << std::endl;
+  FLOG(INFO) << "Vulkan version: " << vlk::Engine::getVulkanVersion() << std::endl;
+
+}
 std::string vlk::Engine::getVulkanVersion() {
-    return std::to_string(VK_HEADER_VERSION);
+  return std::to_string(VK_HEADER_VERSION);
 }
 
 vlk::Engine::Engine() {
-    this->setupModules();
+  this->setupModules();
 }
 
 void vlk::Engine::setupModules() {
-    this->inputModule = new InputModule(this);
-    this->audioModule = new AudioModule();
-    this->vulkanModule = new VulkanModule(this, true);
-    this->xcbModule = new XCBModule(this);
-    this->resourceManager = new ResourceManager("sample_application/resources");
-    this->renderer = new Renderer(this, vulkanModule, xcbModule);
+  this->inputModule = new InputModule(this);
+  this->audioModule = new AudioModule();
+  this->vulkanModule = new VulkanModule(this, true);
+  this->xcbModule = new XCBModule(this);
+  this->resourceManager = new ResourceManager("sample_application/resources");
+  this->renderer = new Renderer(this, vulkanModule, xcbModule);
 }
 
 void vlk::Engine::init() {
 
-    google::InitGoogleLogging("vlkengine");
-    FLAGS_logtostderr = 1;
+  FLAGS_logtostderr = 1;
+  FLOG(INFO) << "Starting up application: " << this->application->getName() << std::endl;
 
-    LOG(INFO) << "Starting up application: " << this->application->getName() << std::endl;
+  this->audioModule->init();
+  this->renderer->initWindowLibrary();
+  this->renderer->initVulkan();
+  this->renderer->createWindow();
+  this->renderer->initSwapChain();
+  this->prepare();
 
-    this->audioModule->init();
-    this->renderer->initWindowLibrary();
-    this->renderer->initVulkan();
-    this->renderer->createWindow();
-    this->renderer->initSwapChain();
-    this->prepare();
-
-    this->xcbModule->runXCB();
+  this->xcbModule->runXCB();
 }
 
 void vlk::Engine::draw() {
-    static int c = 0;
-    static int gc = 0;
-    if (c == 1000) {
-        gc++;
-        LOG(INFO) << "Engine.draw " << gc << " x 10^3" << std::endl;
-        c = 0;
-    } else {
-        c++;
-    }
-    this->renderer->draw(this->application->getWorld());
-    this->application->getWorld()->updateWorld();
+  static int c = 0;
+  static int gc = 0;
+  if (c % 1000 == 0) {
+
+    FLOG(INFO) << "Drawing {frame: " << gc << "000, objects: " << this->application->getWorld()->getGameObjects().size() << "}" << std::endl;
+    c = 1;
+    gc++;
+  } else {
+    c++;
+  }
+  this->renderer->draw(this->application->getWorld());
+  this->application->getWorld()->updateWorld();
 }
 
 void vlk::Engine::resize(uint32_t width, u_int32_t height) {
-    std::cout << "Engine.resize" << std::endl;
+  FLOG(INFO) << "INCOMPLETE" << std::endl;
 }
 
 std::string vlk::Engine::getName() {
-    return "Engine";
+  return "Engine";
 }
 
 void vlk::Engine::prepare() {
-    std::cout << "Engine.prepare" << std::endl;
-    this->renderer->prepare(this->application->getWorld());
-    Audio *audio = this->audioModule->loadAudio("sample_application/resources/elysium.ogg");
-    this->audioModule->playAudio(audio);
+  FLOG(INFO) << std::endl;
+  this->renderer->prepare(this->application->getWorld());
+  this->audioModule->prepare(this->application->getWorld());
+
 }
 
 void vlk::Engine::cleanup() {
-    LOG(INFO) << "Engine.cleanup" << std::endl;
-    this->audioModule->cleanup();
+  FLOG(INFO);
+  this->audioModule->cleanup();
 }
 
 void vlk::Engine::queue_audio_effect(vlk::GameObject *gameObject, const std::string audioFilename) {
-    auto audio = this->audioModule->loadAudio(audioFilename);
-    this->audioModule->playAudio(audio);
+  auto audio = this->audioModule->loadAudio(audioFilename);
+  this->audioModule->playAudio(audio);
 }
 
 vlk::ResourceManager *vlk::Engine::getResourceManager() {
-    return this->resourceManager;
+  return this->resourceManager;
 }

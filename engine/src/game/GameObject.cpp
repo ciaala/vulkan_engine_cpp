@@ -4,7 +4,7 @@
 
 #include "game/GameObject.hpp"
 
-std::atomic<vlk::sid_t> vlk::GameObject::GLOBAL_SID{0};
+std::atomic<vlk::GameObject::SID> vlk::GameObject::GLOBAL_SID{0};
 
 vlk::GameObject::GameObject() {
   this->sid = GLOBAL_SID.fetch_add(1);

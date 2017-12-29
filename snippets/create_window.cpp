@@ -36,8 +36,7 @@ main ()
     /* Make sure commands are sent before we isPaused so that the window gets shown */
     xcb_flush (connection);
 
-
-    triggerPause();    /* hold client until Ctrl-C */
+    pause();    /* hold client until Ctrl-C */
 
     xcb_disconnect (connection);
 

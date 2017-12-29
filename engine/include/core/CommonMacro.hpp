@@ -6,6 +6,9 @@
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
+#define FLOG(severity) \
+    LOG(severity) << "<" << __PRETTY_FUNCTION__ << "> "
+
 #ifndef VULKAN_ENGINE_CPP_COMMONMACRO_HPP
 #define VULKAN_ENGINE_CPP_COMMONMACRO_HPP
 #define ERR_EXIT(err_msg, err_class) \

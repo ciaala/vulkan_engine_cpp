@@ -13,3 +13,7 @@ I am thinking of such a scenario:
  - the pool run them also in a random sequence
  - check the end result
 
+Testing
+-------
+
+What is the result if we exclude the result

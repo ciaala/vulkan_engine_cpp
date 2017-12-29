@@ -4,10 +4,10 @@
 
 #ifndef VULKAN_ENGINE_CPP_RENDERERDEFINITION_HPP
 #define VULKAN_ENGINE_CPP_RENDERERDEFINITION_HPP
+
 #define VK_USE_PLATFORM_XCB_KHR 1
 
 #include <vulkan/vulkan.hpp>
-
 #include "core/CommonMacro.hpp"
 
 

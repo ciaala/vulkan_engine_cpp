@@ -1,9 +1,10 @@
+=====================
 Debugging Environment
 =====================
+
 In case there's the need to understand/debug a problem in the vulkan library code itself it is required to do at least this two configuration change.
 
-- Set the building and running libraries to be those inside
-/opt/VulkanSDK/1.0.54.0/source/lib
+- Set the building and running libraries to be those inside /opt/VulkanSDK/1.0.54.0/source/lib
 
 - change the run configuration LD_LIBRARY_PATH property
 - change the building configuration in FindVulkan.cmake to look for it

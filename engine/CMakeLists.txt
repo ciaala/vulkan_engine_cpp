@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(XCB REQUIRED)
 find_package(Vulkan REQUIRED)
-add_subdirectory(doc)
 set(SOURCE_FILES
         src/Engine.cpp
         src/renderer/Renderer.cpp
@@ -49,11 +48,14 @@ set(SOURCE_FILES
         src/renderer/VulkanPipelineModule.cpp
         include/renderer/VulkanPipelineModule.hpp
 
-        include/renderer/ModelRendererAdapter.hpp
-        src/renderer/ModelRendererAdapter.cpp
+        include/renderer/VulkanDrawableObject.hpp
+        src/renderer/VulkanDrawableObject.cpp
 
         src/resource/json.hpp
-        )
+        include/renderer/SpacePartitioner.cpp
+        include/renderer/SpacePartitioner.hpp
+        src/audio/AudioObject.cpp
+        src/audio/AudioObject.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})
@@ -75,5 +77,3 @@ target_include_directories(vkengine
         PUBLIC ogg
         PUBLIC vorbisfile
         PUBLIC glog)
-
-add_dependencies(vkengine DOCUMENTATION)

@@ -2,7 +2,7 @@
 // Created by crypt on 16/07/17.
 //
 namespace vlk {
-    class VulkanModule;
+class VulkanModule;
 }
 
 #ifndef VULKAN_ENGINE_CPP_VULKANMODULE_HPP
@@ -11,15 +11,15 @@ namespace vlk {
 #define FRAME_LAG 2
 
 namespace vlk {
-    class Engine;
+class Engine;
 };
 
 #include "RendererDefinition.hpp"
 
 #include <cstdint>
 
-
 #include <vulkan/vk_sdk_platform.h>
+#include <xcb/xcb.h>
 
 #include <game/GameObject.hpp>
 #include <game/Camera.hpp>
@@ -34,174 +34,170 @@ namespace vlk {
 // Definition used in prepare
 
 namespace vlk {
-    class VulkanModule {
-    private:
-        Engine *engine;
-    private:
-        VulkanPipelineModule *pipelineModule;
-        uint32_t instance_extension_count = 0;
-        uint32_t instance_layer_count = 0;
-        uint32_t validation_layer_count = 0;
-        char const *const *instance_validation_layers = nullptr;
+class VulkanModule {
+ private:
+  Engine *engine;
+ private:
+  VulkanPipelineModule *pipelineModule;
+  uint32_t instance_extension_count = 0;
+  uint32_t instance_layer_count = 0;
+  uint32_t validation_layer_count = 0;
+  char const *const *instance_validation_layers = nullptr;
 
-        uint32_t enabled_extension_count;
-        uint32_t enabled_layer_count;
-        char const *extension_names[64];
-        char const *enabled_layers[64];
+  uint32_t enabled_extension_count;
+  uint32_t enabled_layer_count;
+  char const *extension_names[64];
+  char const *enabled_layers[64];
 
-        vk::Instance inst;
-        vk::PhysicalDevice gpu;
-        vk::Device device;
-        vk::Queue graphics_queue;
-        vk::Queue present_queue;
-        uint32_t graphics_queue_family_index;
-        uint32_t present_queue_family_index;
-        vk::Semaphore image_acquired_semaphores[FRAME_LAG];
-        vk::Semaphore draw_complete_semaphores[FRAME_LAG];
-        vk::Semaphore image_ownership_semaphores[FRAME_LAG];
-        vk::PhysicalDeviceProperties gpu_props;
-        std::unique_ptr<vk::QueueFamilyProperties[]> queue_props;
-        vk::PhysicalDeviceMemoryProperties memory_properties;
+  vk::Instance inst;
+  vk::PhysicalDevice gpu;
+  vk::Device device;
+  vk::Queue graphics_queue;
+  vk::Queue present_queue;
+  uint32_t graphics_queue_family_index;
+  uint32_t present_queue_family_index;
+  vk::Semaphore image_acquired_semaphores[FRAME_LAG];
+  vk::Semaphore draw_complete_semaphores[FRAME_LAG];
+  vk::Semaphore image_ownership_semaphores[FRAME_LAG];
+  vk::PhysicalDeviceProperties gpu_props;
+  std::unique_ptr<vk::QueueFamilyProperties[]> queue_props;
+  vk::PhysicalDeviceMemoryProperties memory_properties;
 
-        uint32_t queue_family_count;
+  uint32_t queue_family_count;
 
-        bool separate_present_queue;
+  bool separate_present_queue;
 
-    public:
-        VulkanModule(vlk::Engine *engine, bool validate);
+ public:
+  VulkanModule(vlk::Engine *engine, bool validate);
 
-        void init();
+  void init();
 
-        void initValidation();
+  void initValidation();
 
-        bool validate;
+  bool validate;
 
-        vk::Bool32 checkLayers(uint32_t check_count, const char *const *const check_names, uint32_t layer_count,
-                               vk::LayerProperties *layers);
+  vk::Bool32 checkLayers(uint32_t check_count, const char *const *const check_names, uint32_t layer_count,
+                         vk::LayerProperties *layers);
 
-        void initSwapChain();
+  void initSwapChain();
 
-        void initSurface(xcb_connection_t *connection, unsigned int xcb_window);
+  void initSurface(xcb_connection_t *connection, unsigned int xcb_window);
 
-        vk::SurfaceKHR surface;
+  vk::SurfaceKHR surface;
 
-        void createDevice();
+  void createDevice();
 
-        void prepare();
+  void prepare();
 
-        void prepareCubeDataBuffers(Camera *camera, GameObject *object);
+  void prepareCubeDataBuffers(Camera *camera, GameObject *object);
 
-    private:
+ private:
 
-        vk::Format format;
-        vk::ColorSpaceKHR color_space;
-        bool quit;
-        uint32_t curFrame;
-        uint32_t frame_index;
-        vk::Fence fences[FRAME_LAG];
+  vk::Format format;
+  vk::ColorSpaceKHR color_space;
+  bool quit;
+  uint32_t curFrame;
+  uint32_t frame_index;
+  vk::Fence fences[FRAME_LAG];
 
+ private:
+  void prepareBuffers();
 
-    private:
-        void prepareBuffers();
+  void prepareDepth();
 
-        void prepareDepth();
+  // Data used inside the prepare phase
+  vk::CommandPool cmd_pool;
+  vk::CommandPool present_cmd_pool;
 
-        // Data used inside the prepare phase
-        vk::CommandPool cmd_pool;
-        vk::CommandPool present_cmd_pool;
+  vk::CommandBuffer cmd;  // Buffer for initialization commands
+  vk::DescriptorSetLayout desc_layout;
+  vk::RenderPass render_pass;
+  vk::Pipeline globalPipeline;
 
-        vk::CommandBuffer cmd;  // Buffer for initialization commands
-        vk::DescriptorSetLayout desc_layout;
-        vk::RenderPass render_pass;
-        vk::Pipeline globalPipeline;
+  uint32_t swapchainImageCount;
+  vk::SwapchainKHR swapchain;
+  std::unique_ptr<SwapchainImageResources[]> swapchain_image_resources;
 
-        uint32_t swapchainImageCount;
-        vk::SwapchainKHR swapchain;
-        std::unique_ptr<SwapchainImageResources[]> swapchain_image_resources;
+  std::vector<texture_object> textures;
 
-        std::vector<texture_object> textures;
+  texture_object staging_texture;
 
-        texture_object staging_texture;
+  void prepareDescriptorPool();
 
-        void prepareDescriptorPool();
+  void prepareDescriptorSet();
 
-        void prepareDescriptorSet();
+  void prepareFramebuffers();
 
-        void prepareFramebuffers();
+  void prepareRenderPass();
 
-        void prepareRenderPass();
+  struct {
+    vk::Format format;
+    vk::Image image;
+    vk::MemoryAllocateInfo mem_alloc;
+    vk::DeviceMemory mem;
+    vk::ImageView view;
+  } depth;
 
-        struct {
-            vk::Format format;
-            vk::Image image;
-            vk::MemoryAllocateInfo mem_alloc;
-            vk::DeviceMemory mem;
-            vk::ImageView view;
-        } depth;
+  uint32_t current_buffer;
+  vk::DescriptorPool desc_pool;
+  bool prepared{false};
+  vk::PresentModeKHR presentMode{vk::PresentModeKHR::eFifo};
 
-        uint32_t current_buffer;
-        vk::DescriptorPool desc_pool;
-        bool prepared{false};
-        vk::PresentModeKHR presentMode{vk::PresentModeKHR::eFifo};
+  uint32_t width;
+  uint32_t height;
 
+  void clearBackgroundCommandBuffer(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands);
 
-        uint32_t width;
-        uint32_t height;
+  void flushInitCmd();
 
-        void drawBuildCmd(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands);
+  TextureModule *textureModule;
 
-        void prepareSubCommandBuffer(
-                const vk::Viewport *viewport,
-                const vk::Rect2D *scissor
-        );
+  void buildImageOwnershipCmd(uint32_t const &index);
 
-        void flushInitCmd();
+  //static char const *const tex_files[];
+  bool use_staging_buffer;
 
-        TextureModule *textureModule;
+  ShaderModule *shaderModule;
+  MemoryModule *memoryModule;
 
-        void buildImageOwnershipCmd(uint32_t const &i);
+  // prepare the draw
+ private:
+  // float spin_angle;
+  void updateDataBuffer(Camera *camera, vk::CommandBuffer & commandBuffer, GameObject *Object);
 
-        //static char const *const tex_files[];
-        bool use_staging_buffer;
+  // float spin_increment;
+  bool pause{false};
+ public:
+  void resize();
 
+  // Game World Refactor
+ public:
+  // TODO Move to Texture Module
+  vk::FormatProperties textureFormatProperties;
+  vk::Format const textureFormat = vk::Format::eR8G8B8A8Unorm;
 
-        ShaderModule *shaderModule;
-        MemoryModule *memoryModule;
+  void draw(GameWorld *world);
 
-        // prepare the draw
-    private:
-        // float spin_angle;
-        void updateDataBuffer(Camera *camera, GameObject *Object);
+  void prepareTextureFormats();
 
-        // float spin_increment;
-        bool pause{false};
-    public:
-        void resize();
+  void prepareTexture(const char *textureFile, const vk::Format &tex_format);
 
-        // Game World Refactor
-    public:
-        // TODO Move to Texture Module
-        vk::FormatProperties textureFormatProperties;
-        vk::Format const textureFormat = vk::Format::eR8G8B8A8Unorm;
+  void prepareTexture(std::string &basic_string);
 
-        void draw(GameWorld *world);
+  ShaderModule *getShaderModule();
 
-        void prepareTextureFormats();
+  void preparePrimaryCommandBuffer();
 
-        void prepareTexture(const char *textureFile, const vk::Format &tex_format);
+  VulkanPipelineModule *getPipelineModule();
 
-        void prepareTexture(std::string &basic_string);
+  void prepareSubCommandBuffers(const vk::Viewport *viewport, const vk::Rect2D *scissor);
 
-        void prepareDescriptors();
-
-        ShaderModule *getShaderModule();
-
-        void preparePrimaryCommandBuffer();
-
-        VulkanPipelineModule *getPipelineModule();
-
-        void prepareSubCommandBuffers(const vk::Viewport *viewport, const vk::Rect2D *scissor);
-    };
+  void resetFenceAcquireNextImage();
+  void presentFrame();
+  vk::Result prepareImageToView(const vk::Image &image, uint32_t index);
+  vk::Result prepareSwapchainCommandBuffer(uint32_t index);
+  std::vector<vk::CommandBuffer> prepareCommandBuffers(uint32_t size);
+};
 }
 
 #endif //VULKAN_ENGINE_CPP_VULKANMODULE_HPP

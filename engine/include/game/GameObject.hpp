@@ -9,17 +9,23 @@
 #include <vector>
 #include <string>
 #include <atomic>
+#include <vulkan/vulkan.hpp>
 
 namespace vlk {
-typedef unsigned long long sid_t;
 class GameObject {
 
- private:
-  static std::atomic<sid_t> GLOBAL_SID;
-  sid_t sid;
  public:
+  typedef unsigned long long SID;
+
+ private:
+  static std::atomic<SID> GLOBAL_SID;
+  SID sid;
+ public:
+
   GameObject();
-  sid_t getSid() { return this->sid; }
+
+  SID getSid() { return this->sid; }
+
   mat4x4 &getModelMatrix() {
     return this->modelMatrix;
   };
@@ -57,6 +63,7 @@ class GameObject {
 
   std::vector<std::string> vertexShaderFiles;
   std::vector<std::string> fragmentShaderFiles;
+  vk::Pipeline pipeline;
 };
 
 }
