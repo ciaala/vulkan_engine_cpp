@@ -1110,9 +1110,10 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
       .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
       .setPInheritanceInfo(&inheritanceInfo);
 
-  float blueIndex = (curFrame % 255 ) / 255.0f;
-
-  vk::ClearValue const clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, blueIndex, 1.0f}})),
+  float blueIndex = ((curFrame % 25 )*11) / 255.0f;
+  float greenIndex = ((curFrame % (25*25))* 121) / (255.0f*255.0f);
+  float redIndex = ((curFrame % (25*25*25)) * 11*121) / (255.0f*255.0f*255.0f);
+  vk::ClearValue const clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{redIndex, greenIndex, blueIndex, 1.0f}})),
                                          vk::ClearDepthStencilValue(1.0f, 0u)};
   // TODO current_buffer ...
   auto const passInfo = vk::RenderPassBeginInfo()
