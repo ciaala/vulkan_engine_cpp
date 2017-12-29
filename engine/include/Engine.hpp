@@ -74,8 +74,8 @@ namespace vlk {
 
         void setApplication(Application *application) { this->application = application; }
 
-
-    };
+  bool isReady();
+};
 }
 
 

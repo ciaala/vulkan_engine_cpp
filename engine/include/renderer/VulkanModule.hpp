@@ -70,18 +70,21 @@ class VulkanModule {
  public:
   VulkanModule(vlk::Engine *engine, bool validate);
 
-  void init();
+  void initDevice();
 
   void initValidation();
 
   bool validate;
 
-  vk::Bool32 checkLayers(uint32_t check_count, const char *const *const check_names, uint32_t layer_count,
+  vk::Bool32 checkLayers(uint32_t check_count,
+                         const char *const *const check_names,
+                         uint32_t layer_count,
                          vk::LayerProperties *layers);
 
   void initSwapChain();
 
-  void initSurface(xcb_connection_t *connection, unsigned int xcb_window);
+  void initSurface(xcb_connection_t *connection,
+                   unsigned int xcb_window);
 
   vk::SurfaceKHR surface;
 
@@ -89,7 +92,8 @@ class VulkanModule {
 
   void prepare();
 
-  void prepareCubeDataBuffers(Camera *camera, GameObject *object);
+  void prepareCubeDataBuffers(Camera *camera,
+                              GameObject *object);
 
  private:
 
@@ -100,8 +104,7 @@ class VulkanModule {
   uint32_t frame_index;
   vk::Fence fences[FRAME_LAG];
 
- private:
-  void prepareBuffers();
+  void prepareSwapchainBuffers();
 
   void prepareDepth();
 
@@ -146,8 +149,9 @@ class VulkanModule {
   uint32_t width;
   uint32_t height;
 
-  void clearBackgroundCommandBuffer(vk::CommandBuffer buffer, std::vector<vk::CommandBuffer> &subCommands);
-
+  void clearBackgroundCommandBuffer(vk::CommandBuffer &buffer,
+                                    vk::Framebuffer &frameBuffer
+  );
   void flushInitCmd();
 
   TextureModule *textureModule;
@@ -163,7 +167,7 @@ class VulkanModule {
   // prepare the draw
  private:
   // float spin_angle;
-  void updateDataBuffer(Camera *camera, vk::CommandBuffer & commandBuffer, GameObject *Object);
+  void updateDataBuffer(Camera *camera, vk::CommandBuffer &commandBuffer, GameObject *Object);
 
   // float spin_increment;
   bool pause{false};
@@ -186,17 +190,17 @@ class VulkanModule {
 
   ShaderModule *getShaderModule();
 
-  void preparePrimaryCommandBuffer();
-
   VulkanPipelineModule *getPipelineModule();
-
+  void drawWorld(vlk::GameWorld *gameWorld);
   void prepareSubCommandBuffers(const vk::Viewport *viewport, const vk::Rect2D *scissor);
-
+ private:
   void resetFenceAcquireNextImage();
   void presentFrame();
   vk::Result prepareImageToView(const vk::Image &image, uint32_t index);
   vk::Result prepareSwapchainCommandBuffer(uint32_t index);
   std::vector<vk::CommandBuffer> prepareCommandBuffers(uint32_t size);
+  void prepareRenderPassAndFramebuffer();
+  void preparePrimaryCommandBuffer(vk::CommandBuffer *commandBuffer);
 };
 }
 

@@ -36,20 +36,24 @@ namespace vlk {
 
         Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *xcbModule);
 
-        void initWindowLibrary();
-
-        void initVulkan();
-
-        void createWindow();
-
-        void initSwapChain();
-
         void prepare(GameWorld *gameWorld);
 
         void draw(GameWorld *gameWorld);
 
-        void prepareDrawableObject(vlk::Camera *camera, vlk::GameObject *gameObject);
-    };
+  void prepareDrawableObject(vlk::Camera *camera, vlk::GameObject *gameObject);
+ private:
+
+  void initWindowLibrary();
+
+  void initVulkan();
+
+  void createWindow();
+
+  void initSwapChain();
+
+ public:
+  void init();
+};
 }
 
 #endif //VULKAN_ENGINE_CPP_RENDERER_HPP

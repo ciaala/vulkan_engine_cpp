@@ -55,7 +55,7 @@ set(SOURCE_FILES
         include/renderer/SpacePartitioner.cpp
         include/renderer/SpacePartitioner.hpp
         src/audio/AudioObject.cpp
-        src/audio/AudioObject.hpp)
+        src/audio/AudioObject.hpp src/utility/TimerUtility.cpp src/utility/TimerUtility.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})

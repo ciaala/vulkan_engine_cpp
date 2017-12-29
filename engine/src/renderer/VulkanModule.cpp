@@ -2,6 +2,7 @@
 // Created by crypt on 16/07/17.
 //
 #include "renderer/VulkanModule.hpp"
+#include "../utility/TimerUtility.hpp"
 #include <iostream>
 
 vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) :
@@ -66,7 +67,7 @@ void vlk::VulkanModule::initValidation() {
   }
 }
 
-void vlk::VulkanModule::init() {
+void vlk::VulkanModule::initDevice() {
   FLOG(INFO);
 
   uint32_t instance_extension_count = 0;
@@ -514,16 +515,13 @@ void vlk::VulkanModule::prepare() {
   this->width = 500;
   this->height = 500;
 
-  auto const cmd_pool_info = vk::CommandPoolCreateInfo().setQueueFamilyIndex(graphics_queue_family_index);
-  auto result = device.createCommandPool(&cmd_pool_info, nullptr, &cmd_pool);
+  auto const cmd_pool_info = vk::CommandPoolCreateInfo()
+      .setQueueFamilyIndex(graphics_queue_family_index);
+  auto result = device
+      .createCommandPool(&cmd_pool_info, nullptr, &cmd_pool);
   VERIFY(result == vk::Result::eSuccess);
+  this->preparePrimaryCommandBuffer(&this->cmd);
 
-  auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
-      .setCommandPool(cmd_pool)
-      .setLevel(vk::CommandBufferLevel::ePrimary)
-      .setCommandBufferCount(1);
-
-  result = device.allocateCommandBuffers(&commandBufferAllocateInfo, &this->cmd);
   VERIFY(result == vk::Result::eSuccess);
 
   auto const cmd_buf_info = vk::CommandBufferBeginInfo().setPInheritanceInfo(nullptr);
@@ -531,15 +529,17 @@ void vlk::VulkanModule::prepare() {
   result = this->cmd.begin(&cmd_buf_info);
   VERIFY(result == vk::Result::eSuccess);
 
-  this->prepareBuffers();
+  this->prepareSwapchainBuffers();
+
   this->prepareDepth();
 
   // Initialize texture properties;
   this->prepareTextureFormats();
+  this->prepareRenderPassAndFramebuffer();
 
 }
 
-void vlk::VulkanModule::prepareBuffers() {
+void vlk::VulkanModule::prepareSwapchainBuffers() {
   FLOG(INFO);
   vk::SwapchainKHR oldSwapchain = swapchain;
 
@@ -700,18 +700,16 @@ void vlk::VulkanModule::prepareBuffers() {
     VERIFY(result == vk::Result::eSuccess);
     this->prepareSwapchainCommandBuffer(index);
 
-
   }
 }
-
 
 vk::Result vlk::VulkanModule::prepareImageToView(const vk::Image &image, uint32_t index) {
   FLOG(INFO);
   auto color_image_view =
-        vk::ImageViewCreateInfo()
-            .setViewType(vk::ImageViewType::e2D)
-            .setFormat(this->format)
-            .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+      vk::ImageViewCreateInfo()
+          .setViewType(vk::ImageViewType::e2D)
+          .setFormat(this->format)
+          .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
   this->swapchain_image_resources[index].image = image;
 
@@ -722,6 +720,7 @@ vk::Result vlk::VulkanModule::prepareImageToView(const vk::Image &image, uint32_
 }
 
 vk::Result vlk::VulkanModule::prepareSwapchainCommandBuffer(uint32_t index) {
+  FLOG(INFO);
   auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
       .setCommandPool(this->cmd_pool)
       .setLevel(vk::CommandBufferLevel::ePrimary)
@@ -731,16 +730,9 @@ vk::Result vlk::VulkanModule::prepareSwapchainCommandBuffer(uint32_t index) {
                                        &this->swapchain_image_resources[index].cmd);
 }
 
-std::vector<vk::CommandBuffer> vlk::VulkanModule::prepareCommandBuffers(uint32_t count ) {
-  auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
-      .setCommandPool(this->cmd_pool)
-      .setLevel(vk::CommandBufferLevel::ePrimary)
-      .setCommandBufferCount(1);
-
-  return this->device.allocateCommandBuffers(commandBufferAllocateInfo);
-}
-
 void vlk::VulkanModule::prepareDepth() {
+  FLOG(INFO);
+
   depth.format = vk::Format::eD16Unorm;
 
   auto const image = vk::ImageCreateInfo()
@@ -793,6 +785,8 @@ void vlk::VulkanModule::prepareTextureFormats() {
 
 //TODO MOVE to TextureModule
 void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format &tex_format) {
+  FLOG(INFO);
+
   texture_object currentTexture;
   if ((this->textureFormatProperties.linearTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) &&
       !this->use_staging_buffer) {
@@ -907,6 +901,8 @@ void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format
 }
 
 void vlk::VulkanModule::prepareCubeDataBuffers(Camera *camera, GameObject *object) {
+  FLOG(INFO);
+
   mat4x4 VP{0};
   mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
 
@@ -1104,18 +1100,24 @@ void vlk::VulkanModule::prepareRenderPass() {
 }
 
 void vlk::VulkanModule::clearBackgroundCommandBuffer(
-    vk::CommandBuffer commandBuffer,
-    std::vector<vk::CommandBuffer> &subCommands
-) {
+    vk::CommandBuffer &commandBuffer,
+    vk::Framebuffer &frameBuffer) {
   FLOG(INFO);
-  auto const commandInfo = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+  auto const inheritanceInfo = vk::CommandBufferInheritanceInfo(render_pass,
+                                                                0,
+                                                                frameBuffer);
+  auto const commandInfo = vk::CommandBufferBeginInfo()
+      .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
+      .setPInheritanceInfo(&inheritanceInfo);
 
-  vk::ClearValue const clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, 0.2f, 0.2f}})),
+  float blueIndex = (curFrame % 255 ) / 255.0f;
+
+  vk::ClearValue const clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{0.2f, 0.2f, blueIndex, 1.0f}})),
                                          vk::ClearDepthStencilValue(1.0f, 0u)};
   // TODO current_buffer ...
   auto const passInfo = vk::RenderPassBeginInfo()
       .setRenderPass(render_pass)
-      .setFramebuffer(swapchain_image_resources[current_buffer].framebuffer)
+      .setFramebuffer(frameBuffer)
       .setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D((uint32_t) width, (uint32_t) height)))
       .setClearValueCount(2)
       .setPClearValues(clearValues);
@@ -1124,28 +1126,21 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
   VERIFY(result == vk::Result::eSuccess);
 
   commandBuffer.beginRenderPass(&passInfo, vk::SubpassContents::eInline);
-  //commandBuffer.
 
   auto const viewport =
-      vk::Viewport().setWidth((float) width).setHeight((float) height).setMinDepth((float) 0.0f).setMaxDepth(
-          (float) 1.0f);
+      vk::Viewport()
+          .setWidth((float) width)
+          .setHeight((float) height)
+          .setMinDepth(0.0f)
+          .setMaxDepth(1.0f);
   commandBuffer.setViewport(0, 1, &viewport);
 
   vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(width, height));
   commandBuffer.setScissor(0, 1, &scissor);
-  commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
+  // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
 
-  // subCommands.resize(1);
-  prepareSubCommandBuffers(&viewport, &scissor);
-
-  // prepareSubCommandBuffer(subCommands[1], &viewport, &scissor, shaderStageInfoList);
-
-  //subCommands[1] =
-  commandBuffer.executeCommands((uint32_t) subCommands.size(), subCommands.data());
-
-  // Note that ending the renderpass changes the image's layout from
-  // COLOR_ATTACHMENT_OPTIMAL to PRESENT_SRC_KHR
   commandBuffer.endRenderPass();
+
   if (separate_present_queue) {
     LOG(INFO) << "Separated presentation queue" << std::endl;
     // We have to transfer ownership from the graphics queue family to
@@ -1238,7 +1233,7 @@ void vlk::VulkanModule::buildImageOwnershipCmd(uint32_t const &index) {
   //VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::updateDataBuffer(Camera *camera, vk::CommandBuffer & commandBuffer, GameObject *object) {
+void vlk::VulkanModule::updateDataBuffer(Camera *camera, vk::CommandBuffer &commandBuffer, GameObject *object) {
   FLOG(INFO) << "Object: " << object->getSid();
   mat4x4 VP;
   mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
@@ -1264,7 +1259,7 @@ void vlk::VulkanModule::updateDataBuffer(Camera *camera, vk::CommandBuffer & com
   device.unmapMemory(swapchain_image_resources[current_buffer].uniform_memory);
 }
 
-void   vlk::VulkanModule::resetFenceAcquireNextImage()  {
+void vlk::VulkanModule::resetFenceAcquireNextImage() {
   FLOG(INFO);
   // Ensure no more than FRAME_LAG renderings are outstanding
   device.waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
@@ -1289,13 +1284,25 @@ void   vlk::VulkanModule::resetFenceAcquireNextImage()  {
 }
 
 void vlk::VulkanModule::draw(GameWorld *gameWorld) {
+  static auto const start = vlk::TimerUtility::now();
   FLOG(INFO);
   this->resetFenceAcquireNextImage();
+  this->drawWorld(gameWorld);
 
-  // TODO Move this block outside of the vulkanmodule
+  this->presentFrame();
+  curFrame++;
+  if (curFrame % 100 == 0) {
+    uint64_t milliSeconds = vlk::TimerUtility::now() - start;
+
+    LOG(INFO) << "frame x second " << (curFrame * 1000) / (double) milliSeconds;
+  }
+}
+// TODO Move this block outside of the vulkanmodule
+void vlk::VulkanModule::drawWorld(vlk::GameWorld *gameWorld) {
+  FLOG(INFO);
   auto gameObjects = gameWorld->getGameObjects();
   auto commandBufferCounts = gameObjects.size();
-  if ( commandBufferCounts > 0 ) {
+  if (commandBufferCounts > 0) {
     auto commandBuffers = this->prepareCommandBuffers(commandBufferCounts);
 
     for (int index = 0; index < commandBufferCounts; ++index) {
@@ -1311,8 +1318,6 @@ void vlk::VulkanModule::draw(GameWorld *gameWorld) {
     mainCommandBuffer.executeCommands(commandBuffers);
     mainCommandBuffer.end();
   }
-  this->presentFrame();
-
 }
 
 void vlk::VulkanModule::resize() {
@@ -1386,19 +1391,9 @@ vlk::ShaderModule *vlk::VulkanModule::getShaderModule() {
   return this->shaderModule;
 }
 
-void vlk::VulkanModule::preparePrimaryCommandBuffer() {
-//this->swapchain_image_resources
-}
-
 vlk::VulkanPipelineModule *vlk::VulkanModule::getPipelineModule() {
   return this->pipelineModule;
 }
-
-void vlk::VulkanModule::prepareSubCommandBuffers(const vk::Viewport *viewport,
-                                                 const vk::Rect2D *scissor) {
-  FLOG(INFO) << "INCOMPLETE";
-}
-
 
 void vlk::VulkanModule::presentFrame() {
   FLOG(INFO);
@@ -1408,8 +1403,14 @@ void vlk::VulkanModule::presentFrame() {
   // okay to render to the image.
   vk::PipelineStageFlags const pipe_stage_flags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
-  vk::CommandBuffer &imageCommandBuffer = swapchain_image_resources[current_buffer].cmd;
 
+  // clearCommandBuffer requires the render pass
+
+
+  // TODO nothing is recorded inside the image presentation command buffer
+  vk::CommandBuffer &imageCommandBuffer = swapchain_image_resources[current_buffer].cmd;
+  this->clearBackgroundCommandBuffer(imageCommandBuffer,
+                                     swapchain_image_resources[current_buffer].framebuffer);
   auto const submit_info = vk::SubmitInfo()
       .setPWaitDstStageMask(&pipe_stage_flags)
       .setWaitSemaphoreCount(1)
@@ -1464,4 +1465,28 @@ void vlk::VulkanModule::presentFrame() {
     VERIFY(result == vk::Result::eSuccess);
   }
 }
+void vlk::VulkanModule::prepareRenderPassAndFramebuffer() {
+  FLOG(INFO);
+  this->prepareRenderPass();
+  this->prepareFramebuffers();
 
+}
+void vlk::VulkanModule::preparePrimaryCommandBuffer(vk::CommandBuffer *commandBuffer) {
+  FLOG(INFO);
+  auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
+      .setCommandPool(this->cmd_pool)
+      .setLevel(vk::CommandBufferLevel::ePrimary)
+      .setCommandBufferCount(1);
+  this->device.allocateCommandBuffers(&commandBufferAllocateInfo, commandBuffer);
+}
+
+std::vector<vk::CommandBuffer> vlk::VulkanModule::prepareCommandBuffers(uint32_t count) {
+  FLOG(INFO);
+
+  auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
+      .setCommandPool(this->cmd_pool)
+      .setLevel(vk::CommandBufferLevel::ePrimary)
+      .setCommandBufferCount(count);
+
+  return this->device.allocateCommandBuffers(commandBufferAllocateInfo);
+}

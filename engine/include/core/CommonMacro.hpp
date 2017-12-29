@@ -5,9 +5,9 @@
 #include <string>
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-
+#include <ostream>
 #define FLOG(severity) \
-    LOG(severity) << "<" << __PRETTY_FUNCTION__ << "> "
+    LOG(severity) << "<" << __PRETTY_FUNCTION__ << "> " << std::flush
 
 #ifndef VULKAN_ENGINE_CPP_COMMONMACRO_HPP
 #define VULKAN_ENGINE_CPP_COMMONMACRO_HPP

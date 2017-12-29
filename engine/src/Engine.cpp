@@ -39,13 +39,12 @@ void vlk::Engine::init() {
   FLOG(INFO) << "Starting up application: " << this->application->getName() << std::endl;
 
   this->audioModule->init();
-  this->renderer->initWindowLibrary();
-  this->renderer->initVulkan();
-  this->renderer->createWindow();
-  this->renderer->initSwapChain();
+  this->renderer->init();
+
   this->prepare();
 
   this->xcbModule->runXCB();
+
 }
 
 void vlk::Engine::draw() {
@@ -73,8 +72,9 @@ std::string vlk::Engine::getName() {
 
 void vlk::Engine::prepare() {
   FLOG(INFO) << std::endl;
-  this->renderer->prepare(this->application->getWorld());
   this->audioModule->prepare(this->application->getWorld());
+
+  this->renderer->prepare(this->application->getWorld());
 
 }
 
@@ -90,4 +90,8 @@ void vlk::Engine::queue_audio_effect(vlk::GameObject *gameObject, const std::str
 
 vlk::ResourceManager *vlk::Engine::getResourceManager() {
   return this->resourceManager;
+}
+
+bool vlk::Engine::isReady() {
+  return true;
 }

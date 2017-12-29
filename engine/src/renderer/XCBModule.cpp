@@ -190,12 +190,12 @@ void vlk::XCBModule::runXCB() {
       free(event);
       event = xcb_poll_for_event(connection);
     }
-
+if (engine->isReady()) {
     this->engine->draw();
     curFrame++;
     if (frameCount != UINT32_MAX && curFrame == frameCount) {
       quit = true;
-    }
+    }}
   }
 }
 

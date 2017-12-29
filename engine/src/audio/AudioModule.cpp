@@ -62,6 +62,7 @@ void vlk::AudioModule::cleanup() {
 }
 
 void vlk::AudioModule::prepare(GameWorld *world) {
+  FLOG(INFO);
   for (auto audioObject : world->getAudioObjects()) {
     const std::string &resouceIdentifier = audioObject->getResouceIdentifier();
     Audio *audio = this->loadAudio(resouceIdentifier);

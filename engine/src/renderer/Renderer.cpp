@@ -38,7 +38,7 @@ void vlk::Renderer::createWindow() {
 
 void vlk::Renderer::initVulkan() {
   FLOG(INFO);
-  this->vulkanModule->init();
+  this->vulkanModule->initDevice();
 }
 
 vlk::XCBModule *vlk::Renderer::getXCBModule() {
@@ -64,8 +64,6 @@ void vlk::Renderer::prepare(GameWorld *gameWorld) {
   camera->update();
 
   // TODO TASK-NEXT prepare the primary command buffer
-  this->vulkanModule->preparePrimaryCommandBuffer();
-
 
   // TODO Use the spacePartitioner to extract viewables
   // std::iterator<std::input_iterator_tag, GameObject*> viewableIterator = spacePartitioner->getViewableObjectsIterator(gameWorld->getGameObjects());
@@ -103,4 +101,11 @@ void vlk::Renderer::prepareDrawableObject(vlk::Camera *camera, vlk::GameObject *
 void vlk::Renderer::draw(vlk::GameWorld *gameWorld) {
   FLOG(INFO);
   this->vulkanModule->draw(gameWorld);
+}
+
+void vlk::Renderer::init() {
+  this->initWindowLibrary();
+  this->initVulkan();
+  this->createWindow();
+  this->initSwapChain();
 }
