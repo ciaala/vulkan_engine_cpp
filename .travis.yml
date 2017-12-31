@@ -16,12 +16,12 @@ before_install:
   - docker pull ubuntu:artful
   - docker run -it -d --name docker_container ubuntu:artful
   - docker exec docker_container apt update
-  - docker exec docker_container apt install -y cmake python3-pip libgflags-dev libvulkan-devls
+  - docker exec docker_container apt install -y cmake python3-pip libgflags-dev libvulkan-dev
   - docker exec docker_container pip3 install --user cpp-coveralls
   - docker cp ${TRAVIS_BUILD_DIR} docker_container:/tmp/git
 
 script:
-  - docker exec docker_container /bin/bash -c "cd /tmp/git; mkdir build; cd build; cmake ..; make all; ./nanolisp-test"
+  - docker exec docker_container /bin/bash -c "cd /tmp/git; mkdir build; cd build; cmake ..; make all; ./vlk-test"
 
 after_success:
   - coveralls --root .. -E ".*googletest.*" -E ".*CMakeFiles.*" -E ".*test/.*.cpp.*"
