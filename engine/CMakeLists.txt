@@ -3,6 +3,23 @@ set(CMAKE_MODULE_PATH ../cmake)
 project(vkengine)
 set(CMAKE_CXX_STANDARD 14)
 
+# TODO discover a package manager to build
+# TODO substitutes each modules with proper dependencies
+# TODO Add gflags from sub directory
+#add_subdirectory(modules/gflags)
+#include(ExternalProject)
+
+#message("adding subdirectory gflags")
+
+#ExternalProject_Add(gflags
+#        GIT_REPOSITORY git@github.com:gflags/gflags.git
+#        GIT_TAG master
+#        )
+
+message("adding subdirectory googletest")
+add_subdirectory(modules/googletest)
+message("adding subdirectory glog")
+add_subdirectory(modules/glog)
 
 find_package(XCB REQUIRED)
 find_package(Vulkan REQUIRED)
@@ -55,7 +72,10 @@ set(SOURCE_FILES
         include/renderer/SpacePartitioner.cpp
         include/renderer/SpacePartitioner.hpp
         src/audio/AudioObject.cpp
-        src/audio/AudioObject.hpp src/utility/TimerUtility.cpp src/utility/TimerUtility.hpp)
+        src/audio/AudioObject.hpp
+
+        src/utility/TimeUtility.cpp
+        src/utility/TimeUtility.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})

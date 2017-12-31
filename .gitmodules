@@ -1,3 +1,6 @@
-[submodule "diary"]
-	path = diary
-	url = ./diary
+[submodule "engine/modules/glog"]
+	path = engine/modules/glog
+	url = https://github.com/google/glog.git
+[submodule "engine/modules/googletest"]
+	path = engine/modules/googletest
+	url = https://github.com/google/googletest

@@ -2,7 +2,7 @@
 // Created by crypt on 16/07/17.
 //
 #include "renderer/VulkanModule.hpp"
-#include "../utility/TimerUtility.hpp"
+#include "../utility/TimeUtility.hpp"
 #include <iostream>
 
 vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) :
@@ -1115,7 +1115,7 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
   float redIndex = ((curFrame % (25*25*25)) * 11*121) / (255.0f*255.0f*255.0f);
   vk::ClearValue const clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{redIndex, greenIndex, blueIndex, 1.0f}})),
                                          vk::ClearDepthStencilValue(1.0f, 0u)};
-  // TODO current_buffer ...
+
   auto const passInfo = vk::RenderPassBeginInfo()
       .setRenderPass(render_pass)
       .setFramebuffer(frameBuffer)
@@ -1285,7 +1285,7 @@ void vlk::VulkanModule::resetFenceAcquireNextImage() {
 }
 
 void vlk::VulkanModule::draw(GameWorld *gameWorld) {
-  static auto const start = vlk::TimerUtility::now();
+  static auto const start = vlk::TimeUtility::now();
   FLOG(INFO);
   this->resetFenceAcquireNextImage();
   this->drawWorld(gameWorld);
@@ -1293,7 +1293,7 @@ void vlk::VulkanModule::draw(GameWorld *gameWorld) {
   this->presentFrame();
   curFrame++;
   if (curFrame % 100 == 0) {
-    uint64_t milliSeconds = vlk::TimerUtility::now() - start;
+    uint64_t milliSeconds = vlk::TimeUtility::now() - start;
 
     LOG(INFO) << "frame x second " << (curFrame * 1000) / (double) milliSeconds;
   }

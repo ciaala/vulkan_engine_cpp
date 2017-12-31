@@ -1,0 +1,30 @@
+sudo: true
+
+services:
+  - docker
+
+language:
+  - cpp
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+
+before_install:
+  - env
+  - docker pull ubuntu:artful
+  - docker run -it -d --name docker_container ubuntu:artful
+  - docker exec docker_container apt update
+  - docker exec docker_container apt install -y cmake python3-pip libgflags-dev libvulkan-devls
+  - docker exec docker_container pip3 install --user cpp-coveralls
+  - docker cp ${TRAVIS_BUILD_DIR} docker_container:/tmp/git
+
+script:
+  - docker exec docker_container /bin/bash -c "cd /tmp/git; mkdir build; cd build; cmake ..; make all; ./nanolisp-test"
+
+after_success:
+  - coveralls --root .. -E ".*googletest.*" -E ".*CMakeFiles.*" -E ".*test/.*.cpp.*"
+
+notifications:
+  email: false

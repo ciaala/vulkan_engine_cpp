@@ -4,8 +4,8 @@
 #include <time.h>
 
 
-#include "TimerUtility.hpp"
-uint64_t vlk::TimerUtility::now() {
+#include "TimeUtility.hpp"
+uint64_t vlk::TimeUtility::now() {
   timespec ts{0};
   timespec_get(&ts, TIME_UTC);
   uint64_t milliseconds = ((uint64_t) ts.tv_sec) * 1000;

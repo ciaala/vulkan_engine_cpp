@@ -6,7 +6,7 @@
 #define VULKAN_ENGINE_CPP_TIMERUTILITY_HPP
 #include <cstdint>
 namespace vlk {
-  class TimerUtility {
+  class TimeUtility {
    public:
     static uint64_t now();
   };
