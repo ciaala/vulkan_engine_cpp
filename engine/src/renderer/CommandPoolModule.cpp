@@ -55,4 +55,5 @@ void vlk::CommandPoolModule::releaseCommandBuffer(vk::CommandBuffer *commandBuff
   FLOG(INFO) << "Deleting command buffer " << id ;
   device.freeCommandBuffers(commandPool, 1, commandBuffer);
   this->identifiers.erase(commandBuffer);
+  delete commandBuffer;
 }

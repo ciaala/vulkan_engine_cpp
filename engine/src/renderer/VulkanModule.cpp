@@ -1473,6 +1473,7 @@ vlk::VulkanModule::~VulkanModule() {
   delete pipelineModule;
   delete textureModule;
   delete shaderModule;
+  delete memoryModule;
   FLOG(INFO) << "Deleting swapchains framebuffer";
   for (int i = 0; i < swapchainImageCount; ++i) {
     device.destroyFramebuffer(swapchain_image_resources[i].framebuffer);
