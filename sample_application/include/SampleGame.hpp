@@ -19,7 +19,7 @@ private:
 
 public:
     SampleGame(vlk::Engine *engine);
-
+    ~SampleGame();
     void quit();
 
     void triggerPause();

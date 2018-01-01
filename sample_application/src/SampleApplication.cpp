@@ -34,4 +34,9 @@ vlk::InputController *SampleApplication::getInputController() {
 vlk::GameWorld *SampleApplication::getWorld() {
   return this->game->getWorld();
 }
+SampleApplication::~SampleApplication() {
+  delete inputController;
+  delete game;
+
+}
 

@@ -19,7 +19,7 @@ class SampleGameWorld : public vlk::GameWorld {
 
  public:
   explicit SampleGameWorld(vlk::Engine *engine);
-
+  ~SampleGameWorld();
   vlk::Camera *getCamera() override;
 
   void updateWorld() override;

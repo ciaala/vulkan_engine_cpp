@@ -43,7 +43,7 @@ namespace vlk {
         //engine(int argc = 0, char** argv = nullptr);
 
         explicit Engine();
-
+        ~Engine();
         void setupModules();
 
         void init();

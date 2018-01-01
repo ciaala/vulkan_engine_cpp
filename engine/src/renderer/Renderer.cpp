@@ -108,4 +108,5 @@ void vlk::Renderer::init() {
   this->initVulkan();
   this->createWindow();
   this->initSwapChain();
+
 }

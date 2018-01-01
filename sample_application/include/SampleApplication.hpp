@@ -24,7 +24,7 @@ public:
 
     vlk::InputController *getInputController() override;
 
-    ~SampleApplication() {};
+    ~SampleApplication();
 
     vlk::GameWorld *getWorld() override;
 

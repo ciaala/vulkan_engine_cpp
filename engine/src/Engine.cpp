@@ -21,10 +21,12 @@ std::string vlk::Engine::getVulkanVersion() {
 }
 
 vlk::Engine::Engine() {
+  FLOG(INFO);
   this->setupModules();
 }
 
 void vlk::Engine::setupModules() {
+  FLOG(INFO);
   this->inputModule = new InputModule(this);
   this->audioModule = new AudioModule();
   this->vulkanModule = new VulkanModule(this, true);
@@ -52,7 +54,8 @@ void vlk::Engine::draw() {
   static int gc = 0;
   if (c % 1000 == 0) {
 
-    FLOG(INFO) << "Drawing {frame: " << gc << "000, objects: " << this->application->getWorld()->getGameObjects().size() << "}" << std::endl;
+    FLOG(INFO) << "Drawing {frame: " << gc << "000, objects: " << this->application->getWorld()->getGameObjects().size()
+               << "}" << std::endl;
     c = 1;
     gc++;
   } else {
@@ -94,4 +97,13 @@ vlk::ResourceManager *vlk::Engine::getResourceManager() {
 
 bool vlk::Engine::isReady() {
   return true;
+}
+vlk::Engine::~Engine() {
+  FLOG(INFO);
+  delete vulkanModule;
+  delete audioModule;
+  delete inputModule;
+  delete renderer;
+  delete xcbModule;
+  delete resourceManager;
 }

@@ -19,9 +19,9 @@ namespace vlk {
         float attr[12 * 3][4];
     };
 
-    typedef struct {
+    typedef struct SwapchainImageResources {
         vk::Image image;
-        vk::CommandBuffer cmd;
+        std::shared_ptr<vk::CommandBuffer> cmd;
         std::vector<vk::CommandBuffer> subCommands;
         vk::CommandBuffer graphics_to_present_cmd;
         vk::ImageView view;
@@ -29,6 +29,9 @@ namespace vlk {
         vk::DeviceMemory uniform_memory;
         vk::Framebuffer framebuffer;
         vk::DescriptorSet descriptor_set;
+      ~SwapchainImageResources() {
+        cmd.reset();
+      }
     } SwapchainImageResources;
 
     struct texture_object {

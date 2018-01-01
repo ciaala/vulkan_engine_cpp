@@ -49,3 +49,13 @@ void SampleGameWorld::fillWorld() {
 std::vector<vlk::AudioObject *> SampleGameWorld::getAudioObjects() {
   return this->audioObjects;
 }
+SampleGameWorld::~SampleGameWorld() {
+  for( auto audioObject : this->audioObjects) {
+    delete audioObject;
+  }
+  audioObjects.clear();
+  for(auto object : this->getGameObjects()) {
+    delete object;
+    }
+  this->getGameObjects().clear();
+}

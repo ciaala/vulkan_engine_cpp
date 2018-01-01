@@ -20,4 +20,7 @@ SampleGame::SampleGame(vlk::Engine *engine) : gameWorld{new SampleGameWorld(engi
 vlk::GameWorld *SampleGame::getWorld() {
   return this->gameWorld;
 }
+SampleGame::~SampleGame() {
+  delete this->gameWorld;
+}
 

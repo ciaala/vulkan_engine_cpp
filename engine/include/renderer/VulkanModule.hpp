@@ -30,6 +30,7 @@ class Engine;
 #include "core/CommonMacro.hpp"
 #include "ShaderModule.hpp"
 #include "VulkanPipelineModule.hpp"
+#include "../../src/renderer/CommandPoolModule.hpp"
 
 // Definition used in prepare
 
@@ -37,8 +38,12 @@ namespace vlk {
 class VulkanModule {
  private:
   Engine *engine;
- private:
+
+
   VulkanPipelineModule *pipelineModule;
+
+  CommandPoolModule *graphicPool;
+
   uint32_t instance_extension_count = 0;
   uint32_t instance_layer_count = 0;
   uint32_t validation_layer_count = 0;
@@ -69,6 +74,7 @@ class VulkanModule {
 
  public:
   VulkanModule(vlk::Engine *engine, bool validate);
+  ~VulkanModule();
 
   void initDevice();
 
@@ -112,7 +118,7 @@ class VulkanModule {
   vk::CommandPool cmd_pool;
   vk::CommandPool present_cmd_pool;
 
-  vk::CommandBuffer cmd;  // Buffer for initialization commands
+  std::shared_ptr<vk::CommandBuffer> mainCommandBuffer;  // Buffer for initialization commands
   vk::DescriptorSetLayout desc_layout;
   vk::RenderPass render_pass;
   vk::Pipeline globalPipeline;
@@ -149,7 +155,7 @@ class VulkanModule {
   uint32_t width;
   uint32_t height;
 
-  void clearBackgroundCommandBuffer(vk::CommandBuffer &buffer,
+  void clearBackgroundCommandBuffer(vk::CommandBuffer *buffer,
                                     vk::Framebuffer &frameBuffer
   );
   void flushInitCmd();
@@ -192,15 +198,11 @@ class VulkanModule {
 
   VulkanPipelineModule *getPipelineModule();
   void drawWorld(vlk::GameWorld *gameWorld);
-  void prepareSubCommandBuffers(const vk::Viewport *viewport, const vk::Rect2D *scissor);
  private:
   void resetFenceAcquireNextImage();
   void presentFrame();
   vk::Result prepareImageToView(const vk::Image &image, uint32_t index);
-  vk::Result prepareSwapchainCommandBuffer(uint32_t index);
-  std::vector<vk::CommandBuffer> prepareCommandBuffers(uint32_t size);
   void prepareRenderPassAndFramebuffer();
-  void preparePrimaryCommandBuffer(vk::CommandBuffer *commandBuffer);
 };
 }
 

@@ -27,7 +27,7 @@ set(SOURCE_FILES
         src/Engine.cpp
         src/renderer/Renderer.cpp
         src/renderer/VulkanModule.cpp
-        src/renderer/XCBModule.cpp
+        src/ws/xcb/XCBModule.cpp
         src/renderer/ShaderModule.cpp
         src/renderer/TextureModule.cpp
         src/renderer/MemoryModule.cpp
@@ -75,7 +75,7 @@ set(SOURCE_FILES
         src/audio/AudioObject.hpp
 
         src/utility/TimeUtility.cpp
-        src/utility/TimeUtility.hpp)
+        src/utility/TimeUtility.hpp src/renderer/CommandPoolModule.cpp src/renderer/CommandPoolModule.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})
