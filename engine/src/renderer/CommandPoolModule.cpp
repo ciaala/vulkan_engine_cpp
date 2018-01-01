@@ -23,9 +23,7 @@ std::shared_ptr<vk::CommandBuffer> vlk::CommandPoolModule::createCommandBuffer()
   auto result = std::shared_ptr<vk::CommandBuffer>(
       new vk::CommandBuffer,
       [this](vk::CommandBuffer *commandBuffer) {
-        uint64_t  id = identifiers[commandBuffer];
-        FLOG(INFO) << "Deleting command buffer " << id ;
-        device.freeCommandBuffers(commandPool, 1, commandBuffer);
+        this->releaseCommandBuffer(commandBuffer);
       });
   uint64_t id = commandBufferCounter++;
   identifiers[result.get()] = id;
@@ -51,4 +49,10 @@ std::vector<vk::CommandBuffer> vlk::CommandPoolModule::createCommandBuffers(cons
 vlk::CommandPoolModule::~CommandPoolModule() {
   FLOG(INFO) << "Destroying command pool";
   device.destroyCommandPool(this->commandPool);
+}
+void vlk::CommandPoolModule::releaseCommandBuffer(vk::CommandBuffer *commandBuffer) {
+  uint64_t id = this->identifiers.count(commandBuffer) > 0 ? this->identifiers.at(commandBuffer) : UINT64_MAX;
+  FLOG(INFO) << "Deleting command buffer " << id ;
+  device.freeCommandBuffers(commandPool, 1, commandBuffer);
+  this->identifiers.erase(commandBuffer);
 }

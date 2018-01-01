@@ -11,7 +11,6 @@ vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) :
     use_staging_buffer{true} {
   this->engine = engine;
   this->validate = validate;
-  this->pipelineModule = new VulkanPipelineModule(&this->device);
 }
 
 void vlk::VulkanModule::initValidation() {
@@ -1197,7 +1196,7 @@ void vlk::VulkanModule::flushInitCmd() {
   result = device.waitForFences(1, &fence, VK_TRUE, UINT64_MAX);
   VERIFY(result == vk::Result::eSuccess);
 
-  device.freeCommandBuffers(cmd_pool, 1, commandBuffers);
+  // device.freeCommandBuffers(cmd_pool, 1, commandBuffers);
   device.destroyFence(fence, nullptr);
   // TODO (31-12-2017) REMOVE
 
@@ -1361,15 +1360,15 @@ void vlk::VulkanModule::resize() {
 
   for (i = 0; i < swapchainImageCount; i++) {
     device.destroyImageView(swapchain_image_resources[i].view, nullptr);
-    device.freeCommandBuffers(cmd_pool, 1, swapchain_image_resources[i].cmd.get());
-    device.freeCommandBuffers(cmd_pool,
-                              (uint32_t) swapchain_image_resources[i].subCommands.size(),
-                              swapchain_image_resources[i].subCommands.data());
+  //  device.freeCommandBuffers(cmd_pool, 1, swapchain_image_resources[i].cmd.get());
+    //device.freeCommandBuffers(cmd_pool,
+     //                         (uint32_t) swapchain_image_resources[i].subCommands.size(),
+     //                         swapchain_image_resources[i].subCommands.data());
     device.destroyBuffer(swapchain_image_resources[i].uniform_buffer, nullptr);
     device.freeMemory(swapchain_image_resources[i].uniform_memory, nullptr);
   }
 
-  device.destroyCommandPool(cmd_pool, nullptr);
+ // device.destroyCommandPool(cmd_pool, nullptr);
   if (separate_present_queue) {
     device.destroyCommandPool(present_cmd_pool, nullptr);
   }
@@ -1472,10 +1471,25 @@ void vlk::VulkanModule::prepareRenderPassAndFramebuffer() {
 vlk::VulkanModule::~VulkanModule() {
   FLOG(INFO);
   delete pipelineModule;
-  delete graphicPool;
+  delete textureModule;
+  delete shaderModule;
+  FLOG(INFO) << "Deleting swapchains framebuffer";
   for (int i = 0; i < swapchainImageCount; ++i) {
     device.destroyFramebuffer(swapchain_image_resources[i].framebuffer);
-    //device.destroy(swapchain_image_resources[i].
+    device.destroyImageView(swapchain_image_resources[i].view);
   }
-  delete[] swapchain_image_resources.get();
+  this->mainCommandBuffer.reset();
+  swapchain_image_resources.reset();
+  // as last since swapchainImageResource uses a deleter instantiated inside the graphicPool
+  inst.destroySurfaceKHR(surface);
+  device.destroyRenderPass(this->render_pass);
+  device.freeMemory(depth.mem);
+  device.destroyImageView(depth.view);
+  device.destroyImage(depth.image);
+  for(uint32_t i=0; i < FRAME_LAG; i++) {
+    device.destroySemaphore(image_acquired_semaphores[i]);
+    device.destroySemaphore(draw_complete_semaphores[i]);
+    device.destroySemaphore(image_ownership_semaphores[i]);
+  }
+  delete graphicPool;
 }

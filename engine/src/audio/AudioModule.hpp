@@ -12,27 +12,28 @@
 #include "core/CommonMacro.hpp"
 
 namespace vlk {
-    class AudioModule {
-    public:
-        AudioModule();
+class AudioModule {
+ public:
+  AudioModule();
 
-        void init();
+  void init();
 
-        Audio* loadAudio(const std::string &filename);
+  Audio *loadAudio(const std::string &filename);
 
-        void playAudio(Audio* audio);
+  void playAudio(Audio *audio);
 
-        void cleanup();
+  void cleanup();
 
-        void prepare(GameWorld *world);
-        void render(GameWorld *world);
-    private:
-        std::unordered_map<Audio*, Audio*> buffers;
-        ALCdevice *device;
-        ALCcontext *context;
-        OggVorbisModule *oggVorbisModule;
-        std::unordered_map<std::string, Audio*> audioHandleCache;
-    };
+  void prepare(GameWorld *world);
+  void render(GameWorld *world);
+  ~AudioModule();
+ private:
+  std::unordered_map<Audio *, Audio *> buffers;
+  ALCdevice *device;
+  ALCcontext *context;
+  OggVorbisModule *oggVorbisModule;
+  std::unordered_map<std::string, Audio *> audioHandleCache;
+};
 
 }
 #endif //VULKAN_ENGINE_CPP_AUDIOMODULE_HPP

@@ -25,6 +25,7 @@ class CommandPoolModule {
   std::vector<vk::CommandBuffer> createCommandBuffers(uint64_t quantity);
   uint64_t commandBufferCounter;
   ~CommandPoolModule();
+  void releaseCommandBuffer(vk::CommandBuffer *pBuffer);
 };
 }
 

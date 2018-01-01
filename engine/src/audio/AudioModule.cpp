@@ -77,3 +77,10 @@ void vlk::AudioModule::render(GameWorld *world) {
     }
   }
 }
+vlk::AudioModule::~AudioModule() {
+  FLOG(INFO) << "Cleaning loaded audio objects";
+  for (const auto& cacheEntry: this->audioHandleCache) {
+    FLOG(INFO) << "Deleting " << cacheEntry.first;
+    delete cacheEntry.second;
+  }
+}

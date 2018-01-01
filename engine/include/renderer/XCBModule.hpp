@@ -34,7 +34,7 @@ namespace vlk {
         vlk::Engine *engine;
         vlk::InputModule *inputModule;
     public:
-        XCBModule(Engine *engine);
+        explicit XCBModule(Engine *engine);
 
         void createWindow(uint16_t width, uint16_t height);
 

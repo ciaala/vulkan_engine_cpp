@@ -11,7 +11,7 @@ namespace vlk {
     class Audio {
     public:
         Audio(void *data, ALenum alFormat, ALsizei rate, ALsizei size);
-
+        ~Audio();
         ALuint getBuffer();
 
     private:

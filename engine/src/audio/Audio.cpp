@@ -2,6 +2,8 @@
 // Created by crypt on 21/07/17.
 //
 
+#include <glog/log_severity.h>
+#include <core/CommonMacro.hpp>
 #include "Audio.hpp"
 
 vlk::Audio::Audio(void *data, ALenum alFormat, ALsizei rate, ALsizei size) :
@@ -19,5 +21,10 @@ ALuint vlk::Audio::getBuffer() {
         alBufferData(this->buffer, this->alFormat, this->data, this->size, this->rate);
     }
     return buffer;
+}
+vlk::Audio::~Audio() {
+    FLOG(INFO) << "Releasing audio resource";
+    alDeleteBuffers(1, &buffer);
+    delete data;
 }
 

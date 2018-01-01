@@ -115,7 +115,7 @@ class VulkanModule {
   void prepareDepth();
 
   // Data used inside the prepare phase
-  vk::CommandPool cmd_pool;
+  // vk::CommandPool cmd_pool;
   vk::CommandPool present_cmd_pool;
 
   std::shared_ptr<vk::CommandBuffer> mainCommandBuffer;  // Buffer for initialization commands
