@@ -8,21 +8,20 @@
 #include <AL/al.h>
 
 namespace vlk {
-    class Audio {
-    public:
-        Audio(void *data, ALenum alFormat, ALsizei rate, ALsizei size);
-        ~Audio();
-        ALuint getBuffer();
+class Audio {
+ public:
+  Audio(char *data, ALenum alFormat, ALsizei rate, ALsizei size);
+  ~Audio();
+  ALuint getBuffer();
 
-    private:
-        void *data;
-        ALenum alFormat;
-        ALsizei rate;
-        ALuint buffer;
-        bool isBufferCreated;
-        ALsizei size;
-    };
+ private:
+  char *data;
+  ALenum alFormat;
+  ALsizei rate;
+  ALuint buffer;
+  bool isBufferCreated;
+  ALsizei size;
+};
 }
-
 
 #endif //VULKAN_ENGINE_CPP_AUDIO_HPP

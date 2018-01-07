@@ -40,7 +40,7 @@ vlk::Audio *vlk::OggVorbisModule::load(const char *filename) {
     // TODO discuss size_t VS ogg_vorbis_64_t
     size_t bytes = 2 * (size_t) samples * channels;
 
-    auto data = (char *) malloc(bytes);
+    auto data = new char[bytes];
 
     size_t bytes_read = 0;
     while (bytes_read < bytes) {

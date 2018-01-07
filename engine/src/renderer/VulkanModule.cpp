@@ -1360,15 +1360,15 @@ void vlk::VulkanModule::resize() {
 
   for (i = 0; i < swapchainImageCount; i++) {
     device.destroyImageView(swapchain_image_resources[i].view, nullptr);
-  //  device.freeCommandBuffers(cmd_pool, 1, swapchain_image_resources[i].cmd.get());
+    //  device.freeCommandBuffers(cmd_pool, 1, swapchain_image_resources[i].cmd.get());
     //device.freeCommandBuffers(cmd_pool,
-     //                         (uint32_t) swapchain_image_resources[i].subCommands.size(),
-     //                         swapchain_image_resources[i].subCommands.data());
+    //                         (uint32_t) swapchain_image_resources[i].subCommands.size(),
+    //                         swapchain_image_resources[i].subCommands.data());
     device.destroyBuffer(swapchain_image_resources[i].uniform_buffer, nullptr);
     device.freeMemory(swapchain_image_resources[i].uniform_memory, nullptr);
   }
 
- // device.destroyCommandPool(cmd_pool, nullptr);
+  // device.destroyCommandPool(cmd_pool, nullptr);
   if (separate_present_queue) {
     device.destroyCommandPool(present_cmd_pool, nullptr);
   }
@@ -1444,8 +1444,10 @@ void vlk::VulkanModule::presentFrame() {
       .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index]
                                                  : &draw_complete_semaphores[frame_index])
       .setSwapchainCount(1)
+      .setPNext(nullptr)
       .setPSwapchains(&swapchain)
-      .setPImageIndices(&current_buffer);
+      .setPImageIndices(&current_buffer)
+      .setPResults(nullptr);
 
   result = present_queue.presentKHR(&presentInfo);
   frame_index += 1;
@@ -1487,7 +1489,7 @@ vlk::VulkanModule::~VulkanModule() {
   device.freeMemory(depth.mem);
   device.destroyImageView(depth.view);
   device.destroyImage(depth.image);
-  for(uint32_t i=0; i < FRAME_LAG; i++) {
+  for (uint32_t i = 0; i < FRAME_LAG; i++) {
     device.destroySemaphore(image_acquired_semaphores[i]);
     device.destroySemaphore(draw_complete_semaphores[i]);
     device.destroySemaphore(image_ownership_semaphores[i]);
