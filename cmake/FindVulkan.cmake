@@ -1,5 +1,5 @@
 set(CMAKE_VERBOSE_MAKEFILE)
-set(VULKAN_BASE_DIR /opt/VulkanSDK/1.0.65.0/)
+set(VULKAN_BASE_DIR /opt/VulkanSDK/1.0.68.0/)
 message("VULKAN_BASE_DIR: " ${VULKAN_BASE_DIR})
 find_path(VULKAN_INCLUDE_DIR
         NAMES vulkan/vulkan.h

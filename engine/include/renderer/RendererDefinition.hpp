@@ -25,8 +25,8 @@ namespace vlk {
         std::vector<vk::CommandBuffer> subCommands;
         vk::CommandBuffer graphics_to_present_cmd;
         vk::ImageView view;
-        vk::Buffer uniform_buffer;
-        vk::DeviceMemory uniform_memory;
+        // vk::Buffer uniform_buffer;
+        // vk::DeviceMemory uniform_memory;
         vk::Framebuffer framebuffer;
         vk::DescriptorSet descriptor_set;
       ~SwapchainImageResources() {
@@ -34,7 +34,7 @@ namespace vlk {
       }
     } SwapchainImageResources;
 
-    struct texture_object {
+    struct TextureObject {
         vk::Sampler sampler;
 
         vk::Image image;

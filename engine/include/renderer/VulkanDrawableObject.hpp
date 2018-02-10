@@ -2,7 +2,7 @@
 // Created by crypt on 28/07/17.
 //
 namespace vlk {
-    class VulkanDrawableObject;
+class VulkanDrawableObject;
 }
 
 #ifndef VULKAN_ENGINE_CPP_VULKANDRAWABLEOBJECT_H
@@ -14,58 +14,57 @@ namespace vlk {
 #include "renderer/VulkanPipelineModule.hpp"
 
 namespace vlk {
-    class VulkanDrawableObject {
+class VulkanDrawableObject {
 
-    private:
-        struct VulkanObjects {
-            const vk::CommandBuffer commandBuffer;
-            std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfoList;
-            std::vector<texture_object> textures;
-            vk::DescriptorSetLayout descLayout;
-            vk::Pipeline pipeline;
-        } vulkan;
+ private:
+  struct VulkanObjects {
+    vk::CommandBuffer *commandBuffer;
+    std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfoList;
+    std::vector<TextureObject> textures;
+    vk::DescriptorSetLayout descLayout;
+    vk::Pipeline pipeline;
+    std::vector<vk::Buffer> vertices;
+    vk::Buffer index;
+    std::vector<vk::DescriptorSet> descriptorSets;
+    std::vector<uint32_t> vertexCount;
+    uint32_t indexCount;
+    vk::Buffer uniformBuffer;
+    vk::PipelineLayout pipelineLayout;
+  } vulkan;
 
-        VulkanModule *vulkanModule;
-        //VulkanPipelineModule *pipelineModule;
-        GameObject *gameObject;
+  VulkanModule *vulkanModule;
+  //VulkanPipelineModule *pipelineModule;
+  GameObject *gameObject;
+  vk::DeviceMemory uniforMemory;
+  //vk::CommandBuffer *commandBuffer;
+ private:
+  void internalPrepareShaders(
+      std::vector<vk::ShaderModule> &vertexes,
+      std::vector<vk::ShaderModule> &fragments
+  );
 
-    private:
-        void internalPrepareShaders(
-                std::vector<vk::ShaderModule> &vertexes,
-                std::vector<vk::ShaderModule> &fragments
-        );
+  void prepareDescriptors();
+  void preparePipeline();
+  void prepareResourceBuffers();
+  void prepareResourceShaders();
+  void prepare(vlk::Camera *camera);
+  std::vector<TextureObject> &getTextures();
+  bool isPrepared;
+  void prepareBuffers(Camera *camera, GameObject *object);
+  vk::DeviceMemory &getUniformMemory();
+  vk::DescriptorSetLayout &getDescriptorSetLayout();
+  void makeVertexBufferFromData(vlk::vktexcube_vs_uniform &data);
+  void preparePipelineLayout();
+ public:
 
-        void prepareDescriptors();
-        void preparePipeline();
-        void prepareResourceBuffers();
-        void prepareResourceShaders();
-        void prepareResources();
+  VulkanDrawableObject(VulkanModule *vulkanModule, GameObject *gameObject);
+  void buildDrawCommandBuffer(vlk::Camera *camera);
+  // NEW API
+  void  setCommandBuffer(vk::CommandBuffer *commandBuffer);
 
-    public:
 
-        VulkanDrawableObject(VulkanModule *vulkanModule, GameObject* gameObject);
-
-        // VulkanDrawableObject(
-        // vk::CommandBuffer &primary,
-        // ResourceModel *renderModel
-        // );
-        void prepare(vlk::Camera *camera);
-
-        void update();
-
-        void render();
-
-        void buildDrawCommandBuffer(
-                vlk::SwapchainImageResources &swapchainImageResources,
-                const vk::Viewport *viewport,
-                const vk::Rect2D *scissor,
-                const vk::RenderPass &renderPass);
-
-        void  getCommandBuffer() {
-
-        }
-
-    };
+  GameObject *getGameObject();
+};
 
 }
 

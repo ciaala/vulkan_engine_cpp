@@ -11,10 +11,10 @@
 //    }
 void vlk::Engine::static_initialization() {
   google::InitGoogleLogging(vlk::Engine::getName().c_str());
-
-  FLOG(INFO) << "VulkanEngine startup." << std::endl;
-  FLOG(INFO) << "Vulkan version: " << vlk::Engine::getVulkanVersion() << std::endl;
-
+  std::stringstream log;
+  log << "VulkanEngine startup." << std::endl;
+  log << "Vulkan version: " << vlk::Engine::getVulkanVersion() << std::endl;
+  FLOG(INFO) << log.str();
 }
 std::string vlk::Engine::getVulkanVersion() {
   return std::to_string(VK_HEADER_VERSION);

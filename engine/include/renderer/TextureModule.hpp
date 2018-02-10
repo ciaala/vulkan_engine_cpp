@@ -13,42 +13,68 @@
 
 namespace vlk {
 
+class TextureModule {
 
-    class TextureModule {
-    public:
-        void
-        prepareTextureImage(const char *filename,
-                            texture_object &tex_obj,
-                            vk::ImageTiling tiling,
-                            vk::ImageUsageFlags usage,
-                            vk::MemoryPropertyFlags required_props);
+  // FIELDS
+ private:
+  vk::Device *device;
+  MemoryModule *memoryModule;
+  vk::FormatProperties textureFormatProperties;
+  vk::Format const textureFormat = vk::Format::eR8G8B8A8Unorm;
+  vk::PhysicalDevice *gpu;
+  bool useStagingBuffer;
+ private:
+  void
+  prepareTextureImage(const char *filename,
+                      TextureObject &tex_obj,
+                      vk::ImageTiling tiling,
+                      vk::ImageUsageFlags usage,
+                      vk::MemoryPropertyFlags required_props);
 
-        bool
-        loadTexture(const char *filename,
-                    uint8_t *rgba_data,
-                    vk::SubresourceLayout *layout,
-                    int32_t *width,
-                    int32_t *height);
+  bool
+  loadTexture(const char *filename,
+              uint8_t *rgba_data,
+              vk::SubresourceLayout *layout,
+              int32_t *width,
+              int32_t *height);
 
-        TextureModule(vk::Device *device, MemoryModule *memoryModule);
+  void destroyTextureImage(TextureObject *tex_objs);
+
+  void setImageLayout(const vk::CommandBuffer *commandBuffer,
+                      vk::Image image,
+                      vk::ImageAspectFlags aspectMask,
+                      vk::ImageLayout oldLayout,
+                      vk::ImageLayout newLayout,
+                      vk::AccessFlags srcAccessMask,
+                      vk::PipelineStageFlags srcStages,
+                      vk::PipelineStageFlags destStages);
 
 
-        void destroyTextureImage(texture_object *tex_objs);
+  // CONSTRUCTOR & DESTRUCTOR
 
 
-        void setImageLayout(const vk::CommandBuffer *cmd,
-                            vk::Image image,
-                            vk::ImageAspectFlags aspectMask,
-                            vk::ImageLayout oldLayout,
-                            vk::ImageLayout newLayout,
-                            vk::AccessFlags srcAccessMask,
-                            vk::PipelineStageFlags src_stages,
-                            vk::PipelineStageFlags dest_stages);
+ private:
+  void makeTextureWithoutStagingBuffer(const vk::CommandBuffer *commandBuffer,
+                                         const char *textureFile,
+                                         vlk::TextureObject &currentTexture);
 
-    private:
-        vk::Device *device;
-        MemoryModule *memoryModule;
-    };
+  void makeTextureWithStagingBuffer(const vk::CommandBuffer *commandBuffer,
+                                      const char *textureFile,
+                                      vlk::TextureObject &currentTexture);
+ public:
+  TextureModule(vk::Device *device, vk::PhysicalDevice *, MemoryModule *memoryModule);
+
+  // PUBLIC METHODS
+
+  void makeTexture(vk::CommandBuffer *commandBuffer,
+                                       const char *textureFile,
+                                       const vk::Format &texFormat,
+                                       TextureObject &currentTexture);
+
+  bool loadTextureInfo(const char *filename, int32_t *width, int32_t *height);
+  void createImageView(const vk::Format &texFormat, vlk::TextureObject &currentTexture) ;
+
+  };
 }
 
 #endif //VULKAN_ENGINE_CPP_TEXTUREMODULE_HPP

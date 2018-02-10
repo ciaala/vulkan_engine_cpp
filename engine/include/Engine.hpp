@@ -6,6 +6,7 @@
 #define VULKAN_ENGINE_CPP_ENGINE_H
 
 #include <string>
+#include "core/CommonMacro.hpp"
 #include "game/Application.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/XCBModule.hpp"

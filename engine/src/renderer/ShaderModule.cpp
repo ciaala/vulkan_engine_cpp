@@ -22,6 +22,7 @@ vlk::ShaderModule::ShaderModule(vk::Device *device) {
 }
 
 vk::ShaderModule vlk::ShaderModule::readAndPrepare(const char *filename) {
+    FLOG(INFO) << "Loading: shader " << filename;
     size_t size;
     auto code = this->readSpv(filename, &size);
     if (code != nullptr) {
@@ -32,8 +33,7 @@ vk::ShaderModule vlk::ShaderModule::readAndPrepare(const char *filename) {
 }
 
 char *vlk::ShaderModule::readSpv(const char *filename, size_t *psize) {
-
-    std::cout << "Reading file: " << filename << std::endl;
+    FLOG(INFO) << "Reading file: " << filename;
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
         return nullptr;

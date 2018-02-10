@@ -31,6 +31,7 @@ class Engine;
 #include "ShaderModule.hpp"
 #include "VulkanPipelineModule.hpp"
 #include "../../src/renderer/CommandPoolModule.hpp"
+#include "VulkanDrawableObject.hpp"
 
 // Definition used in prepare
 
@@ -42,7 +43,7 @@ class VulkanModule {
 
   VulkanPipelineModule *pipelineModule;
 
-  CommandPoolModule *graphicPool;
+  CommandPoolModule *commandPoolGraphic;
 
   uint32_t instance_extension_count = 0;
   uint32_t instance_layer_count = 0;
@@ -61,9 +62,19 @@ class VulkanModule {
   vk::Queue present_queue;
   uint32_t graphics_queue_family_index;
   uint32_t present_queue_family_index;
+
+
+
   vk::Semaphore image_acquired_semaphores[FRAME_LAG];
   vk::Semaphore draw_complete_semaphores[FRAME_LAG];
   vk::Semaphore image_ownership_semaphores[FRAME_LAG];
+  vk::Fence fences[FRAME_LAG];
+  uint32_t swapchainImageCount;
+  vk::SwapchainKHR swapchain;
+  std::unique_ptr<SwapchainImageResources[]> swapchain_image_resources;
+
+
+
   vk::PhysicalDeviceProperties gpu_props;
   std::unique_ptr<vk::QueueFamilyProperties[]> queue_props;
   vk::PhysicalDeviceMemoryProperties memory_properties;
@@ -98,17 +109,13 @@ class VulkanModule {
 
   void prepare();
 
-  void prepareCubeDataBuffers(Camera *camera,
-                              GameObject *object);
-
  private:
 
   vk::Format format;
   vk::ColorSpaceKHR color_space;
   bool quit;
-  uint32_t curFrame;
-  uint32_t frame_index;
-  vk::Fence fences[FRAME_LAG];
+
+
 
   void prepareSwapchainBuffers();
 
@@ -123,17 +130,15 @@ class VulkanModule {
   vk::RenderPass render_pass;
   vk::Pipeline globalPipeline;
 
-  uint32_t swapchainImageCount;
-  vk::SwapchainKHR swapchain;
-  std::unique_ptr<SwapchainImageResources[]> swapchain_image_resources;
 
-  std::vector<texture_object> textures;
 
-  texture_object staging_texture;
+  // std::vector<TextureObject> textures;
+
+  // TextureObject staging_texture;
 
   void prepareDescriptorPool();
 
-  void prepareDescriptorSet();
+  void prepareDescriptorSet(vk::DescriptorSetLayout *layouts_);
 
   void prepareFramebuffers();
 
@@ -146,8 +151,8 @@ class VulkanModule {
     vk::DeviceMemory mem;
     vk::ImageView view;
   } depth;
-
-  uint32_t current_buffer;
+  uint32_t curFrame;
+  uint32_t swapChainIndex;
   vk::DescriptorPool desc_pool;
   bool prepared{false};
   vk::PresentModeKHR presentMode{vk::PresentModeKHR::eFifo};
@@ -173,8 +178,9 @@ class VulkanModule {
   // prepare the draw
  private:
   // float spin_angle;
-  void updateDataBuffer(Camera *camera, vk::CommandBuffer &commandBuffer, GameObject *Object);
-
+  void updateDrawableObject(Camera *camera, VulkanDrawableObject *drawableObject);
+  std::shared_ptr<vlk::VulkanDrawableObject> prepareRenderableObject(vk::CommandBuffer &commandBuffer,
+                                                                       vlk::GameObject *gameObject);
   // float spin_increment;
   bool pause{false};
  public:
@@ -182,27 +188,24 @@ class VulkanModule {
 
   // Game World Refactor
  public:
-  // TODO Move to Texture Module
-  vk::FormatProperties textureFormatProperties;
-  vk::Format const textureFormat = vk::Format::eR8G8B8A8Unorm;
 
-  void draw(GameWorld *world);
-
-  void prepareTextureFormats();
-
-  void prepareTexture(const char *textureFile, const vk::Format &tex_format);
-
-  void prepareTexture(std::string &basic_string);
+  void draw(GameWorld *world, std::unordered_map<GameObject::SID, VulkanDrawableObject *> map);
 
   ShaderModule *getShaderModule();
 
   VulkanPipelineModule *getPipelineModule();
-  void drawWorld(vlk::GameWorld *gameWorld);
+  void drawWorld(vlk::GameWorld *gameWorld, vk::Framebuffer &frameBuffer);
  private:
   void resetFenceAcquireNextImage();
   void presentFrame();
   vk::Result prepareImageToView(const vk::Image &image, uint32_t index);
   void prepareRenderPassAndFramebuffer();
+
+  // NEW PUBLIC API
+ public:
+  void makeVertexBuffer(vlk::vktexcube_vs_uniform &data, vk::Buffer &uniformBuffer);
+
+  void prepareTextureObject(vk::CommandBuffer *commandBuffer, std::string &filename, TextureObject &textureObject);
 };
 }
 

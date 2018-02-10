@@ -7,8 +7,7 @@
 
 vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) :
     enabled_layer_count{0},
-    enabled_extension_count{0},
-    use_staging_buffer{true} {
+    enabled_extension_count{0} {
   this->engine = engine;
   this->validate = validate;
 }
@@ -454,7 +453,9 @@ void vlk::VulkanModule::initSwapChain() {
 
   // Create fences that we can use to throttle if we get too far
   // ahead of the image presents
-  auto const fence_ci = vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled);
+  auto const fence_ci = vk::FenceCreateInfo()
+      .setPNext(nullptr)
+      .setFlags(vk::FenceCreateFlagBits::eSignaled);
   for (uint32_t i = 0; i < FRAME_LAG; i++) {
     result = device.createFence(&fence_ci, nullptr, &fences[i]);
     VERIFY(result == vk::Result::eSuccess);
@@ -470,7 +471,7 @@ void vlk::VulkanModule::initSwapChain() {
       VERIFY(result == vk::Result::eSuccess);
     }
   }
-  frame_index = 0;
+  swapChainIndex = 0;
 
   // Get Memory information and properties
   gpu.getMemoryProperties(&memory_properties);
@@ -504,7 +505,7 @@ void vlk::VulkanModule::createDevice() {
   auto result = gpu.createDevice(&deviceInfo, nullptr, &device);
   VERIFY(result == vk::Result::eSuccess);
   this->memoryModule = new MemoryModule(&memory_properties);
-  this->textureModule = new TextureModule(&device, memoryModule);
+  this->textureModule = new TextureModule(&device, &gpu, memoryModule);
   this->shaderModule = new ShaderModule(&device);
   this->pipelineModule = new VulkanPipelineModule(&device);
 }
@@ -513,10 +514,10 @@ void vlk::VulkanModule::prepare() {
   FLOG(INFO);
   this->width = 500;
   this->height = 500;
-  this->graphicPool = new CommandPoolModule(device, graphics_queue_family_index);
+  this->commandPoolGraphic = new CommandPoolModule(device, graphics_queue_family_index);
 
-//  this->graphicPool->preparePrimaryCommandBuffer(&this->mainCommandBuffer);
-  this->mainCommandBuffer = this->graphicPool->createCommandBuffer();
+//  this->commandPoolGraphic->preparePrimaryCommandBuffer(&this->mainCommandBuffer);
+  this->mainCommandBuffer = this->commandPoolGraphic->createCommandBuffer();
 
   auto const cmd_buf_info = vk::CommandBufferBeginInfo().setPInheritanceInfo(nullptr);
   auto result = this->mainCommandBuffer->begin(&cmd_buf_info);
@@ -527,7 +528,6 @@ void vlk::VulkanModule::prepare() {
   this->prepareDepth();
 
   // Initialize texture properties;
-  this->prepareTextureFormats();
   this->prepareRenderPassAndFramebuffer();
 
 }
@@ -691,7 +691,7 @@ void vlk::VulkanModule::prepareSwapchainBuffers() {
   for (uint32_t index = 0; index < swapchainImageCount; ++index) {
     auto result = this->prepareImageToView(swapchainImages[index], index);
     VERIFY(result == vk::Result::eSuccess);
-    this->swapchain_image_resources[index].cmd = this->graphicPool->createCommandBuffer();
+    this->swapchain_image_resources[index].cmd = this->commandPoolGraphic->createCommandBuffer();
   }
 }
 
@@ -760,196 +760,6 @@ void vlk::VulkanModule::prepareDepth() {
   VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::prepareTextureFormats() {
-  gpu.getFormatProperties(textureFormat, &textureFormatProperties);
-}
-
-//TODO MOVE to TextureModule
-void vlk::VulkanModule::prepareTexture(const char *textureFile, const vk::Format &tex_format) {
-  FLOG(INFO);
-
-  texture_object currentTexture;
-  if ((this->textureFormatProperties.linearTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) &&
-      !this->use_staging_buffer) {
-    /* Device can texture using linear textures */
-    this->textureModule->prepareTextureImage(textureFile, currentTexture, vk::ImageTiling::eLinear,
-                                             vk::ImageUsageFlagBits::eSampled,
-                                             vk::MemoryPropertyFlagBits::eHostVisible |
-                                                 vk::MemoryPropertyFlagBits::eHostCoherent);
-    // Nothing in the globalPipeline needs to be complete to start, and don't allow fragment
-    // shader to run until layout transition completes
-    this->textureModule->setImageLayout(this->mainCommandBuffer.get(),
-                                        currentTexture.image,
-                                        vk::ImageAspectFlagBits::eColor,
-                                        vk::ImageLayout::ePreinitialized,
-                                        currentTexture.imageLayout,
-                                        vk::AccessFlagBits::eHostWrite,
-                                        vk::PipelineStageFlagBits::eTopOfPipe,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
-    this->staging_texture.image = vk::Image();
-  } else if (this->textureFormatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) {
-    /* Must use staging buffer to copy linear texture to optimized */
-
-    this->textureModule->prepareTextureImage(textureFile,
-                                             this->staging_texture,
-                                             vk::ImageTiling::eLinear,
-                                             vk::ImageUsageFlagBits::eTransferSrc,
-                                             vk::MemoryPropertyFlagBits::eHostVisible
-                                                 | vk::MemoryPropertyFlagBits::eHostCoherent);
-
-    this->textureModule->prepareTextureImage(textureFile,
-                                             currentTexture,
-                                             vk::ImageTiling::eOptimal,
-                                             vk::ImageUsageFlagBits::eTransferDst
-                                                 | vk::ImageUsageFlagBits::eSampled,
-                                             vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-    this->textureModule->setImageLayout(this->mainCommandBuffer.get(),
-                                        this->staging_texture.image,
-                                        vk::ImageAspectFlagBits::eColor,
-                                        vk::ImageLayout::ePreinitialized,
-                                        vk::ImageLayout::eTransferSrcOptimal,
-                                        vk::AccessFlagBits::eHostWrite,
-                                        vk::PipelineStageFlagBits::eTopOfPipe,
-                                        vk::PipelineStageFlagBits::eTransfer);
-
-    this->textureModule->setImageLayout(this->mainCommandBuffer.get(),
-                                        currentTexture.image,
-                                        vk::ImageAspectFlagBits::eColor,
-                                        vk::ImageLayout::ePreinitialized,
-                                        vk::ImageLayout::eTransferDstOptimal,
-                                        vk::AccessFlagBits::eHostWrite,
-                                        vk::PipelineStageFlagBits::eTopOfPipe,
-                                        vk::PipelineStageFlagBits::eTransfer);
-
-    auto const subresource = vk::ImageSubresourceLayers()
-        .setAspectMask(vk::ImageAspectFlagBits::eColor)
-        .setMipLevel(0)
-        .setBaseArrayLayer(0)
-        .setLayerCount(1);
-
-    auto const copy_region =
-        vk::ImageCopy()
-            .setSrcSubresource(subresource)
-            .setSrcOffset({0, 0, 0})
-            .setDstSubresource(subresource)
-            .setDstOffset({0, 0, 0})
-            .setExtent(
-                {(uint32_t) this->staging_texture.tex_width,
-                 (uint32_t) this->staging_texture.tex_height, 1});
-
-    this->mainCommandBuffer->copyImage(this->staging_texture.image,
-                                       vk::ImageLayout::eTransferSrcOptimal,
-                                       currentTexture.image,
-                                       vk::ImageLayout::eTransferDstOptimal,
-                                       1,
-                                       &copy_region);
-
-    this->textureModule->setImageLayout(this->mainCommandBuffer.get(),
-                                        currentTexture.image,
-                                        vk::ImageAspectFlagBits::eColor,
-                                        vk::ImageLayout::eTransferDstOptimal,
-                                        currentTexture.imageLayout,
-                                        vk::AccessFlagBits::eTransferWrite,
-                                        vk::PipelineStageFlagBits::eTransfer,
-                                        vk::PipelineStageFlagBits::eFragmentShader);
-  } else {
-    std::cerr << "No support for R8G8B8A8_UNORM as texture image format";
-  }
-
-  auto const samplerInfo = vk::SamplerCreateInfo()
-      .setMagFilter(vk::Filter::eNearest)
-      .setMinFilter(vk::Filter::eNearest)
-      .setMipmapMode(vk::SamplerMipmapMode::eNearest)
-      .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-      .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-      .setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
-      .setMipLodBias(0.0f)
-      .setAnisotropyEnable(VK_FALSE)
-      .setMaxAnisotropy(1)
-      .setCompareEnable(VK_FALSE)
-      .setCompareOp(vk::CompareOp::eNever)
-      .setMinLod(0.0f)
-      .setMaxLod(0.0f)
-      .setBorderColor(vk::BorderColor::eFloatOpaqueWhite)
-      .setUnnormalizedCoordinates(VK_FALSE);
-
-  auto result = this->device.createSampler(&samplerInfo, nullptr, &currentTexture.sampler);
-  VERIFY(result == vk::Result::eSuccess);
-
-  auto const viewInfo = vk::ImageViewCreateInfo()
-      .setImage(currentTexture.image)
-      .setViewType(vk::ImageViewType::e2D)
-      .setFormat(tex_format)
-      .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
-
-  result = this->device.createImageView(&viewInfo, nullptr, &currentTexture.view);
-  VERIFY(result == vk::Result::eSuccess);
-  this->textures.emplace_back(currentTexture);
-}
-
-void vlk::VulkanModule::prepareCubeDataBuffers(Camera *camera, GameObject *object) {
-  FLOG(INFO);
-
-  mat4x4 VP{0};
-  mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
-
-  mat4x4 MVP{0};
-  mat4x4_mul(MVP, VP, object->getModelMatrix());
-
-  vktexcube_vs_uniform data{0};
-  memcpy(data.mvp, MVP, sizeof(MVP));
-  //    dumpMatrix("MVP", MVP)
-
-  for (int32_t i = 0; i < 12 * 3; i++) {
-
-    data.position[i][0] = object->getVertexBufferData()[i * 3];
-    data.position[i][1] = object->getVertexBufferData()[i * 3 + 1];
-    data.position[i][2] = object->getVertexBufferData()[i * 3 + 2];
-    data.position[i][3] = 1.0f;
-    data.attr[i][0] = object->getUVBufferData()[2 * i];
-    data.attr[i][1] = object->getUVBufferData()[2 * i + 1];
-    data.attr[i][2] = 0;
-    data.attr[i][3] = 0;
-  }
-
-  auto const buf_info = vk::BufferCreateInfo().setSize(sizeof(data)).setUsage(
-      vk::BufferUsageFlagBits::eUniformBuffer);
-
-  for (unsigned int i = 0; i < swapchainImageCount; i++) {
-    auto result = device.createBuffer(&buf_info, nullptr, &swapchain_image_resources[i].uniform_buffer);
-    VERIFY(result == vk::Result::eSuccess);
-
-    vk::MemoryRequirements mem_reqs;
-    device.getBufferMemoryRequirements(swapchain_image_resources[i].uniform_buffer, &mem_reqs);
-
-    auto mem_alloc = vk::MemoryAllocateInfo().setAllocationSize(mem_reqs.size).setMemoryTypeIndex(0);
-
-    bool const pass = memoryModule->memoryTypeFromProperties(
-        mem_reqs.memoryTypeBits,
-        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-        &mem_alloc.memoryTypeIndex);
-    VERIFY(pass);
-
-    result = device.allocateMemory(&mem_alloc, nullptr, &swapchain_image_resources[i].uniform_memory);
-    VERIFY(result == vk::Result::eSuccess);
-
-    auto pData = device.mapMemory(swapchain_image_resources[i].uniform_memory, 0, VK_WHOLE_SIZE,
-                                  vk::MemoryMapFlags());
-    // TODO Investigate
-    //VERIFY(pData.result == vk::Result::eSuccess);
-
-    memcpy(pData, &data, sizeof data);
-
-    device.unmapMemory(swapchain_image_resources[i].uniform_memory);
-    // TODO Investigate
-    // result =
-    device.bindBufferMemory(swapchain_image_resources[i].uniform_buffer,
-                            swapchain_image_resources[i].uniform_memory, 0);
-    // VERIFY(result == vk::Result::eSuccess);
-  }
-}
-
 void vlk::VulkanModule::prepareDescriptorPool() {
   FLOG(INFO);
   // TODO TextureCount
@@ -967,47 +777,6 @@ void vlk::VulkanModule::prepareDescriptorPool() {
   VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::prepareDescriptorSet() {
-  FLOG(INFO);
-  auto const alloc_info =
-      vk::DescriptorSetAllocateInfo()
-          .setDescriptorPool(desc_pool)
-          .setDescriptorSetCount(1)
-          .setPSetLayouts(&desc_layout);
-
-  auto buffer_info = vk::DescriptorBufferInfo()
-      .setOffset(0)
-      .setRange(sizeof(struct vktexcube_vs_uniform));
-
-  vk::DescriptorImageInfo tex_descs[textures.size()];
-  for (uint32_t i = 0; i < textures.size(); i++) {
-    tex_descs[i].setSampler(textures[i].sampler);
-    tex_descs[i].setImageView(textures[i].view);
-    tex_descs[i].setImageLayout(vk::ImageLayout::eGeneral);
-  }
-
-  vk::WriteDescriptorSet writes[2];
-
-  writes[0].setDescriptorCount(1);
-  writes[0].setDescriptorType(vk::DescriptorType::eUniformBuffer);
-  writes[0].setPBufferInfo(&buffer_info);
-
-  writes[1].setDstBinding(1);
-  writes[1].setDescriptorCount((uint32_t) textures.size());
-  writes[1].setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
-  writes[1].setPImageInfo(tex_descs);
-
-  for (unsigned int i = 0; i < swapchainImageCount; i++) {
-    auto result = device.allocateDescriptorSets(&alloc_info, &swapchain_image_resources[i].descriptor_set);
-    VERIFY(result == vk::Result::eSuccess);
-
-    buffer_info.setBuffer(swapchain_image_resources[i].uniform_buffer);
-    writes[0].setDstSet(swapchain_image_resources[i].descriptor_set);
-    writes[1].setDstSet(swapchain_image_resources[i].descriptor_set);
-    device.updateDescriptorSets(2, writes, 0, nullptr);
-  }
-}
-
 void vlk::VulkanModule::prepareFramebuffers() {
   FLOG(INFO);
   vk::ImageView attachments[2];
@@ -1023,7 +792,8 @@ void vlk::VulkanModule::prepareFramebuffers() {
 
   for (uint32_t i = 0; i < swapchainImageCount; i++) {
     attachments[0] = swapchain_image_resources[i].view;
-    auto const result = device.createFramebuffer(&fb_info, nullptr, &swapchain_image_resources[i].framebuffer);
+    auto const result = device.createFramebuffer(&fb_info, nullptr,
+                                                 &swapchain_image_resources[i].framebuffer);
     VERIFY(result == vk::Result::eSuccess);
   }
 }
@@ -1151,7 +921,7 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
             .setNewLayout(vk::ImageLayout::ePresentSrcKHR)
             .setSrcQueueFamilyIndex(graphics_queue_family_index)
             .setDstQueueFamilyIndex(present_queue_family_index)
-            .setImage(swapchain_image_resources[current_buffer].image)
+            .setImage(swapchain_image_resources[swapChainIndex].image)
             .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
     commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
@@ -1229,42 +999,51 @@ void vlk::VulkanModule::buildImageOwnershipCmd(uint32_t const &index) {
   //VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::updateDataBuffer(Camera *camera, vk::CommandBuffer &commandBuffer, GameObject *object) {
-  FLOG(INFO) << "Object: " << object->getSid();
-  mat4x4 VP;
-  mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
+void vlk::VulkanModule::updateDrawableObject(Camera *camera, VulkanDrawableObject *drawableObject) {
+  FLOG(INFO) << "gameObject: " << drawableObject->getGameObject()->getSid();
+  // const auto drawableObject = new VulkanDrawableObject(this, gameObject);
+  /*
+        if (false) {
+          mat4x4 VP;
+          mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
 
-  // Rotate around the Y axis
-  mat4x4 model{0};
-  mat4x4_dup(model, object->getModelMatrix());
-  mat4x4_rotate(object->getModelMatrix(), model, 0.0f, 1.0f, 0.0f,
-                (float) degreesToRadians(object->getSpinningAngle()));
+          // Rotate around the Y axis
+          mat4x4 model{0};
+          mat4x4_dup(model, gameObject->getModelMatrix());
+          mat4x4_rotate(gameObject->getModelMatrix(), model, 0.0f, 1.0f, 0.0f,
+                        (float) degreesToRadians(gameObject->getSpinningAngle()));
 
-  mat4x4 MVP;
-  mat4x4_mul(MVP, VP, object->getModelMatrix());
+          mat4x4 MVP;
+          mat4x4_mul(MVP, VP, gameObject->getModelMatrix());
 
-  auto data = device.mapMemory(swapchain_image_resources[current_buffer].uniform_memory,
-                               0,
-                               VK_WHOLE_SIZE,
-                               vk::MemoryMapFlags());
-  // TODO investigate API changes
-//    VERIFY(data.result == vk::Result::eSuccess);
+          // where is this memory going
+          auto data = device.mapMemory(drawableObject->getUniformMemory(),
+                                       0,
+                                       VK_WHOLE_SIZE,
+                                       vk::MemoryMapFlags());
+          // TODO investigate API changes
+      //    VERIFY(data.result == vk::Result::eSuccess);
 
-  memcpy(data, (const void *) &MVP[0][0], sizeof(MVP));
+          memcpy(data, (const void *) &MVP[0][0], sizeof(MVP));
 
-  device.unmapMemory(swapchain_image_resources[current_buffer].uniform_memory);
+          device.unmapMemory(drawableObject->getUniformMemory());
+        }
+  */
+
+
+  drawableObject->buildDrawCommandBuffer(camera);
 }
 
 void vlk::VulkanModule::resetFenceAcquireNextImage() {
   FLOG(INFO);
   // Ensure no more than FRAME_LAG renderings are outstanding
-  device.waitForFences(1, &fences[frame_index], VK_TRUE, UINT64_MAX);
-  device.resetFences(1, &fences[frame_index]);
+  device.waitForFences(1, &fences[swapChainIndex], VK_TRUE, UINT64_MAX);
+  device.resetFences(1, &fences[swapChainIndex]);
 
   vk::Result result;
   do {
-    result = device.acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[frame_index],
-                                        vk::Fence(), &current_buffer);
+    result = device.acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[swapChainIndex],
+                                        vk::Fence(), &swapChainIndex);
     if (result == vk::Result::eErrorOutOfDateKHR) {
       // demo->swapchain is out of date (e.g. the window was resized) and
       // must be recreated:
@@ -1279,11 +1058,12 @@ void vlk::VulkanModule::resetFenceAcquireNextImage() {
   } while (result != vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::draw(GameWorld *gameWorld) {
+void vlk::VulkanModule::draw(GameWorld *gameWorld, std::unordered_map<GameObject::SID, VulkanDrawableObject *> dra) {
   static auto const start = vlk::TimeUtility::now();
   FLOG(INFO);
   this->resetFenceAcquireNextImage();
-  this->drawWorld(gameWorld);
+
+  this->drawWorld(gameWorld, swapchain_image_resources[swapChainIndex].framebuffer);
 
   this->presentFrame();
   curFrame++;
@@ -1294,25 +1074,41 @@ void vlk::VulkanModule::draw(GameWorld *gameWorld) {
   }
 }
 // TODO Move this block outside of the vulkanmodule
-void vlk::VulkanModule::drawWorld(vlk::GameWorld *gameWorld) {
-  FLOG(INFO);
+void vlk::VulkanModule::drawWorld(vlk::GameWorld *gameWorld,
+                                  vk::Framebuffer &frameBuffer) {
   auto gameObjects = gameWorld->getGameObjects();
   auto commandBufferCounts = gameObjects.size();
+  FLOG(INFO) << "drawing " << commandBufferCounts;
+
   if (commandBufferCounts > 0) {
-    auto commandBuffers = this->graphicPool->createCommandBuffers(commandBufferCounts);
+    auto commandBuffers = this->commandPoolGraphic->createCommandBuffers(commandBufferCounts);
 
     for (int index = 0; index < commandBufferCounts; ++index) {
-      this->updateDataBuffer(gameWorld->getCamera(), commandBuffers[index], gameObjects[index]);
-    }
-    auto mainCommandBuffer = this->graphicPool->createCommandBuffer();
 
+      this->commandPoolGraphic->begin(commandBuffers[index],
+                                      render_pass,
+                                      frameBuffer);
+
+      auto drawable = this->prepareRenderableObject(commandBuffers[index], gameObjects[index]);
+
+      this->updateDrawableObject(gameWorld->getCamera(), drawable.get());
+
+    }
+    /*
+    auto mainCommandBuffer = this->commandPoolGraphic->createCommandBuffer();
+    vk::CommandBufferInheritanceInfo inheritanceInfo;
+    inheritanceInfo.setPNext(nullptr)
+        .setRenderPass(render_pass);
     vk::CommandBufferBeginInfo beginInfo;
-    beginInfo.setPInheritanceInfo(nullptr);
+        beginInfo.setPInheritanceInfo(
+                &inheritanceInfo)
     // TODO check this flag
-    beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eRenderPassContinue);
+      .setFlags(vk::CommandBufferUsageFlagBits::eRenderPassContinue);
     mainCommandBuffer->begin(beginInfo);
     mainCommandBuffer->executeCommands(commandBuffers);
     mainCommandBuffer->end();
+     */
+    commandPoolGraphic->submit(commandBuffers);
   }
 }
 
@@ -1347,12 +1143,14 @@ void vlk::VulkanModule::resize() {
   //device.destroyPipelineLayout(pipeline_layout, nullptr);
   device.destroyDescriptorSetLayout(desc_layout, nullptr);
 
+  /*
   for (i = 0; i < this->textures.size(); i++) {
     device.destroyImageView(textures[i].view, nullptr);
     device.destroyImage(textures[i].image, nullptr);
     device.freeMemory(textures[i].mem, nullptr);
     device.destroySampler(textures[i].sampler, nullptr);
   }
+   */
 
   device.destroyImageView(depth.view, nullptr);
   device.destroyImage(depth.image, nullptr);
@@ -1364,8 +1162,9 @@ void vlk::VulkanModule::resize() {
     //device.freeCommandBuffers(cmd_pool,
     //                         (uint32_t) swapchain_image_resources[i].subCommands.size(),
     //                         swapchain_image_resources[i].subCommands.data());
-    device.destroyBuffer(swapchain_image_resources[i].uniform_buffer, nullptr);
-    device.freeMemory(swapchain_image_resources[i].uniform_memory, nullptr);
+    // TODO place elsewhere or relay on valgrind
+    //device.destroyBuffer(swapchain_image_resources[i].uniform_buffer, nullptr);
+    //device.freeMemory(swapchain_image_resources[i].uniform_memory, nullptr);
   }
 
   // device.destroyCommandPool(cmd_pool, nullptr);
@@ -1376,11 +1175,6 @@ void vlk::VulkanModule::resize() {
   // Second, re-perform the prepare() function, which will re-create the
   // swapchain.
   engine->prepare();
-}
-
-void vlk::VulkanModule::prepareTexture(std::string &filename) {
-  FLOG(INFO);
-  this->prepareTexture(filename.c_str(), this->textureFormat);
 }
 
 vlk::ShaderModule *vlk::VulkanModule::getShaderModule() {
@@ -1404,19 +1198,23 @@ void vlk::VulkanModule::presentFrame() {
 
 
   // TODO nothing is recorded inside the image presentation command buffer
-  vk::CommandBuffer *imageCommandBuffer = swapchain_image_resources[current_buffer].cmd.get();
+  vk::CommandBuffer *imageCommandBuffer = swapchain_image_resources[swapChainIndex].cmd.get();
   this->clearBackgroundCommandBuffer(imageCommandBuffer,
-                                     swapchain_image_resources[current_buffer].framebuffer);
+                                     swapchain_image_resources[swapChainIndex].framebuffer);
   auto const submit_info = vk::SubmitInfo()
+      .setPNext(nullptr)
       .setPWaitDstStageMask(&pipe_stage_flags)
+
       .setWaitSemaphoreCount(1)
-      .setPWaitSemaphores(&image_acquired_semaphores[frame_index])
+      .setPWaitSemaphores(&image_acquired_semaphores[swapChainIndex])
+
       .setCommandBufferCount(1)
       .setPCommandBuffers(imageCommandBuffer)
-      .setSignalSemaphoreCount(1)
-      .setPSignalSemaphores(&draw_complete_semaphores[frame_index]);
 
-  auto result = graphics_queue.submit(1, &submit_info, fences[frame_index]);
+      .setSignalSemaphoreCount(1)
+      .setPSignalSemaphores(&draw_complete_semaphores[swapChainIndex]);
+
+  auto result = graphics_queue.submit(1, &submit_info, fences[swapChainIndex]);
   VERIFY(result == vk::Result::eSuccess);
 
   if (separate_present_queue) {
@@ -1427,11 +1225,11 @@ void vlk::VulkanModule::presentFrame() {
     auto const present_submit_info = vk::SubmitInfo()
         .setPWaitDstStageMask(&pipe_stage_flags)
         .setWaitSemaphoreCount(1)
-        .setPWaitSemaphores(&draw_complete_semaphores[frame_index])
+        .setPWaitSemaphores(&draw_complete_semaphores[swapChainIndex])
         .setCommandBufferCount(1)
-        .setPCommandBuffers(&swapchain_image_resources[current_buffer].graphics_to_present_cmd)
+        .setPCommandBuffers(&swapchain_image_resources[swapChainIndex].graphics_to_present_cmd)
         .setSignalSemaphoreCount(1)
-        .setPSignalSemaphores(&image_ownership_semaphores[frame_index]);
+        .setPSignalSemaphores(&image_ownership_semaphores[swapChainIndex]);
 
     result = present_queue.submit(1, &present_submit_info, vk::Fence());
     VERIFY(result == vk::Result::eSuccess);
@@ -1441,17 +1239,17 @@ void vlk::VulkanModule::presentFrame() {
   // otherwise wait for draw complete
   auto const presentInfo = vk::PresentInfoKHR()
       .setWaitSemaphoreCount(1)
-      .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[frame_index]
-                                                 : &draw_complete_semaphores[frame_index])
+      .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[swapChainIndex]
+                                                 : &draw_complete_semaphores[swapChainIndex])
       .setSwapchainCount(1)
       .setPNext(nullptr)
       .setPSwapchains(&swapchain)
-      .setPImageIndices(&current_buffer)
+      .setPImageIndices(&swapChainIndex)
       .setPResults(nullptr);
 
   result = present_queue.presentKHR(&presentInfo);
-  frame_index += 1;
-  frame_index %= FRAME_LAG;
+  swapChainIndex += 1;
+  swapChainIndex %= FRAME_LAG;
   if (result == vk::Result::eErrorOutOfDateKHR) {
     // swapchain is out of date (e.g. the window was resized) and
     // must be recreated:
@@ -1476,14 +1274,13 @@ vlk::VulkanModule::~VulkanModule() {
   delete textureModule;
   delete shaderModule;
   delete memoryModule;
-  FLOG(INFO) << "Deleting swapchains framebuffer";
   for (int i = 0; i < swapchainImageCount; ++i) {
     device.destroyFramebuffer(swapchain_image_resources[i].framebuffer);
     device.destroyImageView(swapchain_image_resources[i].view);
   }
   this->mainCommandBuffer.reset();
   swapchain_image_resources.reset();
-  // as last since swapchainImageResource uses a deleter instantiated inside the graphicPool
+  // as last since swapchainImageResource uses a deleter instantiated inside the commandPoolGraphic
   inst.destroySurfaceKHR(surface);
   device.destroyRenderPass(this->render_pass);
   device.freeMemory(depth.mem);
@@ -1494,5 +1291,61 @@ vlk::VulkanModule::~VulkanModule() {
     device.destroySemaphore(draw_complete_semaphores[i]);
     device.destroySemaphore(image_ownership_semaphores[i]);
   }
-  delete graphicPool;
+  delete commandPoolGraphic;
+}
+void vlk::VulkanModule::makeVertexBuffer(vlk::vktexcube_vs_uniform &data,
+                                         vk::Buffer &uniformBuffer
+) {
+  vk::DeviceMemory uniform_memory;
+  vk::MemoryRequirements memoryRequirements{};
+
+  auto const buf_info = vk::BufferCreateInfo()
+      .setPNext(nullptr)
+      .setSize(sizeof(data))
+      .setUsage(vk::BufferUsageFlagBits::eUniformBuffer);
+  auto result = device.createBuffer(&buf_info, nullptr, &uniformBuffer);
+  VERIFY(result == vk::Result::eSuccess);
+
+  device.getBufferMemoryRequirements(uniformBuffer, &memoryRequirements);
+
+  auto mem_alloc = vk::MemoryAllocateInfo().setAllocationSize(memoryRequirements.size).setMemoryTypeIndex(0);
+
+  bool const pass = memoryModule->memoryTypeFromProperties(
+      memoryRequirements.memoryTypeBits,
+      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+      &mem_alloc.memoryTypeIndex);
+  VERIFY(pass);
+
+  result = device.allocateMemory(&mem_alloc, nullptr, &uniform_memory);
+  VERIFY(result == vk::Result::eSuccess);
+
+  auto pData = device.mapMemory(uniform_memory,
+                                0,
+                                VK_WHOLE_SIZE,
+                                vk::MemoryMapFlags());
+
+  memcpy(pData, &data, sizeof data);
+
+  device.unmapMemory(uniform_memory);
+
+  device.bindBufferMemory(uniformBuffer,
+                          uniform_memory,
+                          0);
+}
+void vlk::VulkanModule::prepareTextureObject(
+    vk::CommandBuffer *commandBuffer,
+    std::string &filename,
+    TextureObject &textureObject) {
+  this->textureModule->makeTexture(commandBuffer,
+                                   filename.data(),
+                                   this->format,
+                                   textureObject);
+}
+std::shared_ptr<vlk::VulkanDrawableObject>
+vlk::VulkanModule::prepareRenderableObject(vk::CommandBuffer &commandBuffer,
+                                           vlk::GameObject *gameObject) {
+  FLOG(INFO);
+  auto drawable = std::make_shared<vlk::VulkanDrawableObject>(this, gameObject);
+  drawable->setCommandBuffer(&commandBuffer);
+  return drawable;
 }

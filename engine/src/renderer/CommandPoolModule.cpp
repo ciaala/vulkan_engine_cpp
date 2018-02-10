@@ -29,16 +29,16 @@ std::shared_ptr<vk::CommandBuffer> vlk::CommandPoolModule::createCommandBuffer()
   identifiers[result.get()] = id;
   FLOG(INFO) << "Creating command buffer " << id;
   auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
+      .setPNext(nullptr)
       .setCommandPool(this->commandPool)
       .setLevel(vk::CommandBufferLevel::ePrimary)
       .setCommandBufferCount(1);
   this->device.allocateCommandBuffers(&commandBufferAllocateInfo, result.get());
-
   return result;
 }
 std::vector<vk::CommandBuffer> vlk::CommandPoolModule::createCommandBuffers(const uint64_t quantity) {
 
-  FLOG(INFO);
+  FLOG(INFO) << " quantity" << quantity;
   auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
       .setCommandPool(this->commandPool)
       .setLevel(vk::CommandBufferLevel::ePrimary)
@@ -52,8 +52,25 @@ vlk::CommandPoolModule::~CommandPoolModule() {
 }
 void vlk::CommandPoolModule::releaseCommandBuffer(vk::CommandBuffer *commandBuffer) {
   uint64_t id = this->identifiers.count(commandBuffer) > 0 ? this->identifiers.at(commandBuffer) : UINT64_MAX;
-  FLOG(INFO) << "Deleting command buffer " << id ;
+  FLOG(INFO) << "Deleting command buffer " << id;
   device.freeCommandBuffers(commandPool, 1, commandBuffer);
   this->identifiers.erase(commandBuffer);
   delete commandBuffer;
+}
+void vlk::CommandPoolModule::begin(vk::CommandBuffer &commandBuffer,
+                                          vk::RenderPass &renderPass,
+                                          vk::Framebuffer &frameBuffer) {
+  vk::CommandBufferInheritanceInfo inheritanceInfo;
+  inheritanceInfo.setPNext(nullptr)
+      .setRenderPass(renderPass)
+      .setFramebuffer(frameBuffer);
+  vk::CommandBufferBeginInfo beginInfo;
+  beginInfo.setPInheritanceInfo(
+          &inheritanceInfo)
+          // TODO check this flag
+      .setFlags(vk::CommandBufferUsageFlagBits::eRenderPassContinue);
+  commandBuffer.begin(beginInfo);
+}
+void vlk::CommandPoolModule::submit(std::vector<vk::CommandBuffer> vector) {
+
 }

@@ -47,7 +47,7 @@ namespace vlk {
 
 }
 
-std::string stripJsonComment(std::string &line) {
+std::string stripJSONComment(std::string &line) {
     size_t comment_start = line.find_first_of('/');
     if (comment_start < (line.length() - 1) && line[comment_start + 1] == '/') {
         LOG(INFO) << "Stripped " << line << " -> " << line.substr(0, comment_start) << std::endl;
@@ -56,7 +56,9 @@ std::string stripJsonComment(std::string &line) {
     return line;
 }
 
-vlk::ResourceModel *vlk::ResourceManager::loadJonModel(const std::string &identifier) {
+vlk::ResourceModel *vlk::ResourceManager::loadJSONModel(const std::string &identifier) {
+    FLOG(INFO) << "Loading json: " << identifier;
+
     std::string fullname = this->loadPath + "/" + identifier;
     std::ifstream file(fullname);
     std::stringstream ss;
@@ -66,7 +68,7 @@ vlk::ResourceModel *vlk::ResourceManager::loadJonModel(const std::string &identi
         json p;
         while (!file.eof()) {
             getline(file, line);
-            ss << stripJsonComment(line);
+            ss << stripJSONComment(line);
         }
         //std::cout << ss.str() << std::endl;
         file.close();
@@ -98,10 +100,11 @@ vlk::ResourceModel *vlk::ResourceManager::loadJonModel(const std::string &identi
 }
 
 vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifier) {
+    FLOG(INFO) << "Loading model: " << identifier;
     if (modelCache.count(identifier) == 0) {
 
         if (identifier.rfind(".json") == (identifier.length() - 5)) {
-            modelCache[identifier] = loadJonModel(identifier);
+            modelCache[identifier] = loadJSONModel(identifier);
         }
     }
     return modelCache[identifier];

@@ -28,22 +28,31 @@ vlk::Camera *SampleGameWorld::getCamera() {
 
 SampleGameWorld::SampleGameWorld(vlk::Engine *engine) {
   this->engine = engine;
-  // TODO Re-enable
-  // fillWorld();
+
+  fillWorld();
 
   this->audioObjects.emplace_back(new vlk::AudioObject("sample_application/resources/elysium.ogg"));
 }
 void SampleGameWorld::fillWorld() {
-  vlk::ResourceModel *resourceModel = engine->getResourceManager()->loadModel("cube.json");
-  objects.emplace_back(new SampleObject(resourceModel));
 
-  auto secondCube = new SampleObject(engine->getResourceManager()->loadModel("cube2.json"));
-  secondCube->setSpinningAngle(-4.0f);
-  mat4x4 pos{0};
-  mat4x4_identity(pos);
-  mat4x4_translate(pos, 1.0, 0.0, 0.0);
-  secondCube->setModelMatrix(pos);
+  const auto zeroCube = new SampleObject(engine->getResourceManager()->loadModel("cube0.json"));
+  objects.emplace_back(zeroCube);
+
+  const auto firstCube = new SampleObject(engine->getResourceManager()->loadModel("cube1.json"));
+  objects.emplace_back(firstCube);
+  firstCube->setSpinningAngle(4.0f);
+  mat4x4 pos1{0};
+  mat4x4_identity(pos1);
+  mat4x4_translate(pos1, 1.0, 0.0, 0.0);
+  firstCube->setModelMatrix(pos1);
+
+  const auto secondCube = new SampleObject(engine->getResourceManager()->loadModel("cube2.json"));
   objects.emplace_back(secondCube);
+  secondCube->setSpinningAngle(-4.0f);
+  mat4x4 pos2{0};
+  mat4x4_identity(pos2);
+  mat4x4_translate(pos2, 1.0, 0.0, 0.0);
+  secondCube->setModelMatrix(pos2);
 }
 
 std::vector<vlk::AudioObject *> SampleGameWorld::getAudioObjects() {

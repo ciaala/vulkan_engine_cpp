@@ -10,7 +10,7 @@ void
 vlk::VulkanDrawableObject::internalPrepareShaders(
     std::vector<vk::ShaderModule> &vertexes,
     std::vector<vk::ShaderModule> &fragments) {
-  FLOG(INFO);
+  FLOG(INFO) << "preparing vertexes: " << vertexes.size() << ", fragments: " << fragments.size();
 
   for (auto vertex: vertexes) {
     vulkan.shaderStageInfoList.emplace_back(
@@ -50,15 +50,15 @@ void vlk::VulkanDrawableObject::preparePipeline() {
 
 void vlk::VulkanDrawableObject::prepare(vlk::Camera *camera) {
   FLOG(INFO);
-  this->vulkanModule->prepareCubeDataBuffers(
-      camera, gameObject);
+  prepareResourceBuffers();
+  prepareResourceShaders();
+  prepareBuffers(camera, gameObject);
 
-  prepareResources();
   prepareDescriptors();
-
+  isPrepared = true;
 }
 
-void vlk::VulkanDrawableObject::prepareResourceShaders() {
+  void vlk::VulkanDrawableObject::prepareResourceShaders() {
   FLOG(INFO);
 
   std::vector<vk::ShaderModule> vertexes = this->vulkanModule->getShaderModule()->prepareShaderFromFiles(
@@ -69,27 +69,30 @@ void vlk::VulkanDrawableObject::prepareResourceShaders() {
   this->internalPrepareShaders(vertexes, fragments);
 }
 
-vlk::VulkanDrawableObject::VulkanDrawableObject(vlk::VulkanModule *vulkanModule, vlk::GameObject *gameObject)
+vlk::VulkanDrawableObject::VulkanDrawableObject(vlk::VulkanModule *vulkanModule,
+                                                vlk::GameObject *gameObject)
     : vulkanModule{vulkanModule},
-      gameObject(gameObject) {
-
+      gameObject(gameObject),
+      isPrepared(false){
+  FLOG(INFO);
 }
-
+/*
 void vlk::VulkanDrawableObject::update() {
-  FLOG(INFO) << "INCOMPLETE" << std::endl;
+  FLOG(ERROR) << "INCOMPLETE" << std::endl;
 
 }
 
 void vlk::VulkanDrawableObject::render() {
-  FLOG(INFO) << "INCOMPLETE" << std::endl;
+  FLOG(ERROR) << "INCOMPLETE" << std::endl;
 
 }
+ */
+void somethingElse() {
+  FLOG(ERROR);
 
-void vlk::VulkanDrawableObject::buildDrawCommandBuffer(
-    vlk::SwapchainImageResources &swapchainImageResources,
-    const vk::Viewport *viewport,
-    const vk::Rect2D *scissor,
-    const vk::RenderPass &renderPass) {
+  /*
+}
+
   FLOG(INFO);
 
   // TODO Command Buffer should be local
@@ -105,53 +108,126 @@ void vlk::VulkanDrawableObject::buildDrawCommandBuffer(
       .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse
                     | vk::CommandBufferUsageFlagBits::eRenderPassContinue)
       .setPInheritanceInfo(&inheritanceInfo);
-  vulkan.commandBuffer.begin(commandInfo);
+  const auto commandBuffer = vulkan.commandBuffer;
+  commandBuffer.begin(commandInfo);
 
-  // TODO decide about pipelineLayout;
+   // TODO decide about pipelineLayout;
   auto __pipeline_layout = vulkanModule->getPipelineModule()
       ->preparePipelineLayout(vulkan.textures,
                               vulkan.descLayout);
 
   vulkan.pipeline = vulkanModule->getPipelineModule()->prepareGraphicPipeline(vulkan.shaderStageInfoList,
-                                                                                     __pipeline_layout,
-                                                                                     renderPass);
+                                                                              __pipeline_layout,
+                                                                              renderPass);
   //vk::Pipeline pipeline = createSubCommandBufferPipeline();
-  vulkan.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vulkan.pipeline);
+  commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vulkan.pipeline);
   //commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
-  vulkan.commandBuffer.setViewport(0, 1, viewport);
-  vulkan.commandBuffer.setScissor(0, 1, scissor);
+  commandBuffer.setViewport(0, 1, viewport);
+  commandBuffer.setScissor(0, 1, scissor);
 
   //auto renderPass = vk::SubPass
   //commandBuffer.beginRenderPass(this->render_pass, vk::SubpassContents::eSecondaryCommandBuffers);
-
-  vulkan.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                                 __pipeline_layout,
-                                                 0,
-                                                 1,
-                                                 &(swapchainImageResources.descriptor_set),
-                                                 0,
-                                                 nullptr);
-
-  vulkan.commandBuffer.draw(12 * 3, 1, 0, 0);
-  vulkan.commandBuffer.end();
+  */
 }
-
-void vlk::VulkanDrawableObject::prepareResources() {
+void vlk::VulkanDrawableObject::buildDrawCommandBuffer(vlk::Camera *camera) {
   FLOG(INFO);
-
-  prepareResourceBuffers();
-  prepareResourceShaders();
-
+  auto commandBuffer = vulkan.commandBuffer;
+  if (! isPrepared ) {
+    prepare(camera);
+  }
+  this->preparePipelineLayout();
+  commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                   vulkan.pipelineLayout,
+                                   0,
+                                   vulkan.descriptorSets.size(),
+                                   vulkan.descriptorSets.data(),
+                                   0,
+                                   nullptr);
+  if (!vulkan.vertices.empty()) {
+    VkDeviceSize offsets[1] = {0};
+    commandBuffer->bindVertexBuffers(0, vulkan.vertices.size(), vulkan.vertices.data(), offsets);
+  }
+  if (vulkan.index) {
+    VkDeviceSize offset = 0;
+    commandBuffer->bindIndexBuffer(vulkan.index, offset, vk::IndexType::eUint32);
+  }
+  if (!vulkan.index) {
+    commandBuffer->draw(12 * 3, 1, 0, 0);
+  } else {
+    FLOG(ERROR);
+    // commandBuffer->drawIndexed();
+  }
+  commandBuffer->end();
 }
 
 void vlk::VulkanDrawableObject::prepareResourceBuffers() {
-  FLOG(INFO);
-
-  for (std::string &textureFile : gameObject->getTextureFiles()) {
-    this->vulkanModule->prepareTexture(textureFile);
+  FLOG(INFO) << " gameObject: " << this->gameObject->getSid();
+  auto textureFiles = gameObject->getTextureFiles();
+  vulkan.textures.resize(textureFiles.size());
+  unsigned int index = 0;
+  for (std::string &textureFile : textureFiles ) {
+      this->vulkanModule->prepareTextureObject(vulkan.commandBuffer, textureFile, vulkan.textures[index]);
+      index ++;
   }
 }
 
 void vlk::VulkanDrawableObject::prepareDescriptors() {
+  FLOG(INFO) << "AND NOW ?";
+
+}
+vk::DescriptorSetLayout &vlk::VulkanDrawableObject::getDescriptorSetLayout() {
   FLOG(INFO);
+  return vulkan.descLayout;
+}
+std::vector<vlk::TextureObject> &vlk::VulkanDrawableObject::getTextures() {
+  FLOG(INFO);
+  return vulkan.textures;
+}
+
+
+void vlk::VulkanDrawableObject::prepareBuffers(Camera *camera, GameObject *object) {
+  FLOG(INFO);
+
+  mat4x4 VP{0};
+  mat4x4_mul(VP, camera->getProjectionMatrix(), camera->getViewMatrix());
+
+  mat4x4 MVP{0};
+  mat4x4_mul(MVP, VP, object->getModelMatrix());
+
+  vktexcube_vs_uniform data{0};
+  memcpy(data.mvp, MVP, sizeof(MVP));
+  //    dumpMatrix("MVP", MVP)
+
+  for (int32_t i = 0; i < 12 * 3; i++) {
+
+    data.position[i][0] = object->getVertexBufferData()[i * 3];
+    data.position[i][1] = object->getVertexBufferData()[i * 3 + 1];
+    data.position[i][2] = object->getVertexBufferData()[i * 3 + 2];
+    data.position[i][3] = 1.0f;
+    data.attr[i][0] = object->getUVBufferData()[2 * i];
+    data.attr[i][1] = object->getUVBufferData()[2 * i + 1];
+    data.attr[i][2] = 0;
+    data.attr[i][3] = 0;
+  }
+
+  makeVertexBufferFromData(data);
+}
+void vlk::VulkanDrawableObject::makeVertexBufferFromData(vlk::vktexcube_vs_uniform &data) {
+  this->vulkanModule->makeVertexBuffer(data, vulkan.uniformBuffer);
+}
+vk::DeviceMemory& vlk::VulkanDrawableObject::getUniformMemory() {
+  return uniforMemory;
+}
+
+void vlk::VulkanDrawableObject::setCommandBuffer(vk::CommandBuffer *commandBuffer) {
+  this->vulkan.commandBuffer = commandBuffer;
+}
+vlk::GameObject *vlk::VulkanDrawableObject::getGameObject() {
+  return gameObject;
+}
+void vlk::VulkanDrawableObject::preparePipelineLayout() {
+  FLOG(INFO);
+ vulkan.pipelineLayout = vulkanModule->getPipelineModule()->preparePipelineLayout(
+      vulkan.textures,
+      vulkan.descLayout);
 }

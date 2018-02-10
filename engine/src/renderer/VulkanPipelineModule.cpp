@@ -12,6 +12,7 @@ vlk::VulkanPipelineModule::prepareGraphicPipeline(
     std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
     vk::PipelineLayout &__pipeline_layout,
     vk::RenderPass __render_pass) {
+  FLOG(INFO);
   vk::Pipeline resultPipeline;
 
   vk::PipelineCacheCreateInfo const pipelineCacheInfo;
@@ -102,8 +103,9 @@ vlk::VulkanPipelineModule::~VulkanPipelineModule() {
 
 }
 
-vk::PipelineLayout vlk::VulkanPipelineModule::preparePipelineLayout(std::vector<texture_object> &textures,
+vk::PipelineLayout vlk::VulkanPipelineModule::preparePipelineLayout(std::vector<TextureObject> &textures,
                                                                     vk::DescriptorSetLayout &descLayout) {
+  FLOG(INFO);
   vk::DescriptorSetLayoutBinding const layout_bindings[2] = {
       vk::DescriptorSetLayoutBinding()
           .setBinding(0)

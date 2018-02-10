@@ -22,7 +22,7 @@ namespace vlk {
 
     private:
 
-        ResourceModel *loadJonModel(const std::string &identifier);
+        ResourceModel *loadJSONModel(const std::string &identifier);
 
         std::unordered_map<std::string, ResourceModel *> modelCache;
     };

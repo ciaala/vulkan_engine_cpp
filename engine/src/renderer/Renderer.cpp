@@ -94,13 +94,11 @@ void vlk::Renderer::prepareDrawableObject(vlk::Camera *camera, vlk::GameObject *
   } else {
     adapter = vulkanDrawables[gameObject->getSid()];
   }
-
-  adapter->prepare(camera);
 }
 
 void vlk::Renderer::draw(vlk::GameWorld *gameWorld) {
   FLOG(INFO);
-  this->vulkanModule->draw(gameWorld);
+  this->vulkanModule->draw(gameWorld, vulkanDrawables);
 }
 
 void vlk::Renderer::init() {

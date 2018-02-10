@@ -16,7 +16,7 @@ SET(DOC_SOURCES
         )
 find_program(RST_TOOL rst2html5)
 add_custom_target(DOCUMENTATION ALL)
-message("\nDocumentation file to generate:")
+message("\nDocumentation files to generate:")
 foreach (DOC_SOURCE ${DOC_SOURCES})
     set(DOC_SOURCE_FILE_OUTPUT ${DOC_SOURCE}.html)
     string(REPLACE "/" "_" DOC_SOURCE_OUTPUT ${DOC_SOURCE_FILE_OUTPUT})

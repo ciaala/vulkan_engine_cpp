@@ -26,6 +26,10 @@ class CommandPoolModule {
   uint64_t commandBufferCounter;
   ~CommandPoolModule();
   void releaseCommandBuffer(vk::CommandBuffer *pBuffer);
+  void begin(vk::CommandBuffer &buffer,
+             vk::RenderPass &renderPass,
+             vk::Framebuffer &frameBuffer );
+  void submit(std::vector<vk::CommandBuffer> vector);
 };
 }
 
