@@ -20,7 +20,7 @@ class TextureModule {
   vk::Device *device;
   MemoryModule *memoryModule;
   vk::FormatProperties textureFormatProperties;
-  vk::Format const textureFormat = vk::Format::eR8G8B8A8Unorm;
+  vk::Format const &textureFormat;
   vk::PhysicalDevice *gpu;
   bool useStagingBuffer;
  private:
@@ -48,21 +48,24 @@ class TextureModule {
                       vk::AccessFlags srcAccessMask,
                       vk::PipelineStageFlags srcStages,
                       vk::PipelineStageFlags destStages);
+ private:
+  void makeTextureWithoutStagingBuffer(const vk::CommandBuffer *commandBuffer,
+                                       const char *textureFile,
+                                       vlk::TextureObject &currentTexture);
 
+  void makeTextureWithStagingBuffer(const vk::CommandBuffer *commandBuffer,
+                                    const char *textureFile,
+                                    vlk::TextureObject &currentTexture);
 
   // CONSTRUCTOR & DESTRUCTOR
 
 
- private:
-  void makeTextureWithoutStagingBuffer(const vk::CommandBuffer *commandBuffer,
-                                         const char *textureFile,
-                                         vlk::TextureObject &currentTexture);
 
-  void makeTextureWithStagingBuffer(const vk::CommandBuffer *commandBuffer,
-                                      const char *textureFile,
-                                      vlk::TextureObject &currentTexture);
  public:
-  TextureModule(vk::Device *device, vk::PhysicalDevice *, MemoryModule *memoryModule);
+  TextureModule(vk::Device *device,
+                vk::PhysicalDevice *physicalDevice,
+                MemoryModule *memoryModule,
+                vk::Format &textureFormat);
 
   // PUBLIC METHODS
 

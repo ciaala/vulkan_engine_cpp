@@ -18,6 +18,7 @@ vk::ShaderModule vlk::ShaderModule::prepareShaderModule(const void *code, size_t
 }
 
 vlk::ShaderModule::ShaderModule(vk::Device *device) {
+    FLOG(INFO);
     this->device = device;
 }
 

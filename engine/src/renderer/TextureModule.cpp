@@ -22,7 +22,7 @@ void vlk::TextureModule::prepareTextureImage(const char *filename,
 
   auto const image_create_info = vk::ImageCreateInfo()
       .setImageType(vk::ImageType::e2D)
-      .setFormat(vk::Format::eR8G8B8A8Unorm)
+      .setFormat(textureFormat)
       .setExtent({(uint32_t) tex_width, (uint32_t) tex_height, 1})
       .setMipLevels(1)
       .setArrayLayers(1)
@@ -45,7 +45,7 @@ void vlk::TextureModule::prepareTextureImage(const char *filename,
 
   auto pass = memoryModule->memoryTypeFromProperties(mem_reqs.memoryTypeBits, required_props,
                                                      &tex_obj.mem_alloc.memoryTypeIndex);
-  VERIFY(pass == true);
+  VERIFY(pass);
 
   result = device->allocateMemory(&tex_obj.mem_alloc, nullptr, &(tex_obj.mem));
   VERIFY(result == vk::Result::eSuccess);
@@ -151,37 +151,50 @@ void vlk::TextureModule::destroyTextureImage(vlk::TextureObject *tex_objs) {
 
 vlk::TextureModule::TextureModule(vk::Device *device,
                                   vk::PhysicalDevice *gpu,
-                                  vlk::MemoryModule *memoryModule) :
-  gpu(gpu), device(device), memoryModule(memoryModule), useStagingBuffer{true} {
+                                  vlk::MemoryModule *memoryModule,
+vk::Format &textureFormat)  :
+  gpu(gpu),
+  device(device),
+  memoryModule(memoryModule),
+  useStagingBuffer{true},
+  textureFormat{textureFormat}
+{
   FLOG(INFO);
   gpu->getFormatProperties(textureFormat, &textureFormatProperties);
 }
-auto DstAccessMask = [](vk::ImageLayout const &layout) {
-  vk::AccessFlags flags;
 
+
+auto DstAccessMask = [](vk::ImageLayout const &layout) {
+  FLOG(INFO);
+  vk::AccessFlags flags;
   switch (layout) {
     case vk::ImageLayout::eTransferDstOptimal:
       // Make sure anything that was copying from this image has
       // completed
       flags = vk::AccessFlagBits::eTransferWrite;
       break;
-    case vk::ImageLayout::eColorAttachmentOptimal:flags = vk::AccessFlagBits::eColorAttachmentWrite;
+    case vk::ImageLayout::eColorAttachmentOptimal:
+      flags = vk::AccessFlagBits::eColorAttachmentWrite;
       break;
-    case vk::ImageLayout::eDepthStencilAttachmentOptimal:flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+      flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
       break;
     case vk::ImageLayout::eShaderReadOnlyOptimal:
       // Make sure any Copy or CPU writes to image are flushed
       flags = vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eInputAttachmentRead;
       break;
-    case vk::ImageLayout::eTransferSrcOptimal:flags = vk::AccessFlagBits::eTransferRead;
+    case vk::ImageLayout::eTransferSrcOptimal:
+      flags = vk::AccessFlagBits::eTransferRead;
       break;
-    case vk::ImageLayout::ePresentSrcKHR:flags = vk::AccessFlagBits::eMemoryRead;
+    case vk::ImageLayout::ePresentSrcKHR:
+      flags = vk::AccessFlagBits::eMemoryRead;
       break;
     default:break;
   }
-
   return flags;
 };
+
+
 void vlk::TextureModule::setImageLayout(const vk::CommandBuffer *commandBuffer,
                                         vk::Image image,
                                         vk::ImageAspectFlags aspectMask,
@@ -241,6 +254,7 @@ void vlk::TextureModule::makeTexture(vk::CommandBuffer *commandBuffer,
   this->createImageView(texFormat, currentTexture);
 
 }
+
 void vlk::TextureModule::makeTextureWithStagingBuffer(const vk::CommandBuffer *commandBuffer,
                                                       const char *textureFile,
                                                       vlk::TextureObject &currentTexture) {/* Must use staging buffer to copy linear texture to optimized */
@@ -266,7 +280,7 @@ void vlk::TextureModule::makeTextureWithStagingBuffer(const vk::CommandBuffer *c
                          vk::ImageAspectFlagBits::eColor,
                          vk::ImageLayout::ePreinitialized,
                          vk::ImageLayout::eTransferSrcOptimal,
-                         vk::AccessFlagBits::eHostWrite,
+                         vk::AccessFlagBits(),
                          vk::PipelineStageFlagBits::eTopOfPipe,
                          vk::PipelineStageFlagBits::eTransfer);
 
@@ -275,7 +289,7 @@ void vlk::TextureModule::makeTextureWithStagingBuffer(const vk::CommandBuffer *c
                          vk::ImageAspectFlagBits::eColor,
                          vk::ImageLayout::ePreinitialized,
                          vk::ImageLayout::eTransferDstOptimal,
-                         vk::AccessFlagBits::eHostWrite,
+                         vk::AccessFlagBits(),
                          vk::PipelineStageFlagBits::eTopOfPipe,
                          vk::PipelineStageFlagBits::eTransfer);
 
@@ -364,6 +378,8 @@ void vlk::TextureModule::createImageView(const vk::Format &texFormat,
       .setFormat(texFormat)
       .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
-  result = this->device->createImageView(&viewInfo, nullptr, &currentTexture.view);
+  result = this->device->createImageView(&viewInfo,
+                                         nullptr,
+                                         &currentTexture.view);
   VERIFY(result == vk::Result::eSuccess);
 }

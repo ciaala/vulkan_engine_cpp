@@ -5,6 +5,7 @@
 #include "renderer/VulkanModule.hpp"
 
 vlk::VulkanPipelineModule::VulkanPipelineModule(vk::Device *device) : device(device) {
+  FLOG(INFO);
 }
 
 vk::Pipeline
@@ -103,8 +104,9 @@ vlk::VulkanPipelineModule::~VulkanPipelineModule() {
 
 }
 
-vk::PipelineLayout vlk::VulkanPipelineModule::preparePipelineLayout(std::vector<TextureObject> &textures,
-                                                                    vk::DescriptorSetLayout &descLayout) {
+void vlk::VulkanPipelineModule::preparePipelineLayout(std::vector<TextureObject> &textures,
+                                                      vk::DescriptorSetLayout &descLayout,
+                                                      vk::PipelineLayout &pipelineLayout) {
   FLOG(INFO);
   vk::DescriptorSetLayoutBinding const layout_bindings[2] = {
       vk::DescriptorSetLayoutBinding()
@@ -131,8 +133,6 @@ vk::PipelineLayout vlk::VulkanPipelineModule::preparePipelineLayout(std::vector<
   auto const pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(
       &descLayout);
 
-  vk::PipelineLayout resultPipelineLayout;
-  result = device->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &resultPipelineLayout);
+  result = device->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &pipelineLayout);
   VERIFY(result == vk::Result::eSuccess);
-  return resultPipelineLayout;
 }

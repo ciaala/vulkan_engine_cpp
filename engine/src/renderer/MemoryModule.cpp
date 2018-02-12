@@ -2,6 +2,7 @@
 // Created by crypt on 17/07/17.
 //
 
+#include <core/CommonMacro.hpp>
 #include "renderer/MemoryModule.hpp"
 
 bool vlk::MemoryModule::memoryTypeFromProperties(uint32_t typeBits, vk::MemoryPropertyFlags requirements_mask,
@@ -22,7 +23,7 @@ bool vlk::MemoryModule::memoryTypeFromProperties(uint32_t typeBits, vk::MemoryPr
     return false;
 }
 
-vlk::MemoryModule::MemoryModule(vk::PhysicalDeviceMemoryProperties *memory_properties) {
-    this->memory_properties = memory_properties;
+vlk::MemoryModule::MemoryModule(vk::PhysicalDeviceMemoryProperties *memory_properties) : memory_properties{memory_properties}{
+    FLOG(INFO);
 
 }

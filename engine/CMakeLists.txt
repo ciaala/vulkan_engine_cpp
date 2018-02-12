@@ -98,17 +98,3 @@ target_include_directories(vkengine
         PUBLIC vorbisfile
         PUBLIC glog)
 
-ADD_CUSTOM_TARGET(CALLGRAPH ALL)
-
-message("\nCall graph files to generate:")
-foreach (SOURCE_FILE ${SOURCE_FILES})
-    SET(SOURCE_GRAPH_RAW ${SOURCE_FILE}_graph)
-    string(REPLACE "/" "_" SOURCE_GRAPH ${SOURCE_GRAPH_RAW})
-    add_custom_target(${SOURCE_GRAPH} ALL
-            COMMAND clang++ -fsyntax-only -S -emit-llvm ${SOURCE_FILE} -o - | opt -analyze -dot-callgraph
-            SOURCES ${SOURCE_FILE}
-            COMMENT "Creating documentation ")
-
-    message("\t" ${SOURCE_FILE} " => " ${SOURCE_GRAPH})
-    add_dependencies(CALLGRAPH ${SOURCE_GRAPH})
-endforeach()

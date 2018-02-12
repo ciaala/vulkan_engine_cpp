@@ -28,7 +28,7 @@ class LogIndent {
 
 #define FLOG(severity) \
   LogIndent __logIndent; \
-  LOG(severity) << __logIndent << "<" << __PRETTY_FUNCTION__ << "> " << std::flush
+  LOG(severity) << __logIndent << "<" << __PRETTY_FUNCTION__ << "> "
 
 #define ERR_EXIT(err_msg, err_class) \
     do {                             \

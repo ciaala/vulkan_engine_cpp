@@ -7,9 +7,10 @@
 
 vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) :
     enabled_layer_count{0},
-    enabled_extension_count{0} {
-  this->engine = engine;
-  this->validate = validate;
+    enabled_extension_count{0},
+    engine(engine),
+    validate(validate) {
+  FLOG(INFO);
 }
 
 void vlk::VulkanModule::initValidation() {
@@ -420,7 +421,7 @@ void vlk::VulkanModule::initSwapChain() {
   if (!separate_present_queue) {
     present_queue = graphics_queue;
   } else {
-    FLOG(INFO) << "Graphic and Pesentation queue are separated.";
+    LOG(INFO) << "Graphic and Pesentation queue are separated.";
     device.getQueue(present_queue_family_index, 0, &present_queue);
   }
 
@@ -437,10 +438,12 @@ void vlk::VulkanModule::initSwapChain() {
   // the surface has no preferred format.  Otherwise, at least one
   // supported format will be returned.
   if (formatCount == 1 && surfFormats[0].format == vk::Format::eUndefined) {
+    LOG(INFO) << "Undefined image format. Forcing image format to B8G8R8A8" << std::endl;
     format = vk::Format::eB8G8R8A8Unorm;
   } else {
     assert(formatCount >= 1);
     format = surfFormats[0].format;
+    LOG(INFO) << "Format set to " << to_string(format);
   }
   color_space = surfFormats[0].colorSpace;
 
@@ -504,10 +507,7 @@ void vlk::VulkanModule::createDevice() {
 
   auto result = gpu.createDevice(&deviceInfo, nullptr, &device);
   VERIFY(result == vk::Result::eSuccess);
-  this->memoryModule = new MemoryModule(&memory_properties);
-  this->textureModule = new TextureModule(&device, &gpu, memoryModule);
-  this->shaderModule = new ShaderModule(&device);
-  this->pipelineModule = new VulkanPipelineModule(&device);
+
 }
 
 void vlk::VulkanModule::prepare() {
@@ -1348,4 +1348,11 @@ vlk::VulkanModule::prepareRenderableObject(vk::CommandBuffer &commandBuffer,
   auto drawable = std::make_shared<vlk::VulkanDrawableObject>(this, gameObject);
   drawable->setCommandBuffer(&commandBuffer);
   return drawable;
+}
+void vlk::VulkanModule::initSubModules() {
+  FLOG(INFO);
+  this->memoryModule = new MemoryModule(&memory_properties);
+  this->shaderModule = new ShaderModule(&device);
+  this->pipelineModule = new VulkanPipelineModule(&device);
+  this->textureModule = new TextureModule(&device, &gpu, memoryModule, format);
 }

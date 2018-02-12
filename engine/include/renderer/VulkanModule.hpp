@@ -206,6 +206,7 @@ class VulkanModule {
   void makeVertexBuffer(vlk::vktexcube_vs_uniform &data, vk::Buffer &uniformBuffer);
 
   void prepareTextureObject(vk::CommandBuffer *commandBuffer, std::string &filename, TextureObject &textureObject);
+  void initSubModules();
 };
 }
 

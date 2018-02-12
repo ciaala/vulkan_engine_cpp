@@ -49,6 +49,7 @@ void vlk::Renderer::initSwapChain() {
   FLOG(INFO);
   vulkanModule->initSurface(xcbModule->getConnection(), xcbModule->getWindow());
   vulkanModule->initSwapChain();
+  vulkanModule->initSubModules();
 }
 
 /**

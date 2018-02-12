@@ -76,17 +76,7 @@ vlk::VulkanDrawableObject::VulkanDrawableObject(vlk::VulkanModule *vulkanModule,
       isPrepared(false){
   FLOG(INFO);
 }
-/*
-void vlk::VulkanDrawableObject::update() {
-  FLOG(ERROR) << "INCOMPLETE" << std::endl;
 
-}
-
-void vlk::VulkanDrawableObject::render() {
-  FLOG(ERROR) << "INCOMPLETE" << std::endl;
-
-}
- */
 void somethingElse() {
   FLOG(ERROR);
 
@@ -225,9 +215,9 @@ void vlk::VulkanDrawableObject::setCommandBuffer(vk::CommandBuffer *commandBuffe
 vlk::GameObject *vlk::VulkanDrawableObject::getGameObject() {
   return gameObject;
 }
+
 void vlk::VulkanDrawableObject::preparePipelineLayout() {
   FLOG(INFO);
- vulkan.pipelineLayout = vulkanModule->getPipelineModule()->preparePipelineLayout(
-      vulkan.textures,
-      vulkan.descLayout);
+
+  vulkanModule->getPipelineModule()->preparePipelineLayout(vulkan.textures, vulkan.descLayout, vulkan.pipelineLayout);
 }
