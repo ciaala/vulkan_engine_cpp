@@ -760,23 +760,6 @@ void vlk::VulkanModule::prepareDepth() {
   VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::prepareDescriptorPool() {
-  FLOG(INFO);
-  // TODO TextureCount
-  uint32_t texture_count = 2;
-  vk::DescriptorPoolSize const poolSizes[2] = {
-      vk::DescriptorPoolSize().setType(vk::DescriptorType::eUniformBuffer).setDescriptorCount(
-          swapchainImageCount),
-      vk::DescriptorPoolSize().setType(vk::DescriptorType::eCombinedImageSampler).setDescriptorCount(
-          swapchainImageCount * texture_count)};
-
-  auto const descriptor_pool = vk::DescriptorPoolCreateInfo().setMaxSets(swapchainImageCount).setPoolSizeCount(
-      2).setPPoolSizes(poolSizes);
-
-  auto result = device.createDescriptorPool(&descriptor_pool, nullptr, &desc_pool);
-  VERIFY(result == vk::Result::eSuccess);
-}
-
 void vlk::VulkanModule::prepareFramebuffers() {
   FLOG(INFO);
   vk::ImageView attachments[2];
@@ -1355,4 +1338,8 @@ void vlk::VulkanModule::initSubModules() {
   this->shaderModule = new ShaderModule(&device);
   this->pipelineModule = new VulkanPipelineModule(&device);
   this->textureModule = new TextureModule(&device, &gpu, memoryModule, format);
+  this->descriptorModule = new DescriptorModule(device);
+}
+vlk::DescriptorModule *vlk::VulkanModule::getDescriptorModule() const {
+  return descriptorModule;
 }

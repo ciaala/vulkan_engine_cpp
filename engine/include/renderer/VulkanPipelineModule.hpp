@@ -30,8 +30,8 @@ namespace vlk {
         //vk::Pipeline createSubCommandBufferPipeline();
 
         void preparePipelineLayout(std::vector<TextureObject> &textures,
-                                           vk::DescriptorSetLayout &descLayout,
-                                           vk::PipelineLayout &pipelineLayout);
+                                   std::vector<vk::DescriptorSetLayout> &descLayoutList,
+                                   vk::PipelineLayout &pipelineLayout);
 
     };
 }

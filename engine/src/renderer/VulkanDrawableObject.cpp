@@ -165,15 +165,6 @@ void vlk::VulkanDrawableObject::prepareDescriptors() {
   FLOG(INFO) << "AND NOW ?";
 
 }
-vk::DescriptorSetLayout &vlk::VulkanDrawableObject::getDescriptorSetLayout() {
-  FLOG(INFO);
-  return vulkan.descLayout;
-}
-std::vector<vlk::TextureObject> &vlk::VulkanDrawableObject::getTextures() {
-  FLOG(INFO);
-  return vulkan.textures;
-}
-
 
 void vlk::VulkanDrawableObject::prepareBuffers(Camera *camera, GameObject *object) {
   FLOG(INFO);
@@ -218,6 +209,8 @@ vlk::GameObject *vlk::VulkanDrawableObject::getGameObject() {
 
 void vlk::VulkanDrawableObject::preparePipelineLayout() {
   FLOG(INFO);
-
-  vulkanModule->getPipelineModule()->preparePipelineLayout(vulkan.textures, vulkan.descLayout, vulkan.pipelineLayout);
+  vulkanModule->getDescriptorModule()
+      ->prepareDescriptorSet(vulkan.descLayout, vulkan.textures, vulkan.descriptorSets, vulkan.uniformBuffer);
+  vulkanModule->getPipelineModule()
+      ->preparePipelineLayout(vulkan.textures, vulkan.descLayout, vulkan.pipelineLayout);
 }

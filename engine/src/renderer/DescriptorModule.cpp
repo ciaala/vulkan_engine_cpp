@@ -2,28 +2,29 @@
 // Created by crypt on 19/01/18.
 //
 
-#include "renderer/DescriptorModule.hpp"
+#include <glog/log_severity.h>
+#include <renderer/VulkanModule.hpp>
 
-vlk::DescriptorModule::DescriptorModule(vk::Device &device) : device(device) {
-
+vlk::DescriptorModule::DescriptorModule(vk::Device &device) :
+    device(device) {
+  this->prepareDescriptorPool();
 }
 
 void vlk::DescriptorModule::prepareDescriptorSet(std::vector<vk::DescriptorSetLayout> layouts,
                                                  std::vector<TextureObject> &textures,
-                                                 vk::DescriptorSet &descriptorSet,
+                                                 std::vector<vk::DescriptorSet> &descriptorSetList,
                                                  vk::Buffer uniformBuffer) {
   FLOG(INFO);
-
 
   auto buffer_info = vk::DescriptorBufferInfo()
       .setOffset(0)
       .setRange(sizeof(struct vktexcube_vs_uniform));
 
-  vk::DescriptorImageInfo tex_descs[textures.size()];
+  vk::DescriptorImageInfo imageInfo[textures.size()];
   for (uint32_t i = 0; i < textures.size(); i++) {
-    tex_descs[i].setSampler(textures[i].sampler);
-    tex_descs[i].setImageView(textures[i].view);
-    tex_descs[i].setImageLayout(vk::ImageLayout::eGeneral);
+    imageInfo[i].setSampler(textures[i].sampler);
+    imageInfo[i].setImageView(textures[i].view);
+    imageInfo[i].setImageLayout(vk::ImageLayout::eGeneral);
   }
 
   vk::WriteDescriptorSet writes[2];
@@ -35,20 +36,40 @@ void vlk::DescriptorModule::prepareDescriptorSet(std::vector<vk::DescriptorSetLa
   writes[1].setDstBinding(1);
   writes[1].setDescriptorCount((uint32_t) textures.size());
   writes[1].setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
-  writes[1].setPImageInfo(tex_descs);
+  writes[1].setPImageInfo(imageInfo);
 
-  auto const alloc_info =
-      vk::DescriptorSetAllocateInfo()
-          .setDescriptorPool(descriptorPool)
-          .setDescriptorSetCount(layouts.size())
-          .setPSetLayouts(layouts.data());
-    auto result = device.allocateDescriptorSets(&alloc_info, &descriptorSet);
-    VERIFY(result == vk::Result::eSuccess);
+  auto const allocateInfo = vk::DescriptorSetAllocateInfo()
+      .setDescriptorPool(descriptorPool)
+      .setDescriptorSetCount(layouts.size())
+      .setPSetLayouts(layouts.data());
+  auto result = device.allocateDescriptorSets(&allocateInfo, descriptorSetList.data());
+  VERIFY(result == vk::Result::eSuccess);
 
-    buffer_info.setBuffer(uniformBuffer);
-    writes[0].setDstSet(descriptorSet);
+  buffer_info.setBuffer(uniformBuffer);
+  writes[0].setDstSet(descriptorSetList[0]);
 
-    writes[1].setDstSet(descriptorSet);
-    device.updateDescriptorSets(2, writes, 0, nullptr);
+  writes[1].setDstSet(descriptorSetList[0]);
+  device.updateDescriptorSets(2, writes, 0, nullptr);
 
+}
+void vlk::DescriptorModule::prepareDescriptorPool() {
+  FLOG(INFO);
+  // TODO rework this constants
+  const auto swapchainImageCount = 3;
+  const auto texture_count = 2;
+  vk::DescriptorPoolSize const poolSizes[2] = {
+      vk::DescriptorPoolSize()
+          .setType(vk::DescriptorType::eUniformBuffer)
+          .setDescriptorCount(swapchainImageCount),
+      vk::DescriptorPoolSize()
+          .setType(vk::DescriptorType::eCombinedImageSampler)
+          .setDescriptorCount(swapchainImageCount * texture_count)};
+
+  auto const poolCreateInfo = vk::DescriptorPoolCreateInfo()
+      .setMaxSets(swapchainImageCount)
+      .setPoolSizeCount(2)
+      .setPPoolSizes(poolSizes);
+
+  auto result = device.createDescriptorPool(&poolCreateInfo, nullptr, &descriptorPool);
+  VERIFY(result == vk::Result::eSuccess);
 }

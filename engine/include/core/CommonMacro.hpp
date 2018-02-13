@@ -8,26 +8,52 @@
 #include <ostream>
 #include <ogg/ogg.h>
 #include <atomic>
+#include <glog/logging.h>
+#include <iomanip>
 #ifndef VULKAN_ENGINE_CPP_COMMONMACRO_HPP
 #define VULKAN_ENGINE_CPP_COMMONMACRO_HPP
 
+#define GLOG_SEVERITY_INFO 0
+#define GLOG_SEVERITY_WARNING 1
+#define GLOG_SEVERITY_ERROR 2
+#define GLOG_SEVERITY_FATAL 3
+
+
 class LogIndent {
-  static std::atomic_int level;
-  static std::string separators[];
+
+ private:
+
+  static std::atomic_uint_fast32_t level;
+  const std::string filename;
+  const int line;
+  const std::string function;
+  const int severity;
+
  public:
-  LogIndent() {
+  LogIndent(const std::string filename,
+            const int line,
+            const int severity,
+            const std::string function) :
+      function(function),
+      filename(filename),
+      line(line),
+      severity(severity)
+  {
     LogIndent::level.fetch_add(1);
   }
 
   ~LogIndent() {
-    LogIndent::level.fetch_sub(1);
+    uint_fast32_t level = LogIndent::level.fetch_sub(1);
+    int width = 2* ((int) level);
+    google::LogMessage logMessage(filename.data(), 5555, severity);
+    logMessage.stream() << std::setw(2) << level << std::setw(width) << std::setfill('-')<<"";
   }
   friend std::ostream &operator<<(std::ostream &oStream, const LogIndent &logIndent);
 
 };
 
 #define FLOG(severity) \
-  LogIndent __logIndent; \
+  LogIndent __logIndent(__FILE__, __LINE__, GLOG_SEVERITY_ ## severity, __PRETTY_FUNCTION__); \
   LOG(severity) << __logIndent << "<" << __PRETTY_FUNCTION__ << "> "
 
 #define ERR_EXIT(err_msg, err_class) \

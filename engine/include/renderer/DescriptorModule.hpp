@@ -12,13 +12,15 @@ class DescriptorModule {
  private:
   vk::Device &device;
   vk::DescriptorPool descriptorPool;
+  void prepareDescriptorPool();
+
  public:
   explicit DescriptorModule(vk::Device &device);
 
  public:
   void prepareDescriptorSet(std::vector<vk::DescriptorSetLayout> layouts,
                             std::vector<TextureObject> &textures,
-                            vk::DescriptorSet &descriptorSet,
+                            std::vector<vk::DescriptorSet> &descriptorSetList,
                             vk::Buffer uniformBuffer);
 
 };

@@ -32,6 +32,7 @@ class Engine;
 #include "VulkanPipelineModule.hpp"
 #include "../../src/renderer/CommandPoolModule.hpp"
 #include "VulkanDrawableObject.hpp"
+#include "DescriptorModule.hpp"
 
 // Definition used in prepare
 
@@ -42,6 +43,7 @@ class VulkanModule {
 
 
   VulkanPipelineModule *pipelineModule;
+  DescriptorModule *descriptorModule;
 
   CommandPoolModule *commandPoolGraphic;
 
@@ -207,6 +209,7 @@ class VulkanModule {
 
   void prepareTextureObject(vk::CommandBuffer *commandBuffer, std::string &filename, TextureObject &textureObject);
   void initSubModules();
+  DescriptorModule *getDescriptorModule() const;
 };
 }
 

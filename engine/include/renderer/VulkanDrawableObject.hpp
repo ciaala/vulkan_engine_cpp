@@ -21,7 +21,7 @@ class VulkanDrawableObject {
     vk::CommandBuffer *commandBuffer;
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStageInfoList;
     std::vector<TextureObject> textures;
-    vk::DescriptorSetLayout descLayout;
+    std::vector<vk::DescriptorSetLayout> descLayout;
     vk::Pipeline pipeline;
     std::vector<vk::Buffer> vertices;
     vk::Buffer index;

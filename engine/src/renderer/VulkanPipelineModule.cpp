@@ -105,7 +105,7 @@ vlk::VulkanPipelineModule::~VulkanPipelineModule() {
 }
 
 void vlk::VulkanPipelineModule::preparePipelineLayout(std::vector<TextureObject> &textures,
-                                                      vk::DescriptorSetLayout &descLayout,
+                                                      std::vector<vk::DescriptorSetLayout> &descLayoutList,
                                                       vk::PipelineLayout &pipelineLayout) {
   FLOG(INFO);
   vk::DescriptorSetLayoutBinding const layout_bindings[2] = {
@@ -125,13 +125,18 @@ void vlk::VulkanPipelineModule::preparePipelineLayout(std::vector<TextureObject>
               vk::ShaderStageFlagBits::eFragment)
           .setPImmutableSamplers(nullptr)};
 
-  auto const descriptor_layout = vk::DescriptorSetLayoutCreateInfo().setBindingCount(2).setPBindings(layout_bindings);
+  auto const descriptor_layout = vk::DescriptorSetLayoutCreateInfo()
+      .setBindingCount(2)
+      .setPBindings(layout_bindings);
 
-  auto result = device->createDescriptorSetLayout(&descriptor_layout, nullptr, &descLayout);
+  auto result = device->createDescriptorSetLayout(&descriptor_layout,
+                                                  nullptr,
+                                                  &descLayoutList[0]);
   VERIFY(result == vk::Result::eSuccess);
 
-  auto const pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo().setSetLayoutCount(1).setPSetLayouts(
-      &descLayout);
+  auto const pPipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo()
+      .setSetLayoutCount(1)
+      .setPSetLayouts(&descLayoutList[0]);
 
   result = device->createPipelineLayout(&pPipelineLayoutCreateInfo, nullptr, &pipelineLayout);
   VERIFY(result == vk::Result::eSuccess);
