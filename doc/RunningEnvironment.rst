@@ -1,13 +1,16 @@
 Running Environment for Vulkan
 ##############################
 
+
+Setup to Run the executables
 These three environment options should be set to allow vulkan to find and use the validation layers ( is there anything more ? )
 
 .. code:: sh
-
-    VK_LAYER_PATH=/opt/VulkanSDK/1.0.54.0/x86_64/etc/explicit_layer.d
-    PATH=${PATH}:/opt/VulkanSDK/1.0.54.0/x86_64/bin
-    LD_LIBRARY_PATH	=${LD_LIBRARY_PATH}:/opt/VulkanSDK/1.0.54.0/source/lib
+given that the Vulkan libraries are located in the directory /opt/VulkanSDK/1.0.54.0
+    VK_LIBRARY_ROOT=/opt/VulkanSDK/1.0.54.0
+    VK_LAYER_PATH=${VK_LIBRARY_ROOT}/x86_64/etc/explicit_layer.d
+    PATH=${PATH}:${VK_LIBRARY_ROOT}/x86_64/bin
+    LD_LIBRARY_PATH	=${LD_LIBRARY_PATH}:${VK_LIBRARY_ROOT}/source/lib
 
     The example is already matching the configuration rules needed to debug.
     (option: LD_LIBRARY_PATH)

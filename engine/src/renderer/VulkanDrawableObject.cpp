@@ -38,7 +38,7 @@ void vlk::VulkanDrawableObject::preparePipeline() {
   VulkanPipelineModule *pipelineModule = vulkanModule->getPipelineModule();
 
   auto __pipeline_layout = pipelineModule->preparePipelineLayout(vulkanObjects.textures,
-                                  vulkanObjects.descLayout);
+                                  vulkanObjects.descriptorSetLayout);
 
   vulkanObjects.pipeline = pipelineModule->prepareGraphicPipeline(
           vulkanObjects.shaderStageInfoList,
@@ -104,7 +104,7 @@ void somethingElse() {
    // TODO decide about pipelineLayout;
   auto __pipeline_layout = vulkanModule->getPipelineModule()
       ->preparePipelineLayout(vulkan.textures,
-                              vulkan.descLayout);
+                              vulkan.descriptorSetLayout);
 
   vulkan.pipeline = vulkanModule->getPipelineModule()->prepareGraphicPipeline(vulkan.shaderStageInfoList,
                                                                               __pipeline_layout,
@@ -135,7 +135,7 @@ void vlk::VulkanDrawableObject::buildDrawCommandBuffer(vlk::Camera *camera) {
                                    nullptr);
   if (!vulkan.vertices.empty()) {
     VkDeviceSize offsets[1] = {0};
-    commandBuffer->bindVertexBuffers(0, vulkan.vertices.size(), vulkan.vertices.data(), offsets);
+    commandBuffer->bindVertexBuffers(0, (uint32_t) vulkan.vertices.size(), vulkan.vertices.data(), offsets);
   }
   if (vulkan.index) {
     VkDeviceSize offset = 0;
@@ -193,9 +193,11 @@ void vlk::VulkanDrawableObject::prepareBuffers(Camera *camera, GameObject *objec
 
   makeVertexBufferFromData(data);
 }
+
 void vlk::VulkanDrawableObject::makeVertexBufferFromData(vlk::vktexcube_vs_uniform &data) {
   this->vulkanModule->makeVertexBuffer(data, vulkan.uniformBuffer);
 }
+
 vk::DeviceMemory& vlk::VulkanDrawableObject::getUniformMemory() {
   return uniforMemory;
 }
@@ -209,8 +211,10 @@ vlk::GameObject *vlk::VulkanDrawableObject::getGameObject() {
 
 void vlk::VulkanDrawableObject::preparePipelineLayout() {
   FLOG(INFO);
-  vulkanModule->getDescriptorModule()
-      ->prepareDescriptorSet(vulkan.descLayout, vulkan.textures, vulkan.descriptorSets, vulkan.uniformBuffer);
-  vulkanModule->getPipelineModule()
-      ->preparePipelineLayout(vulkan.textures, vulkan.descLayout, vulkan.pipelineLayout);
+  DescriptorModule *descriptorModule = vulkanModule->getDescriptorModule();
+  descriptorModule->prepareDescriptorSetLayout(vulkan.textures, vulkan.descriptorSetLayoutList);
+  descriptorModule->updateDescriptorSet(vulkan.textures, vulkan.uniformBuffer, vulkan.descriptorSetLayoutList, vulkan.descriptorSets);
+  auto pipelineModule = vulkanModule->getPipelineModule();
+  pipelineModule->preparePipelineLayout(vulkan.descriptorSetLayoutList,
+                                        vulkan.pipelineLayout);
 }

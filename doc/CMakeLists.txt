@@ -14,7 +14,7 @@ SET(DOC_SOURCES
         engine/startup.rst
         engine/free_form.rst
         )
-find_program(RST_TOOL rst2html5)
+find_program(RST_TOOL rst2html5.py)
 add_custom_target(DOCUMENTATION ALL)
 message("\nDocumentation files to generate:")
 foreach (DOC_SOURCE ${DOC_SOURCES})
