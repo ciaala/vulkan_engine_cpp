@@ -8,16 +8,18 @@ vlk::VulkanPipelineModule::VulkanPipelineModule(vk::Device *device) : device(dev
   FLOG(INFO);
 }
 
-vk::Pipeline
+void
 vlk::VulkanPipelineModule::prepareGraphicPipeline(
     std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
-    vk::PipelineLayout &__pipeline_layout,
-    vk::RenderPass __render_pass) {
+    vk::PipelineLayout &pipelineLayout,
+    vk::RenderPass &renderPass,
+    vk::Pipeline &outPipeline) {
   FLOG(INFO);
-  vk::Pipeline resultPipeline;
 
   vk::PipelineCacheCreateInfo const pipelineCacheInfo;
-  auto result = this->device->createPipelineCache(&pipelineCacheInfo, nullptr, &pipelineCache);
+  auto result = this->device->createPipelineCache(&pipelineCacheInfo,
+                                                  nullptr,
+                                                  &pipelineCache);
   VERIFY(result == vk::Result::eSuccess);
 
   vk::PipelineVertexInputStateCreateInfo const vertexInputInfo;
@@ -78,17 +80,20 @@ vlk::VulkanPipelineModule::prepareGraphicPipeline(
       .setPDepthStencilState(&depthStencilInfo)
       .setPColorBlendState(&colorBlendInfo)
       .setPDynamicState(&dynamicStateInfo)
-      .setLayout(__pipeline_layout)
-      .setRenderPass(__render_pass);
+      .setLayout(pipelineLayout)
+      .setRenderPass(renderPass);
 
-  result = device->createGraphicsPipelines(pipelineCache, 1, &pipelineCreateInfo, nullptr, &resultPipeline);
+  result = device->createGraphicsPipelines(pipelineCache,
+                                           1,
+                                           &pipelineCreateInfo,
+                                           nullptr,
+                                           &outPipeline);
   VERIFY(result == vk::Result::eSuccess);
 
 // TODO Understand this call and replicate it
 // device->destroyShaderModule(fragShaderModule, nullptr);
 // device->destroyShaderModule(vertShaderModule, nullptr);
 
-  return resultPipeline;
 }
 
 vlk::VulkanPipelineModule::~VulkanPipelineModule() {

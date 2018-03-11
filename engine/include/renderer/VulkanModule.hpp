@@ -41,7 +41,6 @@ class VulkanModule {
  private:
   Engine *engine;
 
-
   VulkanPipelineModule *pipelineModule;
   DescriptorModule *descriptorModule;
 
@@ -65,8 +64,6 @@ class VulkanModule {
   uint32_t graphics_queue_family_index;
   uint32_t present_queue_family_index;
 
-
-
   vk::Semaphore image_acquired_semaphores[FRAME_LAG];
   vk::Semaphore draw_complete_semaphores[FRAME_LAG];
   vk::Semaphore image_ownership_semaphores[FRAME_LAG];
@@ -74,8 +71,6 @@ class VulkanModule {
   uint32_t swapchainImageCount;
   vk::SwapchainKHR swapchain;
   std::unique_ptr<SwapchainImageResources[]> swapchain_image_resources;
-
-
 
   vk::PhysicalDeviceProperties gpu_props;
   std::unique_ptr<vk::QueueFamilyProperties[]> queue_props;
@@ -86,7 +81,10 @@ class VulkanModule {
   bool separate_present_queue;
 
  public:
-  VulkanModule(vlk::Engine *engine, bool validate);
+  VulkanModule(
+      vlk::Engine *engine,
+      bool validate);
+
   ~VulkanModule();
 
   void initDevice();
@@ -95,29 +93,32 @@ class VulkanModule {
 
   bool validate;
 
-  vk::Bool32 checkLayers(uint32_t check_count,
-                         const char *const *const check_names,
-                         uint32_t layer_count,
-                         vk::LayerProperties *layers);
+  vk::Bool32 checkLayers(
+      uint32_t check_count,
+      const char *const *const check_names,
+      uint32_t layer_count,
+      vk::LayerProperties *layers);
 
   void initSwapChain();
 
-  void initSurface(xcb_connection_t *connection,
-                   unsigned int xcb_window);
+  void initSurface(
+      xcb_connection_t *connection,
+      unsigned int xcb_window);
 
   vk::SurfaceKHR surface;
 
   void createDevice();
 
   void prepare();
-
+  vk::Format &getFormat();
+  vk::Format &getDepthFormat();
  private:
 
   vk::Format format;
+
+ private:
   vk::ColorSpaceKHR color_space;
   bool quit;
-
-
 
   void prepareSwapchainBuffers();
 
@@ -127,9 +128,8 @@ class VulkanModule {
 
   std::shared_ptr<vk::CommandBuffer> mainCommandBuffer;  // Buffer for initialization commands
   vk::DescriptorSetLayout desc_layout;
-  vk::RenderPass render_pass;
+  vk::RenderPass renderPass;
   vk::Pipeline globalPipeline;
-
 
   void prepareFramebuffers();
 
@@ -142,6 +142,7 @@ class VulkanModule {
     vk::DeviceMemory mem;
     vk::ImageView view;
   } depth;
+
   uint32_t curFrame;
   uint32_t swapChainIndex;
   vk::DescriptorPool desc_pool;
@@ -151,9 +152,11 @@ class VulkanModule {
   uint32_t width;
   uint32_t height;
 
-  void clearBackgroundCommandBuffer(vk::CommandBuffer *buffer,
-                                    vk::Framebuffer &frameBuffer
-  );
+  void clearBackgroundCommandBuffer(
+      vk::CommandBuffer *buffer,
+      vk::Framebuffer &frameBuffer,
+      std::vector<vk::CommandBuffer> &subCommandBuffers);
+
   void flushInitCmd();
 
   TextureModule *textureModule;
@@ -169,9 +172,17 @@ class VulkanModule {
   // prepare the draw
  private:
   // float spin_angle;
-  void updateDrawableObject(Camera *camera, VulkanDrawableObject *drawableObject);
-  std::shared_ptr<vlk::VulkanDrawableObject> prepareRenderableObject(vk::CommandBuffer &commandBuffer,
-                                                                       vlk::GameObject *gameObject);
+  void updateDrawableObject(
+      vk::Framebuffer &framebuffer,
+      uint32_t width,
+      uint32_t height,
+      VulkanDrawableObject *drawableObject,
+      Camera *camera);
+
+  std::shared_ptr<vlk::VulkanDrawableObject> prepareRenderableObject(
+      vk::CommandBuffer &commandBuffer,
+      vlk::GameObject *gameObject);
+
   // float spin_increment;
   bool pause{false};
  public:
@@ -180,25 +191,49 @@ class VulkanModule {
   // Game World Refactor
  public:
 
-  void draw(GameWorld *world, std::unordered_map<GameObject::SID, VulkanDrawableObject *> map);
+  void draw(
+      GameWorld *world,
+      std::unordered_map<GameObject::SID, VulkanDrawableObject *> map);
 
   ShaderModule *getShaderModule();
 
   VulkanPipelineModule *getPipelineModule();
-  void drawWorld(vlk::GameWorld *gameWorld, vk::Framebuffer &frameBuffer);
+
+  std::vector<vk::CommandBuffer> drawWorld(
+      vlk::GameWorld *gameWorld,
+      vk::Framebuffer &frameBuffer);
+
  private:
-  void resetFenceAcquireNextImage();
-  void presentFrame();
-  vk::Result prepareImageToView(const vk::Image &image, uint32_t index);
+  void setDynamicStates(vk::CommandBuffer &commandBuffer);
+    void resetFenceAcquireNextImage();
+
+  void presentFrame(std::vector<vk::CommandBuffer> &vector);
+
+  vk::Result prepareImageToView(
+      const vk::Image &image,
+      uint32_t index);
+
   void prepareRenderPassAndFramebuffer();
 
   // NEW PUBLIC API
  public:
-  void makeVertexBuffer(vlk::vktexcube_vs_uniform &data, vk::Buffer &uniformBuffer);
+  void makeVertexBuffer(
+      vlk::vktexcube_vs_uniform &data,
+      vk::Buffer &uniformBuffer);
 
-  void prepareTextureObject(vk::CommandBuffer *commandBuffer, std::string &filename, TextureObject &textureObject);
+  void
+  prepareTextureObject(
+      vk::CommandBuffer *commandBuffer,
+      std::string &filename,
+      TextureObject &textureObject);
+
   void initSubModules();
+
   DescriptorModule *getDescriptorModule() const;
+
+  vk::RenderPass &getRenderPass();
+  vk::Device *getDevice();
+  CommandPoolModule * getCommandPoolModule();
 };
 }
 

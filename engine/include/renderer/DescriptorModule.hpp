@@ -8,26 +8,28 @@
 #include <renderer/RendererDefinition.hpp>
 
 namespace vlk {
-    class DescriptorModule {
+class DescriptorModule {
 
-    private:
-        vk::Device &device;
-        vk::DescriptorPool descriptorPool;
+ private:
+  vk::Device &device;
+  vk::DescriptorPool descriptorPool;
 
-        void prepareDescriptorPool();
+  void prepareDescriptorPool();
 
-    public:
-        explicit DescriptorModule(vk::Device &device);
+ public:
+  explicit DescriptorModule(vk::Device &device);
 
-    public:
-        void updateDescriptorSet(std::vector<TextureObject> &textures,
-                                 vk::Buffer uniformBuffer,
-                                 std::vector<vk::DescriptorSetLayout> &descriptorSetLayoutList,
-                                 std::vector<vk::DescriptorSet> &outDescriptorSetList);
+ public:
+  void updateDescriptorSet(
+      std::vector<TextureObject> &textures,
+      vk::Buffer uniformBuffer,
+      std::vector<vk::DescriptorSetLayout> &descriptorSetLayoutList,
+      std::vector<vk::DescriptorSet> &outDescriptorSetList);
 
-        void prepareDescriptorSetLayout(std::vector<TextureObject> &textures,
-                                        std::vector<vk::DescriptorSetLayout> &outDescriptorSetLayoutList);
+  void prepareDescriptorSetLayout(
+      std::vector<TextureObject> &textures,
+      std::vector<vk::DescriptorSetLayout> &outDescriptorSetLayoutList);
 
-    };
+};
 }
 #endif //VULKAN_ENGINE_CPP_DESCRIPTORMODULE_HPP

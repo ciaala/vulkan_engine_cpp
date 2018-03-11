@@ -30,8 +30,8 @@ class VulkanDrawableObject {
     uint32_t indexCount;
     vk::Buffer uniformBuffer;
     vk::PipelineLayout pipelineLayout;
+    vk::RenderPass renderPass;
   } vulkan;
-
   VulkanModule *vulkanModule;
   //VulkanPipelineModule *pipelineModule;
   GameObject *gameObject;
@@ -58,12 +58,16 @@ class VulkanDrawableObject {
  public:
 
   VulkanDrawableObject(VulkanModule *vulkanModule, GameObject *gameObject);
-  void buildDrawCommandBuffer(vlk::Camera *camera);
+  void buildDrawCommandBuffer(vlk::Camera *camera,
+                              vk::Framebuffer &framebuffer,
+                              uint32_t width,
+                              uint32_t height);
   // NEW API
   void  setCommandBuffer(vk::CommandBuffer *commandBuffer);
 
 
   GameObject *getGameObject();
+  void prepareRenderPass();
 };
 
 }

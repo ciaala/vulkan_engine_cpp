@@ -29,7 +29,7 @@ class CommandPoolModule {
   void begin(vk::CommandBuffer &buffer,
              vk::RenderPass &renderPass,
              vk::Framebuffer &frameBuffer );
-  void submit(std::vector<vk::CommandBuffer> vector);
+  void submit(std::vector<vk::CommandBuffer> &vector);
 };
 }
 

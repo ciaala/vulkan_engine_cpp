@@ -50,6 +50,7 @@ void vlk::VulkanDrawableObject::preparePipeline() {
 
 void vlk::VulkanDrawableObject::prepare(vlk::Camera *camera) {
   FLOG(INFO);
+  prepareRenderPass();
   prepareResourceBuffers();
   prepareResourceShaders();
   prepareBuffers(camera, gameObject);
@@ -58,7 +59,7 @@ void vlk::VulkanDrawableObject::prepare(vlk::Camera *camera) {
   isPrepared = true;
 }
 
-  void vlk::VulkanDrawableObject::prepareResourceShaders() {
+void vlk::VulkanDrawableObject::prepareResourceShaders() {
   FLOG(INFO);
 
   std::vector<vk::ShaderModule> vertexes = this->vulkanModule->getShaderModule()->prepareShaderFromFiles(
@@ -69,11 +70,12 @@ void vlk::VulkanDrawableObject::prepare(vlk::Camera *camera) {
   this->internalPrepareShaders(vertexes, fragments);
 }
 
-vlk::VulkanDrawableObject::VulkanDrawableObject(vlk::VulkanModule *vulkanModule,
-                                                vlk::GameObject *gameObject)
+vlk::VulkanDrawableObject::VulkanDrawableObject(
+    vlk::VulkanModule *vulkanModule,
+    vlk::GameObject *gameObject)
     : vulkanModule{vulkanModule},
       gameObject(gameObject),
-      isPrepared(false){
+      isPrepared(false) {
   FLOG(INFO);
 }
 
@@ -116,26 +118,49 @@ void somethingElse() {
   commandBuffer.setScissor(0, 1, scissor);
 
   //auto renderPass = vk::SubPass
-  //commandBuffer.beginRenderPass(this->render_pass, vk::SubpassContents::eSecondaryCommandBuffers);
+  //commandBuffer.beginRenderPass(this->renderPass, vk::SubpassContents::eSecondaryCommandBuffers);
   */
 }
-void vlk::VulkanDrawableObject::buildDrawCommandBuffer(vlk::Camera *camera) {
+
+void vlk::VulkanDrawableObject::buildDrawCommandBuffer(
+    vlk::Camera *camera,
+    vk::Framebuffer &framebuffer,
+    uint32_t width,
+    uint32_t height) {
   FLOG(INFO);
   auto commandBuffer = vulkan.commandBuffer;
-  if (! isPrepared ) {
+  if (!isPrepared) {
     prepare(camera);
   }
   this->preparePipelineLayout();
-  commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                   vulkan.pipelineLayout,
-                                   0,
-                                   vulkan.descriptorSets.size(),
-                                   vulkan.descriptorSets.data(),
-                                   0,
-                                   nullptr);
+  if ( "disable_me_2018-03-11" == "ciao") {
+    auto const passInfo = vk::RenderPassBeginInfo()
+        .setPNext(nullptr)
+        .setRenderPass(vulkan.renderPass)
+        .setFramebuffer(framebuffer)
+        .setRenderArea(
+            vk::Rect2D(
+                vk::Offset2D(0, 0),
+                vk::Extent2D(width, height)));
+
+    commandBuffer->beginRenderPass(passInfo, vk::SubpassContents::eInline);
+  }
+
+  commandBuffer->bindDescriptorSets(
+      vk::PipelineBindPoint::eGraphics,
+      vulkan.pipelineLayout,
+      0,
+      (uint32_t) vulkan.descriptorSets.size(),
+      vulkan.descriptorSets.data(),
+      0,
+      nullptr);
+  commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, vulkan.pipeline);
   if (!vulkan.vertices.empty()) {
     VkDeviceSize offsets[1] = {0};
-    commandBuffer->bindVertexBuffers(0, (uint32_t) vulkan.vertices.size(), vulkan.vertices.data(), offsets);
+    commandBuffer->bindVertexBuffers(
+        0,
+        (uint32_t) vulkan.vertices.size(),
+        vulkan.vertices.data(), offsets);
   }
   if (vulkan.index) {
     VkDeviceSize offset = 0;
@@ -155,9 +180,12 @@ void vlk::VulkanDrawableObject::prepareResourceBuffers() {
   auto textureFiles = gameObject->getTextureFiles();
   vulkan.textures.resize(textureFiles.size());
   unsigned int index = 0;
-  for (std::string &textureFile : textureFiles ) {
-      this->vulkanModule->prepareTextureObject(vulkan.commandBuffer, textureFile, vulkan.textures[index]);
-      index ++;
+  for (std::string &textureFile : textureFiles) {
+    this->vulkanModule->prepareTextureObject(
+        vulkan.commandBuffer,
+        textureFile,
+        vulkan.textures[index]);
+    index++;
   }
 }
 
@@ -166,7 +194,9 @@ void vlk::VulkanDrawableObject::prepareDescriptors() {
 
 }
 
-void vlk::VulkanDrawableObject::prepareBuffers(Camera *camera, GameObject *object) {
+void vlk::VulkanDrawableObject::prepareBuffers(
+    Camera *camera,
+    GameObject *object) {
   FLOG(INFO);
 
   mat4x4 VP{0};
@@ -198,23 +228,92 @@ void vlk::VulkanDrawableObject::makeVertexBufferFromData(vlk::vktexcube_vs_unifo
   this->vulkanModule->makeVertexBuffer(data, vulkan.uniformBuffer);
 }
 
-vk::DeviceMemory& vlk::VulkanDrawableObject::getUniformMemory() {
+vk::DeviceMemory &vlk::VulkanDrawableObject::getUniformMemory() {
+  FLOG(INFO);
   return uniforMemory;
 }
 
 void vlk::VulkanDrawableObject::setCommandBuffer(vk::CommandBuffer *commandBuffer) {
+  FLOG(INFO);
   this->vulkan.commandBuffer = commandBuffer;
 }
+
 vlk::GameObject *vlk::VulkanDrawableObject::getGameObject() {
+  FLOG(INFO);
   return gameObject;
 }
 
 void vlk::VulkanDrawableObject::preparePipelineLayout() {
   FLOG(INFO);
   DescriptorModule *descriptorModule = vulkanModule->getDescriptorModule();
-  descriptorModule->prepareDescriptorSetLayout(vulkan.textures, vulkan.descriptorSetLayoutList);
-  descriptorModule->updateDescriptorSet(vulkan.textures, vulkan.uniformBuffer, vulkan.descriptorSetLayoutList, vulkan.descriptorSets);
+  descriptorModule->prepareDescriptorSetLayout(
+      vulkan.textures,
+      vulkan.descriptorSetLayoutList);
+  descriptorModule->updateDescriptorSet(
+      vulkan.textures,
+      vulkan.uniformBuffer,
+      vulkan.descriptorSetLayoutList,
+      vulkan.descriptorSets);
   auto pipelineModule = vulkanModule->getPipelineModule();
-  pipelineModule->preparePipelineLayout(vulkan.descriptorSetLayoutList,
-                                        vulkan.pipelineLayout);
+  pipelineModule->preparePipelineLayout(
+      vulkan.descriptorSetLayoutList,
+      vulkan.pipelineLayout);
+  pipelineModule->prepareGraphicPipeline(
+      vulkan.shaderStageInfoList,
+      vulkan.pipelineLayout,
+      vulkan.renderPass,
+      vulkan.pipeline);
+
+}
+void vlk::VulkanDrawableObject::prepareRenderPass() {
+  const vk::AttachmentDescription
+      attachments[2] = {vk::AttachmentDescription()
+                            .setFormat(this->vulkanModule->getFormat())
+                            .setSamples(vk::SampleCountFlagBits::e1)
+                            .setLoadOp(vk::AttachmentLoadOp::eClear)
+                            .setStoreOp(vk::AttachmentStoreOp::eStore)
+                            .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+                            .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                            .setInitialLayout(vk::ImageLayout::eUndefined)
+                            .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
+                        vk::AttachmentDescription()
+                            .setFormat(this->vulkanModule->getDepthFormat())
+                            .setSamples(vk::SampleCountFlagBits::e1)
+                            .setLoadOp(vk::AttachmentLoadOp::eClear)
+                            .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+                            .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+                            .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                            .setInitialLayout(vk::ImageLayout::eUndefined)
+                            .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)};
+  vk::AttachmentReference colorReference = vk::AttachmentReference()
+      .setAttachment(0)
+      .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+  vk::AttachmentReference depthReference = vk::AttachmentReference()
+      .setAttachment(1)
+      .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+  auto const subpass = vk::SubpassDescription()
+      .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+      .setInputAttachmentCount(0)
+      .setPInputAttachments(nullptr)
+      .setColorAttachmentCount(1)
+      .setPColorAttachments(&colorReference)
+      .setPResolveAttachments(0)
+      .setPDepthStencilAttachment(&depthReference)
+      .setPreserveAttachmentCount(0)
+      .setPPreserveAttachments(nullptr);
+
+  auto const rp_info = vk::RenderPassCreateInfo()
+      .setAttachmentCount(2)
+      .setPAttachments(attachments)
+      .setSubpassCount(1)
+      .setPSubpasses(&subpass)
+      .setDependencyCount(0)
+      .setPDependencies(nullptr);
+
+  auto result = vulkanModule->getDevice()->createRenderPass(
+      &rp_info,
+      nullptr,
+      &vulkan.renderPass);
+  VERIFY(result == vk::Result::eSuccess);
 }

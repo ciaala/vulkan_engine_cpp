@@ -70,8 +70,8 @@ void vlk::TextureModule::prepareTextureImage(const char *filename,
 
     device->unmapMemory(tex_obj.mem);
   }
-
-  tex_obj.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+//TODO 2018-03-11 switching Shader Optimal to Shader general
+  tex_obj.imageLayout = vk::ImageLayout::eGeneral;
 }
 bool
 vlk::TextureModule::loadTextureInfo(const char *filename,

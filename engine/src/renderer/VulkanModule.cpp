@@ -5,7 +5,9 @@
 #include "../utility/TimeUtility.hpp"
 #include <iostream>
 
-vlk::VulkanModule::VulkanModule(Engine *engine, bool validate) :
+vlk::VulkanModule::VulkanModule(
+    Engine *engine,
+    bool validate) :
     enabled_layer_count{0},
     enabled_extension_count{0},
     engine(engine),
@@ -58,9 +60,9 @@ void vlk::VulkanModule::initValidation() {
     if (!validation_found) {
       ERR_EXIT(
           "vkEnumerateInstanceLayerProperties failed to find "
-              "required validation layer.\n\n"
-              "Please look at the Getting Started guide for "
-              "additional information.\n",
+          "required validation layer.\n\n"
+          "Please look at the Getting Started guide for "
+          "additional information.\n",
           "vkCreateInstance Failure");
     }
   }
@@ -87,8 +89,9 @@ void vlk::VulkanModule::initDevice() {
   if (instance_extension_count > 0) {
     std::unique_ptr<vk::ExtensionProperties[]> instance_extensions(
         new vk::ExtensionProperties[instance_extension_count]);
-    result = vk::enumerateInstanceExtensionProperties(nullptr, &instance_extension_count,
-                                                      instance_extensions.get());
+    result = vk::enumerateInstanceExtensionProperties(
+        nullptr, &instance_extension_count,
+        instance_extensions.get());
     VERIFY(result == vk::Result::eSuccess);
 
     for (uint32_t i = 0; i < instance_extension_count; i++) {
@@ -133,13 +136,13 @@ void vlk::VulkanModule::initDevice() {
   if (!surfaceExtFound) {
     ERR_EXIT(
         "vkEnumerateInstanceExtensionProperties failed to find "
-            "the "
+        "the "
         VK_KHR_SURFACE_EXTENSION_NAME
         " extension.\n\n"
-            "Do you have a compatible Vulkan installable client "
-            "driver (ICD) installed?\n"
-            "Please look at the Getting Started guide for additional "
-            "information.\n",
+        "Do you have a compatible Vulkan installable client "
+        "driver (ICD) installed?\n"
+        "Please look at the Getting Started guide for additional "
+        "information.\n",
         "vkCreateInstance Failure");
   }
 
@@ -157,13 +160,13 @@ void vlk::VulkanModule::initDevice() {
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
     ERR_EXIT(
         "vkEnumerateInstanceExtensionProperties failed to find "
-            "the "
+        "the "
         VK_KHR_XCB_SURFACE_EXTENSION_NAME
         " extension.\n\n"
-            "Do you have a compatible Vulkan installable client "
-            "driver (ICD) installed?\n"
-            "Please look at the Getting Started guide for additional "
-            "information.\n",
+        "Do you have a compatible Vulkan installable client "
+        "driver (ICD) installed?\n"
+        "Please look at the Getting Started guide for additional "
+        "information.\n",
         "vkCreateInstance Failure");
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
     ERR_EXIT(
@@ -214,22 +217,22 @@ void vlk::VulkanModule::initDevice() {
   if (result == vk::Result::eErrorIncompatibleDriver) {
     ERR_EXIT(
         "Cannot find a compatible Vulkan installable client "
-            "driver (ICD).\n\n"
-            "Please look at the Getting Started guide for additional "
-            "information.\n",
+        "driver (ICD).\n\n"
+        "Please look at the Getting Started guide for additional "
+        "information.\n",
         "vkCreateInstance Failure");
   } else if (result == vk::Result::eErrorExtensionNotPresent) {
     ERR_EXIT(
         "Cannot find a specified extension library.\n"
-            "Make sure your layers path is set appropriately.\n",
+        "Make sure your layers path is set appropriately.\n",
         "vkCreateInstance Failure");
   } else if (result != vk::Result::eSuccess) {
     ERR_EXIT(
         "vkCreateInstance failed.\n\n"
-            "Do you have a compatible Vulkan installable client "
-            "driver (ICD) installed?\n"
-            "Please look at the Getting Started guide for additional "
-            "information.\n",
+        "Do you have a compatible Vulkan installable client "
+        "driver (ICD) installed?\n"
+        "Please look at the Getting Started guide for additional "
+        "information.\n",
         "vkCreateInstance Failure");
   }
 
@@ -248,11 +251,11 @@ void vlk::VulkanModule::initDevice() {
   } else {
     ERR_EXIT(
         "vkEnumeratePhysicalDevices reported zero accessible "
-            "devices.\n\n"
-            "Do you have a compatible Vulkan installable client "
-            "driver (ICD) installed?\n"
-            "Please look at the Getting Started guide for additional "
-            "information.\n",
+        "devices.\n\n"
+        "Do you have a compatible Vulkan installable client "
+        "driver (ICD) installed?\n"
+        "Please look at the Getting Started guide for additional "
+        "information.\n",
         "vkEnumeratePhysicalDevices Failure");
   }
 
@@ -283,13 +286,13 @@ void vlk::VulkanModule::initDevice() {
   if (!swapchainExtFound) {
     ERR_EXIT(
         "vkEnumerateDeviceExtensionProperties failed to find "
-            "the "
+        "the "
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
         " extension.\n\n"
-            "Do you have a compatible Vulkan installable client "
-            "driver (ICD) installed?\n"
-            "Please look at the Getting Started guide for additional "
-            "information.\n",
+        "Do you have a compatible Vulkan installable client "
+        "driver (ICD) installed?\n"
+        "Please look at the Getting Started guide for additional "
+        "information.\n",
         "vkCreateInstance Failure");
   }
 
@@ -311,8 +314,11 @@ void vlk::VulkanModule::initDevice() {
 }
 
 vk::Bool32
-vlk::VulkanModule::checkLayers(uint32_t check_count, char const *const *const check_names, uint32_t layer_count,
-                               vk::LayerProperties *layers) {
+vlk::VulkanModule::checkLayers(
+    uint32_t check_count,
+    char const *const *const check_names,
+    uint32_t layer_count,
+    vk::LayerProperties *layers) {
   FLOG(INFO);
   for (uint32_t i = 0; i < check_count; i++) {
     vk::Bool32 found = VK_FALSE;
@@ -330,7 +336,9 @@ vlk::VulkanModule::checkLayers(uint32_t check_count, char const *const *const ch
   return VK_TRUE;
 }
 
-void vlk::VulkanModule::initSurface(xcb_connection_t *connection, xcb_window_t xcb_window) {
+void vlk::VulkanModule::initSurface(
+    xcb_connection_t *connection,
+    xcb_window_t xcb_window) {
   FLOG(INFO);
 // Create a WSI surface for the window:
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -695,7 +703,9 @@ void vlk::VulkanModule::prepareSwapchainBuffers() {
   }
 }
 
-vk::Result vlk::VulkanModule::prepareImageToView(const vk::Image &image, uint32_t index) {
+vk::Result vlk::VulkanModule::prepareImageToView(
+    const vk::Image &image,
+    uint32_t index) {
   FLOG(INFO);
   auto color_image_view =
       vk::ImageViewCreateInfo()
@@ -739,9 +749,10 @@ void vlk::VulkanModule::prepareDepth() {
   depth.mem_alloc.setAllocationSize(mem_reqs.size);
   depth.mem_alloc.setMemoryTypeIndex(0);
 
-  auto const pass = memoryModule->memoryTypeFromProperties(mem_reqs.memoryTypeBits,
-                                                           vk::MemoryPropertyFlagBits::eDeviceLocal,
-                                                           &depth.mem_alloc.memoryTypeIndex);
+  auto const pass = memoryModule->memoryTypeFromProperties(
+      mem_reqs.memoryTypeBits,
+      vk::MemoryPropertyFlagBits::eDeviceLocal,
+      &depth.mem_alloc.memoryTypeIndex);
   VERIFY(pass);
 
   result = device.allocateMemory(&depth.mem_alloc, nullptr, &depth.mem);
@@ -766,7 +777,7 @@ void vlk::VulkanModule::prepareFramebuffers() {
   attachments[1] = depth.view;
 
   auto const fb_info = vk::FramebufferCreateInfo()
-      .setRenderPass(render_pass)
+      .setRenderPass(renderPass)
       .setAttachmentCount(2)
       .setPAttachments(attachments)
       .setWidth((uint32_t) width)
@@ -775,8 +786,9 @@ void vlk::VulkanModule::prepareFramebuffers() {
 
   for (uint32_t i = 0; i < swapchainImageCount; i++) {
     attachments[0] = swapchain_image_resources[i].view;
-    auto const result = device.createFramebuffer(&fb_info, nullptr,
-                                                 &swapchain_image_resources[i].framebuffer);
+    auto const result = device.createFramebuffer(
+        &fb_info, nullptr,
+        &swapchain_image_resources[i].framebuffer);
     VERIFY(result == vk::Result::eSuccess);
   }
 }
@@ -811,12 +823,13 @@ void vlk::VulkanModule::prepareRenderPass() {
                                                         .setFinalLayout(
                                                             vk::ImageLayout::eDepthStencilAttachmentOptimal)};
 
-  auto const color_reference = vk::AttachmentReference().setAttachment(0).setLayout(
-      vk::ImageLayout::eColorAttachmentOptimal);
+  auto const color_reference = vk::AttachmentReference()
+      .setAttachment(0)
+      .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
   auto const depth_reference =
       vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
+  https://www.youtube.com/watch?v=Es1fbCeeNDo
   auto const subpass = vk::SubpassDescription()
       .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
       .setInputAttachmentCount(0)
@@ -836,17 +849,19 @@ void vlk::VulkanModule::prepareRenderPass() {
       .setDependencyCount(0)
       .setPDependencies(nullptr);
 
-  auto result = device.createRenderPass(&rp_info, nullptr, &render_pass);
+  auto result = device.createRenderPass(&rp_info, nullptr, &renderPass);
   VERIFY(result == vk::Result::eSuccess);
 }
 
 void vlk::VulkanModule::clearBackgroundCommandBuffer(
     vk::CommandBuffer *commandBuffer,
-    vk::Framebuffer &frameBuffer) {
+    vk::Framebuffer &frameBuffer,
+    std::vector<vk::CommandBuffer> &subCommandBuffers) {
   FLOG(INFO);
-  auto const inheritanceInfo = vk::CommandBufferInheritanceInfo(render_pass,
-                                                                0,
-                                                                frameBuffer);
+  auto const inheritanceInfo = vk::CommandBufferInheritanceInfo(
+      renderPass,
+      0,
+      frameBuffer);
   auto const commandInfo = vk::CommandBufferBeginInfo()
       .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
       .setPInheritanceInfo(&inheritanceInfo);
@@ -860,7 +875,7 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
 
   auto const passInfo = vk::RenderPassBeginInfo()
       .setPNext(nullptr)
-      .setRenderPass(render_pass)
+      .setRenderPass(renderPass)
       .setFramebuffer(frameBuffer)
       .setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D((uint32_t) width, (uint32_t) height)))
       .setClearValueCount(2)
@@ -869,7 +884,7 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
   auto result = commandBuffer->begin(&commandInfo);
   VERIFY(result == vk::Result::eSuccess);
 
-  commandBuffer->beginRenderPass(&passInfo, vk::SubpassContents::eInline);
+  commandBuffer->beginRenderPass(&passInfo, vk::SubpassContents::eSecondaryCommandBuffers);
 
   auto const viewport =
       vk::Viewport()
@@ -882,7 +897,7 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
   vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(width, height));
   commandBuffer->setScissor(0, 1, &scissor);
   // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
-
+  commandBuffer->executeCommands(subCommandBuffers);
   commandBuffer->endRenderPass();
 
   if (separate_present_queue) {
@@ -907,14 +922,19 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
             .setImage(swapchain_image_resources[swapChainIndex].image)
             .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
-    commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                   vk::PipelineStageFlagBits::eBottomOfPipe, vk::DependencyFlagBits(), 0, nullptr, 0,
-                                   nullptr, 1, &image_ownership_barrier);
+    commandBuffer->pipelineBarrier(
+        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        vk::PipelineStageFlagBits::eBottomOfPipe, vk::DependencyFlagBits(), 0, nullptr, 0,
+        nullptr, 1, &image_ownership_barrier);
   }
   // TODO Investigate
   //    result =
   commandBuffer->end();
   //    VERIFY(result == vk::Result::eSuccess);
+}
+
+vk::RenderPass &vlk::VulkanModule::getRenderPass() {
+  return renderPass;
 }
 
 // TODO (31-12-2017) REMOVE
@@ -982,7 +1002,12 @@ void vlk::VulkanModule::buildImageOwnershipCmd(uint32_t const &index) {
   //VERIFY(result == vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::updateDrawableObject(Camera *camera, VulkanDrawableObject *drawableObject) {
+void vlk::VulkanModule::updateDrawableObject(
+    vk::Framebuffer &framebuffer,
+    uint32_t width,
+    uint32_t height,
+    VulkanDrawableObject *drawableObject,
+    Camera *camera) {
   FLOG(INFO) << "gameObject: " << drawableObject->getGameObject()->getSid();
   // const auto drawableObject = new VulkanDrawableObject(this, gameObject);
   /*
@@ -1014,7 +1039,7 @@ void vlk::VulkanModule::updateDrawableObject(Camera *camera, VulkanDrawableObjec
   */
 
 
-  drawableObject->buildDrawCommandBuffer(camera);
+  drawableObject->buildDrawCommandBuffer(camera, framebuffer, width, height);
 }
 
 void vlk::VulkanModule::resetFenceAcquireNextImage() {
@@ -1025,8 +1050,9 @@ void vlk::VulkanModule::resetFenceAcquireNextImage() {
 
   vk::Result result;
   do {
-    result = device.acquireNextImageKHR(swapchain, UINT64_MAX, image_acquired_semaphores[swapChainIndex],
-                                        vk::Fence(), &swapChainIndex);
+    result = device.acquireNextImageKHR(
+        swapchain, UINT64_MAX, image_acquired_semaphores[swapChainIndex],
+        vk::Fence(), &swapChainIndex);
     if (result == vk::Result::eErrorOutOfDateKHR) {
       // demo->swapchain is out of date (e.g. the window was resized) and
       // must be recreated:
@@ -1041,14 +1067,16 @@ void vlk::VulkanModule::resetFenceAcquireNextImage() {
   } while (result != vk::Result::eSuccess);
 }
 
-void vlk::VulkanModule::draw(GameWorld *gameWorld, std::unordered_map<GameObject::SID, VulkanDrawableObject *> dra) {
+void vlk::VulkanModule::draw(
+    GameWorld *gameWorld,
+    std::unordered_map<GameObject::SID, VulkanDrawableObject *> dra) {
   static auto const start = vlk::TimeUtility::now();
   FLOG(INFO);
   this->resetFenceAcquireNextImage();
 
-  this->drawWorld(gameWorld, swapchain_image_resources[swapChainIndex].framebuffer);
+  auto commandBuffers =this->drawWorld(gameWorld, swapchain_image_resources[swapChainIndex].framebuffer);
 
-  this->presentFrame();
+  this->presentFrame(commandBuffers);
   curFrame++;
   if (curFrame % 100 == 0) {
     uint64_t milliSeconds = vlk::TimeUtility::now() - start;
@@ -1057,8 +1085,9 @@ void vlk::VulkanModule::draw(GameWorld *gameWorld, std::unordered_map<GameObject
   }
 }
 // TODO Move this block outside of the vulkanmodule
-void vlk::VulkanModule::drawWorld(vlk::GameWorld *gameWorld,
-                                  vk::Framebuffer &frameBuffer) {
+std::vector<vk::CommandBuffer> vlk::VulkanModule::drawWorld(
+    vlk::GameWorld *gameWorld,
+    vk::Framebuffer &frameBuffer ) {
   auto gameObjects = gameWorld->getGameObjects();
   auto commandBufferCounts = gameObjects.size();
   FLOG(INFO) << "drawing " << commandBufferCounts;
@@ -1067,21 +1096,25 @@ void vlk::VulkanModule::drawWorld(vlk::GameWorld *gameWorld,
     auto commandBuffers = this->commandPoolGraphic->createCommandBuffers(commandBufferCounts);
 
     for (int index = 0; index < commandBufferCounts; ++index) {
+      vk::CommandBuffer &commandBuffer = commandBuffers[index];
 
-      this->commandPoolGraphic->begin(commandBuffers[index],
-                                      render_pass,
-                                      frameBuffer);
+      this->commandPoolGraphic->begin(
+          commandBuffer,
+          renderPass,
+          frameBuffer);
 
-      auto drawable = this->prepareRenderableObject(commandBuffers[index], gameObjects[index]);
+      setDynamicStates(commandBuffer);
 
-      this->updateDrawableObject(gameWorld->getCamera(), drawable.get());
+      auto drawable = this->prepareRenderableObject(commandBuffer, gameObjects[index]);
+
+      this->updateDrawableObject(frameBuffer, width, height, drawable.get(), gameWorld->getCamera());
 
     }
     /*
     auto mainCommandBuffer = this->commandPoolGraphic->createCommandBuffer();
     vk::CommandBufferInheritanceInfo inheritanceInfo;
     inheritanceInfo.setPNext(nullptr)
-        .setRenderPass(render_pass);
+        .setRenderPass(renderPass);
     vk::CommandBufferBeginInfo beginInfo;
         beginInfo.setPInheritanceInfo(
                 &inheritanceInfo)
@@ -1091,8 +1124,23 @@ void vlk::VulkanModule::drawWorld(vlk::GameWorld *gameWorld,
     mainCommandBuffer->executeCommands(commandBuffers);
     mainCommandBuffer->end();
      */
+
     commandPoolGraphic->submit(commandBuffers);
+    return commandBuffers;
   }
+  return std::vector<vk::CommandBuffer>();
+}
+void vlk::VulkanModule::setDynamicStates(vk::CommandBuffer &commandBuffer)  {
+  auto const viewport =
+          vk::Viewport()
+              .setWidth((float) this->width)
+              .setHeight((float) this->height)
+              .setMinDepth(0.0f)
+              .setMaxDepth(1.0f);
+  commandBuffer.setViewport(0, 1, &viewport);
+
+  vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(this->width, this->height));
+  commandBuffer.setScissor(0, 1, &scissor);
 }
 
 void vlk::VulkanModule::resize() {
@@ -1122,7 +1170,7 @@ void vlk::VulkanModule::resize() {
 
   device.destroyPipeline(globalPipeline, nullptr);
   //device.destroyPipelineCache(pipelineCache, nullptr);
-  device.destroyRenderPass(render_pass, nullptr);
+  device.destroyRenderPass(renderPass, nullptr);
   //device.destroyPipelineLayout(pipeline_layout, nullptr);
   device.destroyDescriptorSetLayout(desc_layout, nullptr);
 
@@ -1168,7 +1216,7 @@ vlk::VulkanPipelineModule *vlk::VulkanModule::getPipelineModule() {
   return this->pipelineModule;
 }
 
-void vlk::VulkanModule::presentFrame() {
+void vlk::VulkanModule::presentFrame(std::vector<vk::CommandBuffer> &commandBuffers) {
   FLOG(INFO);
   // Wait for the image acquired semaphore to be signaled to ensure
   // that the image won't be rendered to until the presentation
@@ -1182,8 +1230,9 @@ void vlk::VulkanModule::presentFrame() {
 
   // TODO nothing is recorded inside the image presentation command buffer
   vk::CommandBuffer *imageCommandBuffer = swapchain_image_resources[swapChainIndex].cmd.get();
-  this->clearBackgroundCommandBuffer(imageCommandBuffer,
-                                     swapchain_image_resources[swapChainIndex].framebuffer);
+
+  this->clearBackgroundCommandBuffer(imageCommandBuffer, swapchain_image_resources[swapChainIndex].framebuffer, commandBuffers);
+
   auto const submit_info = vk::SubmitInfo()
       .setPNext(nullptr)
       .setPWaitDstStageMask(&pipe_stage_flags)
@@ -1222,8 +1271,9 @@ void vlk::VulkanModule::presentFrame() {
   // otherwise wait for draw complete
   auto const presentInfo = vk::PresentInfoKHR()
       .setWaitSemaphoreCount(1)
-      .setPWaitSemaphores(separate_present_queue ? &image_ownership_semaphores[swapChainIndex]
-                                                 : &draw_complete_semaphores[swapChainIndex])
+      .setPWaitSemaphores(
+          separate_present_queue ? &image_ownership_semaphores[swapChainIndex]
+                                 : &draw_complete_semaphores[swapChainIndex])
       .setSwapchainCount(1)
       .setPNext(nullptr)
       .setPSwapchains(&swapchain)
@@ -1265,7 +1315,7 @@ vlk::VulkanModule::~VulkanModule() {
   swapchain_image_resources.reset();
   // as last since swapchainImageResource uses a deleter instantiated inside the commandPoolGraphic
   inst.destroySurfaceKHR(surface);
-  device.destroyRenderPass(this->render_pass);
+  device.destroyRenderPass(this->renderPass);
   device.freeMemory(depth.mem);
   device.destroyImageView(depth.view);
   device.destroyImage(depth.image);
@@ -1276,8 +1326,9 @@ vlk::VulkanModule::~VulkanModule() {
   }
   delete commandPoolGraphic;
 }
-void vlk::VulkanModule::makeVertexBuffer(vlk::vktexcube_vs_uniform &data,
-                                         vk::Buffer &uniformBuffer
+void vlk::VulkanModule::makeVertexBuffer(
+    vlk::vktexcube_vs_uniform &data,
+    vk::Buffer &uniformBuffer
 ) {
   vk::DeviceMemory uniform_memory;
   vk::MemoryRequirements memoryRequirements{};
@@ -1302,31 +1353,35 @@ void vlk::VulkanModule::makeVertexBuffer(vlk::vktexcube_vs_uniform &data,
   result = device.allocateMemory(&mem_alloc, nullptr, &uniform_memory);
   VERIFY(result == vk::Result::eSuccess);
 
-  auto pData = device.mapMemory(uniform_memory,
-                                0,
-                                VK_WHOLE_SIZE,
-                                vk::MemoryMapFlags());
+  auto pData = device.mapMemory(
+      uniform_memory,
+      0,
+      VK_WHOLE_SIZE,
+      vk::MemoryMapFlags());
 
   memcpy(pData, &data, sizeof data);
 
   device.unmapMemory(uniform_memory);
 
-  device.bindBufferMemory(uniformBuffer,
-                          uniform_memory,
-                          0);
+  device.bindBufferMemory(
+      uniformBuffer,
+      uniform_memory,
+      0);
 }
 void vlk::VulkanModule::prepareTextureObject(
     vk::CommandBuffer *commandBuffer,
     std::string &filename,
     TextureObject &textureObject) {
-  this->textureModule->makeTexture(commandBuffer,
-                                   filename.data(),
-                                   this->format,
-                                   textureObject);
+  this->textureModule->makeTexture(
+      commandBuffer,
+      filename.data(),
+      this->format,
+      textureObject);
 }
 std::shared_ptr<vlk::VulkanDrawableObject>
-vlk::VulkanModule::prepareRenderableObject(vk::CommandBuffer &commandBuffer,
-                                           vlk::GameObject *gameObject) {
+vlk::VulkanModule::prepareRenderableObject(
+    vk::CommandBuffer &commandBuffer,
+    vlk::GameObject *gameObject) {
   FLOG(INFO);
   auto drawable = std::make_shared<vlk::VulkanDrawableObject>(this, gameObject);
   drawable->setCommandBuffer(&commandBuffer);
@@ -1343,3 +1398,16 @@ void vlk::VulkanModule::initSubModules() {
 vlk::DescriptorModule *vlk::VulkanModule::getDescriptorModule() const {
   return descriptorModule;
 }
+vk::Device *vlk::VulkanModule::getDevice() {
+  return &device;
+}
+vk::Format &vlk::VulkanModule::getDepthFormat() {
+  return depth.format;
+}
+vk::Format &vlk::VulkanModule::getFormat() {
+  return format;
+}
+vlk::CommandPoolModule *vlk::VulkanModule::getCommandPoolModule() {
+  return this->commandPoolGraphic;
+}
+

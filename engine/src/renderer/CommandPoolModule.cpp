@@ -41,7 +41,7 @@ std::vector<vk::CommandBuffer> vlk::CommandPoolModule::createCommandBuffers(cons
   FLOG(INFO) << " quantity" << quantity;
   auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
       .setCommandPool(this->commandPool)
-      .setLevel(vk::CommandBufferLevel::ePrimary)
+      .setLevel(vk::CommandBufferLevel::eSecondary)
       .setCommandBufferCount(quantity);
 
   return this->device.allocateCommandBuffers(commandBufferAllocateInfo);
@@ -71,6 +71,7 @@ void vlk::CommandPoolModule::begin(vk::CommandBuffer &commandBuffer,
       .setFlags(vk::CommandBufferUsageFlagBits::eRenderPassContinue);
   commandBuffer.begin(beginInfo);
 }
-void vlk::CommandPoolModule::submit(std::vector<vk::CommandBuffer> vector) {
+void vlk::CommandPoolModule::submit(std::vector<vk::CommandBuffer> &vector) {
+  FLOG(INFO) << "EXPERIMENTAL BUT NOW WE ARE NOT DOING ANYTHING" << std::endl;
 
 }

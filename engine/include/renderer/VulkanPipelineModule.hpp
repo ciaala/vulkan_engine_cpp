@@ -23,15 +23,16 @@ namespace vlk {
         ~VulkanPipelineModule();
 
     public:
-        vk::Pipeline prepareGraphicPipeline(std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
-                                            vk::PipelineLayout &__pipeline_layout,
-                                            vk::RenderPass __render_pass);
+        void prepareGraphicPipeline(
+                std::vector<vk::PipelineShaderStageCreateInfo> &shaderStageInfoList,
+                vk::PipelineLayout &pipelineLayout,
+                vk::RenderPass &renderPass,
+                vk::Pipeline &outPipeline);
 
         //vk::Pipeline createSubCommandBufferPipeline();
 
         void preparePipelineLayout(std::vector<vk::DescriptorSetLayout> &descriptorSetLayoutList,
                                    vk::PipelineLayout &outPipelineLayout);
-
 
 
     };
