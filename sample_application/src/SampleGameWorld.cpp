@@ -37,7 +37,7 @@ void SampleGameWorld::fillWorld() {
 
   const auto zeroCube = new SampleObject(engine->getResourceManager()->loadModel("cube1.json"));
   objects.emplace_back(zeroCube);
-/*
+
   const auto firstCube = new SampleObject(engine->getResourceManager()->loadModel("cube1.json"));
   objects.emplace_back(firstCube);
   firstCube->setSpinningAngle(4.0f);
@@ -53,7 +53,7 @@ void SampleGameWorld::fillWorld() {
   mat4x4_identity(pos2);
   mat4x4_translate(pos2, 1.0, 0.0, 0.0);
   secondCube->setModelMatrix(pos2);
-  */
+
 }
 
 std::vector<vlk::AudioObject *> SampleGameWorld::getAudioObjects() {

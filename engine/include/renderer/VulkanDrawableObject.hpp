@@ -45,8 +45,8 @@ class VulkanDrawableObject {
 
   void prepareDescriptors();
   void preparePipeline();
-  void prepareResourceBuffers();
-  void prepareResourceShaders();
+  void prepareResourceBuffers(std::shared_ptr<vk::CommandBuffer> commandBuffer);
+  void prepareResourceShaders(std::shared_ptr<vk::CommandBuffer> ptr);
   void prepare(vlk::Camera *camera);
   std::vector<TextureObject> &getTextures();
   bool isPrepared;
@@ -68,6 +68,9 @@ class VulkanDrawableObject {
 
   GameObject *getGameObject();
   void prepareRenderPass();
+
+  void prepareVulkanResources(std::shared_ptr<vk::CommandBuffer> commandBuffer);
+  bool isVulkanResourcesReady;
 };
 
 }

@@ -10,6 +10,7 @@ class VulkanModule;
 // Allow a maximum of two outstanding presentation operations.
 #define FRAME_LAG 2
 
+static const char *const VK_EXT_DEBUG_REPORT = "VK_EXT_debug_report";
 namespace vlk {
 class Engine;
 };
@@ -33,6 +34,7 @@ class Engine;
 #include "../../src/renderer/CommandPoolModule.hpp"
 #include "VulkanDrawableObject.hpp"
 #include "DescriptorModule.hpp"
+#include "../../src/renderer/VulkanDebugger.hpp"
 
 // Definition used in prepare
 
@@ -45,16 +47,17 @@ class VulkanModule {
   DescriptorModule *descriptorModule;
 
   CommandPoolModule *commandPoolGraphic;
-
+  VulkanDebugger *vulkanDebugger;
   uint32_t instance_extension_count = 0;
   uint32_t instance_layer_count = 0;
   uint32_t validation_layer_count = 0;
   char const *const *instance_validation_layers = nullptr;
 
-  uint32_t enabled_extension_count;
-  uint32_t enabled_layer_count;
-  char const *extension_names[64];
+  // TODO make a vector instead of a static array of pointer to char
   char const *enabled_layers[64];
+  uint32_t enabled_layer_count;
+
+  std::vector<const char*> requiredExtensionNames;
 
   vk::Instance inst;
   vk::PhysicalDevice gpu;
@@ -161,7 +164,9 @@ class VulkanModule {
 
   TextureModule *textureModule;
 
-  void buildImageOwnershipCmd(uint32_t const &index);
+  void buildImageOwnershipCmd(
+      vk::CommandBuffer &commandBuffer,
+      vk::Image &image);
 
   //static char const *const tex_files[];
   bool use_staging_buffer;

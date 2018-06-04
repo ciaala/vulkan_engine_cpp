@@ -75,7 +75,14 @@ set(SOURCE_FILES
         src/audio/AudioObject.hpp
 
         src/utility/TimeUtility.cpp
-        src/utility/TimeUtility.hpp src/renderer/CommandPoolModule.cpp src/renderer/CommandPoolModule.hpp src/renderer/DescriptorModule.cpp include/renderer/DescriptorModule.hpp src/core/CommonMacro.cpp)
+        src/utility/TimeUtility.hpp
+        src/renderer/CommandPoolModule.cpp
+        src/renderer/CommandPoolModule.hpp
+        src/renderer/DescriptorModule.cpp
+        include/renderer/DescriptorModule.hpp
+        src/core/CommonMacro.cpp
+        src/renderer/VulkanDebugger.cpp
+        src/renderer/VulkanDebugger.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})

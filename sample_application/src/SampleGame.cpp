@@ -18,6 +18,7 @@ SampleGame::SampleGame(vlk::Engine *engine) : gameWorld{new SampleGameWorld(engi
 }
 
 vlk::GameWorld *SampleGame::getWorld() {
+  FLOG(INFO);
   return this->gameWorld;
 }
 SampleGame::~SampleGame() {

@@ -5,6 +5,7 @@
 
 #include <renderer/VulkanModule.hpp>
 
+const int TEMP_OBJECTS_COUNT = 10;
 vlk::DescriptorModule::DescriptorModule(vk::Device &device) :
         device(device) {
     this->prepareDescriptorPool();
@@ -26,10 +27,10 @@ void vlk::DescriptorModule::prepareDescriptorPool() {
     std::vector<vk::DescriptorPoolSize> poolSizes = {
             vk::DescriptorPoolSize()
                     .setType(vk::DescriptorType::eUniformBuffer)
-                    .setDescriptorCount(swapchainImageCount),
+                    .setDescriptorCount(swapchainImageCount* TEMP_OBJECTS_COUNT),
             vk::DescriptorPoolSize()
                     .setType(vk::DescriptorType::eCombinedImageSampler)
-                    .setDescriptorCount(swapchainImageCount * texture_count),
+                    .setDescriptorCount(swapchainImageCount * texture_count* TEMP_OBJECTS_COUNT),
     };
 
     auto const poolCreateInfo = vk::DescriptorPoolCreateInfo()
@@ -68,15 +69,15 @@ void vlk::DescriptorModule::updateDescriptorSet(std::vector<TextureObject> &text
     writes[1].setDescriptorCount((uint32_t) textures.size());
     writes[1].setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
     writes[1].setPImageInfo(imageInfo);
-
+  if ( outDescriptorSetList.empty()) {
     outDescriptorSetList.resize(1);
     auto const allocateInfo = vk::DescriptorSetAllocateInfo()
-            .setDescriptorPool(descriptorPool)
-            .setDescriptorSetCount((uint32_t) outDescriptorSetList.size())
-            .setPSetLayouts(descriptorSetLayoutList.data());
+        .setDescriptorPool(descriptorPool)
+        .setDescriptorSetCount((uint32_t) outDescriptorSetList.size())
+        .setPSetLayouts(descriptorSetLayoutList.data());
     auto result = device.allocateDescriptorSets(&allocateInfo, outDescriptorSetList.data());
     VERIFY(result == vk::Result::eSuccess);
-
+  }
     buffer_info.setBuffer(uniformBuffer);
     writes[0].setDstSet(outDescriptorSetList[0]);
 

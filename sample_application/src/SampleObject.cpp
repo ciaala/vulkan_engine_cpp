@@ -13,6 +13,7 @@ void SampleObject::rotateRight() {
 }
 
 SampleObject::SampleObject(vlk::ResourceModel *resourceModel) {
+    FLOG(INFO);
     this->resourceModel = resourceModel;
     this->vertexBufferData = resourceModel->getVertex();
     this->uvBufferData = resourceModel->getUV();

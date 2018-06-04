@@ -50,16 +50,18 @@ void vlk::VulkanDrawableObject::preparePipeline() {
 
 void vlk::VulkanDrawableObject::prepare(vlk::Camera *camera) {
   FLOG(INFO);
-  prepareRenderPass();
-  prepareResourceBuffers();
-  prepareResourceShaders();
+  if (1 == 0) {
+    prepareRenderPass();
+  }
+//  prepareResourceBuffers();
+//  prepareResourceShaders();
   prepareBuffers(camera, gameObject);
 
   prepareDescriptors();
   isPrepared = true;
 }
 
-void vlk::VulkanDrawableObject::prepareResourceShaders() {
+void vlk::VulkanDrawableObject::prepareResourceShaders(std::shared_ptr<vk::CommandBuffer> commandBuffer) {
   FLOG(INFO);
 
   std::vector<vk::ShaderModule> vertexes = this->vulkanModule->getShaderModule()->prepareShaderFromFiles(
@@ -75,7 +77,8 @@ vlk::VulkanDrawableObject::VulkanDrawableObject(
     vlk::GameObject *gameObject)
     : vulkanModule{vulkanModule},
       gameObject(gameObject),
-      isPrepared(false) {
+      isPrepared(false),
+      isVulkanResourcesReady{false}{
   FLOG(INFO);
 }
 
@@ -175,14 +178,14 @@ void vlk::VulkanDrawableObject::buildDrawCommandBuffer(
   commandBuffer->end();
 }
 
-void vlk::VulkanDrawableObject::prepareResourceBuffers() {
+void vlk::VulkanDrawableObject::prepareResourceBuffers(std::shared_ptr<vk::CommandBuffer> commandBuffer) {
   FLOG(INFO) << " gameObject: " << this->gameObject->getSid();
   auto textureFiles = gameObject->getTextureFiles();
   vulkan.textures.resize(textureFiles.size());
   unsigned int index = 0;
   for (std::string &textureFile : textureFiles) {
     this->vulkanModule->prepareTextureObject(
-        vulkan.commandBuffer,
+        commandBuffer.get(),
         textureFile,
         vulkan.textures[index]);
     index++;
@@ -261,7 +264,7 @@ void vlk::VulkanDrawableObject::preparePipelineLayout() {
   pipelineModule->prepareGraphicPipeline(
       vulkan.shaderStageInfoList,
       vulkan.pipelineLayout,
-      vulkan.renderPass,
+      this->vulkanModule->getRenderPass(),
       vulkan.pipeline);
 
 }
@@ -316,4 +319,11 @@ void vlk::VulkanDrawableObject::prepareRenderPass() {
       nullptr,
       &vulkan.renderPass);
   VERIFY(result == vk::Result::eSuccess);
+}
+void vlk::VulkanDrawableObject::prepareVulkanResources(std::shared_ptr< vk::CommandBuffer> commandBuffer) {
+  if ( !isVulkanResourcesReady ) {
+    prepareResourceBuffers(commandBuffer);
+    prepareResourceShaders(commandBuffer);
+    isVulkanResourcesReady = true;
+  }
 }

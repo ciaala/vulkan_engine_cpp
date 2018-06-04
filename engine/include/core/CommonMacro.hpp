@@ -64,6 +64,11 @@ class LogIndent {
     } while (0)
 
 #define VERIFY(x) assert(x)
+#define CHECK_RESULT(x,y) \
+if((x) != (y)) { \
+  LOG(ERROR) << "FAILED " << std::dec << (x) << " == " << std::dec << (y); \
+  assert((x) == (y)); \
+}
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 #endif //VULKAN_ENGINE_CPP_COMMONMACRO_HPP
