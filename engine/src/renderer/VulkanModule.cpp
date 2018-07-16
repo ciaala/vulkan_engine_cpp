@@ -213,7 +213,7 @@ void vlk::VulkanModule::init() {
             .setEnabledExtensionCount(enabled_extension_count)
             .setPpEnabledExtensionNames(extension_names);
 
-    result = vk::createInstance(&inst_info, nullptr, &inst);
+    result = vk::createInstance(&inst_info, nullptr, &instance);
     if (result == vk::Result::eErrorIncompatibleDriver) {
         ERR_EXIT(
                 "Cannot find a compatible Vulkan installable client "
@@ -238,13 +238,13 @@ void vlk::VulkanModule::init() {
 
     /* Make initial call to query gpu_count, then second call for gpu info*/
     uint32_t gpu_count;
-    result = inst.enumeratePhysicalDevices(&gpu_count, nullptr);
+    result = instance.enumeratePhysicalDevices(&gpu_count, nullptr);
     VERIFY(result == vk::Result::eSuccess);
     assert(gpu_count > 0);
 
     if (gpu_count > 0) {
         std::unique_ptr<vk::PhysicalDevice[]> physical_devices(new vk::PhysicalDevice[gpu_count]);
-        result = inst.enumeratePhysicalDevices(&gpu_count, physical_devices.get());
+        result = instance.enumeratePhysicalDevices(&gpu_count, physical_devices.get());
         VERIFY(result == vk::Result::eSuccess);
         /* For cube demo we just grab the first physical device */
         gpu = physical_devices[0];
@@ -339,14 +339,14 @@ void vlk::VulkanModule::initSurface(xcb_connection_t *connection, xcb_window_t x
     {
             auto const createInfo = vk::Win32SurfaceCreateInfoKHR().setHinstance(connection).setHwnd(window);
 
-            auto result = inst.createWin32SurfaceKHR(&createInfo, nullptr, &surface);
+            auto result = instance.createWin32SurfaceKHR(&createInfo, nullptr, &surface);
             VERIFY(result == vk::Result::eSuccess);
         }
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
     {
             auto const createInfo = vk::WaylandSurfaceCreateInfoKHR().setDisplay(display).setSurface(window);
 
-            auto result = inst.createWaylandSurfaceKHR(&createInfo, nullptr, &surface);
+            auto result = instance.createWaylandSurfaceKHR(&createInfo, nullptr, &surface);
             VERIFY(result == vk::Result::eSuccess);
         }
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
@@ -354,21 +354,21 @@ void vlk::VulkanModule::initSurface(xcb_connection_t *connection, xcb_window_t x
     {
             auto const createInfo = vk::XlibSurfaceCreateInfoKHR().setDpy(display).setWindow(xlib_window);
 
-            auto result = inst.createXlibSurfaceKHR(&createInfo, nullptr, &surface);
+            auto result = instance.createXlibSurfaceKHR(&createInfo, nullptr, &surface);
             VERIFY(result == vk::Result::eSuccess);
         }
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
     {
         auto const createInfo = vk::XcbSurfaceCreateInfoKHR().setConnection(connection).setWindow(xcb_window);
 
-        auto result = inst.createXcbSurfaceKHR(&createInfo, nullptr, &this->surface);
+        auto result = instance.createXcbSurfaceKHR(&createInfo, nullptr, &this->surface);
         VERIFY(result == vk::Result::eSuccess);
     }
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
     {
-            auto result = create_display_surface();
-            VERIFY(result == vk::Result::eSuccess);
-        }
+        auto result = create_display_surface();
+        VERIFY(result == vk::Result::eSuccess);
+    }
 #endif
 }
 

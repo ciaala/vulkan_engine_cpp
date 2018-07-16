@@ -49,7 +49,7 @@ namespace vlk {
         char const *extension_names[64];
         char const *enabled_layers[64];
 
-        vk::Instance inst;
+        vk::Instance instance;
         vk::PhysicalDevice gpu;
         vk::Device device;
         vk::Queue graphics_queue;

@@ -53,7 +53,7 @@ set(SOURCE_FILES
         src/renderer/ModelRendererAdapter.cpp
 
         src/resource/json.hpp
-        )
+        include/renderer/PresentationModule.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})
@@ -75,5 +75,6 @@ target_include_directories(vkengine
         PUBLIC ogg
         PUBLIC vorbisfile
         PUBLIC glog)
-
-add_dependencies(vkengine DOCUMENTATION)
+if (RST_TOOL)
+    add_dependencies(vkengine DOCUMENTATION)
+endif ()
