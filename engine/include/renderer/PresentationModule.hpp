@@ -1,0 +1,14 @@
+//
+// Created by Francesco Fiduccia on 06/03/2018.
+//
+
+#ifndef VULKAN_ENGINE_CPP_PRESENTATIONMODULE_HPP
+#define VULKAN_ENGINE_CPP_PRESENTATIONMODULE_HPP
+
+
+class PresentationModule {
+
+};
+
+
+#endif //VULKAN_ENGINE_CPP_PRESENTATIONMODULE_HPP
