@@ -30,9 +30,8 @@ if ( DOXYGEN_FOUND )
     message("Found Doxygen: " ${DOXYGEN_EXECUTABLE} )
     set(DOXYGEN_PROJECT_BRIEF "Vulkan Engine")
     set(DOXYGEN_GENERATE_HTML YES)
-    set(DOXYGEN )
+    set(DOXYGEN_EXCLUDE_PATTERNS */modules/*)
 endif()
-set(DOXYGEN_EXCLUDE_PATTERNS */modules/*)
 
 doxygen_add_docs(doxygen
         ${PROJECT_SOURCE_DIR}
