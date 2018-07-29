@@ -33,21 +33,9 @@ class LogIndent {
   LogIndent(const std::string filename,
             const int line,
             const int severity,
-            const std::string function) :
-      function(function),
-      filename(filename),
-      line(line),
-      severity(severity)
-  {
-    LogIndent::level.fetch_add(1);
-  }
+            const std::string function);
 
-  ~LogIndent() {
-    uint_fast32_t level = LogIndent::level.fetch_sub(1);
-    int width = 2* ((int) level);
-    google::LogMessage logMessage(filename.data(), 5555, severity);
-    logMessage.stream() << std::setw(2) << level << std::setw(width) << std::setfill('-')<<"";
-  }
+  ~LogIndent();
   friend std::ostream &operator<<(std::ostream &oStream, const LogIndent &logIndent);
 
 };

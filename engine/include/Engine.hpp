@@ -15,6 +15,7 @@
 #include "../src/audio/AudioModule.hpp"
 #include "resource/ResourceManager.hpp"
 
+//! Main namespace for the engine
 namespace vlk {
     class Renderer;
 

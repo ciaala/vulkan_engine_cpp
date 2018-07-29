@@ -1,0 +1,7 @@
+find_program(CPPCHECK_EXECUTABLE NAMES cppcheck)
+if ( CPPCHECK_EXECUTABLE )
+    message("Found CPPCHECK at " ${CPPCHECK_EXECUTABLE})
+    set(CMAKE_CXX_CPPCHECK ${CPPCHECK_EXECUTABLE})
+else()
+    warning(Not Found CPPCHECK)
+endif()

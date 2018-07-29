@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.11)
 set(CMAKE_MODULE_PATH ../cmake)
 project(vkengine)
-set(CMAKE_CXX_STANDARD 14)
-
+set(CMAKE_CXX_STANDARD 17)
+option(BUILD_DOC "Build documentation" ON)
 # TODO discover a package manager to build
 # TODO substitutes each modules with proper dependencies
 # TODO Add gflags from sub directory
@@ -21,8 +21,27 @@ add_subdirectory(modules/googletest)
 message("adding subdirectory glog")
 add_subdirectory(modules/glog)
 
+
+find_package(Doxygen
+        REQUIRED dot
+        OPTIONAL_COMPONENTS mscgen dia)
+
+if ( DOXYGEN_FOUND )
+    message("Found Doxygen: " ${DOXYGEN_EXECUTABLE} )
+    set(DOXYGEN_PROJECT_BRIEF "Vulkan Engine")
+    set(DOXYGEN_GENERATE_HTML YES)
+    set(DOXYGEN )
+endif()
+set(DOXYGEN_EXCLUDE_PATTERNS */modules/*)
+
+doxygen_add_docs(doxygen
+        ${PROJECT_SOURCE_DIR}
+        COMMENT "Generate API documentation")
+
 find_package(XCB REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(CPPCheck)
+
 set(SOURCE_FILES
         src/Engine.cpp
         src/renderer/Renderer.cpp
