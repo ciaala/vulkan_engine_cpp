@@ -2,7 +2,6 @@
 // Created by crypt on 12/03/18.
 //
 #include <vulkan/vulkan.h>
-#include <jmorecfg.h>
 #include "core/CommonMacro.hpp"
 #include "VulkanDebugger.hpp"
 #include "iostream"
