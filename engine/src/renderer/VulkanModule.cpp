@@ -4,7 +4,6 @@
 #include "renderer/VulkanModule.hpp"
 #include "../utility/TimeUtility.hpp"
 #include <iostream>
-#include <gmpxx.h>
 
 vlk::VulkanModule::VulkanModule(
     Engine *engine,
