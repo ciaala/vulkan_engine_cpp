@@ -4,17 +4,19 @@
 
 #include <iostream>
 #include "renderer/TextureModule.hpp"
+#include "../utility/Utility.hpp"
 
 void vlk::TextureModule::prepareTextureImage(const char *filename,
                                              TextureObject &tex_obj,
                                              vk::ImageTiling tiling,
                                              vk::ImageUsageFlags usage,
                                              vk::MemoryPropertyFlags required_props) {
-  FLOG(INFO) << "Loading: texture image " << filename;
+  FLOG(INFO) << "Loading: texture image " << Utility::getAbsolutePath(filename).string();
   int32_t tex_width;
   int32_t tex_height;
   if (!loadTextureInfo(filename, &tex_width, &tex_height)) {
-    ERR_EXIT("Failed to load textures", "Load Texture Failure");
+    auto message = std::string("Failed to load textures: ") + Utility::getAbsolutePath(filename).string();
+    ERR_EXIT(message.c_str(), "Load Texture Failure");
   }
 
   tex_obj.tex_width = tex_width;
@@ -77,7 +79,7 @@ bool
 vlk::TextureModule::loadTextureInfo(const char *filename,
                                     int32_t *width,
                                     int32_t *height) {
-  FLOG(INFO) << filename;
+  FLOG(INFO);
   return this->loadTexture(filename, nullptr, nullptr, width, height);
 }
 
@@ -89,7 +91,7 @@ vlk::TextureModule::loadTexture(const char *filename,
                                 int32_t *height) {
 
   if (rgba_data != nullptr) {
-    FLOG(INFO) << filename;
+    FLOG(INFO) << "Loading: " << Utility::getAbsolutePath(filename);
   }
   FILE *fPtr = fopen(filename, "rb");
   if (!fPtr) {

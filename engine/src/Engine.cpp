@@ -31,7 +31,7 @@ void vlk::Engine::setupModules() {
   this->audioModule = new AudioModule();
   this->vulkanModule = new VulkanModule(this, true);
   this->xcbModule = new XCBModule(this);
-  this->resourceManager = new ResourceManager("sample_application/resources");
+  this->resourceManager = new ResourceManager("resources");
   this->renderer = new Renderer(this, vulkanModule, xcbModule);
 }
 

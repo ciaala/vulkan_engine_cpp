@@ -3,7 +3,7 @@
 //
 
 #include <game/GameWorld.hpp>
-#include "../include/SampleGame.hpp"
+#include "SampleGame.hpp"
 
 void SampleGame::quit() {
   this->_quit = true;

@@ -5,6 +5,7 @@
 #include <iostream>
 #include "renderer/ShaderModule.hpp"
 #include "core/CommonMacro.hpp"
+#include "../utility/Utility.hpp"
 
 vk::ShaderModule vlk::ShaderModule::prepareShaderModule(const void *code, size_t size) {
 
@@ -23,18 +24,18 @@ vlk::ShaderModule::ShaderModule(vk::Device *device) {
 }
 
 vk::ShaderModule vlk::ShaderModule::readAndPrepare(const char *filename) {
-    FLOG(INFO) << "Loading: shader " << filename;
+    FLOG(INFO) << "Loading: shader " << Utility::getAbsolutePath(filename);
     size_t size;
     auto code = this->readSpv(filename, &size);
     if (code != nullptr) {
         return this->prepareShaderModule(code, size);
     }
-    LOG(ERROR) << "Loading shader from file: '" << filename << "' has failed" << std::endl;
+    LOG(ERROR) << "Loading shader from file: '" << Utility::getAbsolutePath(filename) << "' has failed" << std::endl;
     return nullptr;
 }
 
 char *vlk::ShaderModule::readSpv(const char *filename, size_t *psize) {
-    FLOG(INFO) << "Reading file: " << filename;
+    FLOG(INFO) << "Reading file: " << Utility::getAbsolutePath(filename);
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
         return nullptr;

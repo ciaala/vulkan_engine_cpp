@@ -100,7 +100,7 @@ set(SOURCE_FILES
         include/renderer/DescriptorModule.hpp
         src/core/CommonMacro.cpp
         src/renderer/VulkanDebugger.cpp
-        src/renderer/VulkanDebugger.hpp)
+        src/renderer/VulkanDebugger.hpp src/utility/Utility.cpp src/utility/Utility.hpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})
@@ -111,7 +111,8 @@ target_link_libraries(vkengine ${VULKAN_LIBRARY_DIR}
         vorbis
         ogg
         vorbisfile
-        glog)
+        glog
+        stdc++fs)
 target_include_directories(vkengine
         PRIVATE include
         PUBLIC ${VULKAN_INCLUDE_DIR}

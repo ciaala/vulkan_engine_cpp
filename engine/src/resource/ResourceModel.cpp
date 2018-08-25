@@ -27,11 +27,6 @@ vlk::ResourceModel *vlk::ResourceModel::setUV(
     return this;
 }
 
-vlk::ResourceModel::ResourceModel() {
-    // TODO analyse performance
-
-}
-
 vlk::ResourceModel *vlk::ResourceModel::setTextures(std::vector<std::string> &textures) {
     this->textures = textures;
     return this;

@@ -5,15 +5,13 @@ project(vulkan_engine_cpp)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_CPPCHECK)
 #set(CMAKE_CXX_FLAGS -ferror-limit=9001)
-set(SOURCE_FILES src/main.cpp)
+# set(SOURCE_FILES app/multiple_cubes/src/main.cpp app/single_cube/src/Application.cpp app/single_cube/src/Application.hpp)
 add_subdirectory(engine)
-add_subdirectory(sample_application)
+add_subdirectory(app/multiple_cubes)
+add_subdirectory(app/single_cube)
+# add_subdirectory(app/snakes)
 add_subdirectory(snippets)
 add_subdirectory(doc)
 include_directories(engine/include
-        sample_application/include)
-add_executable(vulkan_engine_cpp ${SOURCE_FILES})
-target_link_libraries(vulkan_engine_cpp vkengine sample_application)
-target_include_directories(vulkan_engine_cpp PUBLIC
-        vkengine
-        sample_application)
+        app/multiple_cubes/include)
+

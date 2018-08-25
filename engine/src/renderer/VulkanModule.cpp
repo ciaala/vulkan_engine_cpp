@@ -3,7 +3,6 @@
 //
 #include "renderer/VulkanModule.hpp"
 #include "../utility/TimeUtility.hpp"
-#include <iostream>
 
 vlk::VulkanModule::VulkanModule(
     Engine *engine,
@@ -102,39 +101,38 @@ void vlk::VulkanModule::initDevice() {
       LOG(INFO) << "Instance Extension available [" << i << "] " << instance_extensions[i].extensionName;
       if (!strcmp(VK_EXT_DEBUG_REPORT, instance_extensions[i].extensionName)) {
         requiredExtensionNames.push_back(VK_EXT_DEBUG_REPORT);
-      }
-      else if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+      } else if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
         surfaceExtFound = 1;
         requiredExtensionNames.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
       }
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-      if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
-          xcbSurfaceExtFound = 1;
-          extension_names[enabled_extension_count++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
-      }
+        if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+            xcbSurfaceExtFound = 1;
+            extension_names[enabled_extension_count++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+        }
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
-      if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
-          xcbSurfaceExtFound = 1;
-          extension_names[enabled_extension_count++] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
-      }
+        if (!strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+            xcbSurfaceExtFound = 1;
+            extension_names[enabled_extension_count++] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+        }
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
       else if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
         platformSurfaceExtFound = 1;
         requiredExtensionNames.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
       }
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-        if (!strcmp(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
-        platformSurfaceExtFound = 1;
-            extension_names[enabled_extension_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
-        }
+      if (!strcmp(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+      platformSurfaceExtFound = 1;
+          extension_names[enabled_extension_count++] = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+      }
 #elif defined(VK_USE_PLATFORM_MIR_KHR)
 #elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
-        if (!strcmp(VK_KHR_DISPLAY_EXTENSION_NAME,
-                    instance_extensions[i].extensionName)) {
-        platformSurfaceExtFound = 1;
-            extension_names[enabled_extension_count++] =
-                VK_KHR_DISPLAY_EXTENSION_NAME;
-        }
+      if (!strcmp(VK_KHR_DISPLAY_EXTENSION_NAME,
+                  instance_extensions[i].extensionName)) {
+      platformSurfaceExtFound = 1;
+          extension_names[enabled_extension_count++] =
+              VK_KHR_DISPLAY_EXTENSION_NAME;
+      }
 
 #endif
     }
@@ -279,11 +277,11 @@ void vlk::VulkanModule::initDevice() {
     VERIFY(result == vk::Result::eSuccess);
 
     for (uint32_t i = 0; i < device_extension_count; i++) {
-      LOG(INFO) << "Device Extension [" << i <<  "] " << device_extensions[i].extensionName;
+      LOG(INFO) << "Device Extension [" << i << "] " << device_extensions[i].extensionName;
       if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, device_extensions[i].extensionName)) {
         swapchainExtFound = 1;
-        requiredExtensionNames.push_back( VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        }
+        requiredExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+      }
     }
   }
 
@@ -507,7 +505,7 @@ void vlk::VulkanModule::createDevice() {
     std::swap(*it, requiredExtensionNames.back());
     requiredExtensionNames.pop_back();
   }
-  for(auto& item : requiredExtensionNames) {
+  for (auto &item : requiredExtensionNames) {
     LOG(INFO) << item;
   }
   auto deviceInfo = vk::DeviceCreateInfo()
@@ -515,7 +513,7 @@ void vlk::VulkanModule::createDevice() {
       .setPQueueCreateInfos(queues)
       .setEnabledLayerCount(0)
       .setPpEnabledLayerNames(nullptr)
-      .setEnabledExtensionCount((uint32_t ) requiredExtensionNames.size())
+      .setEnabledExtensionCount((uint32_t) requiredExtensionNames.size())
       .setPpEnabledExtensionNames(requiredExtensionNames.data())
       .setPEnabledFeatures(nullptr);
 
@@ -525,7 +523,6 @@ void vlk::VulkanModule::createDevice() {
     queues[1].setPQueuePriorities(priorities);
     deviceInfo.setQueueCreateInfoCount(2);
   }
-
 
   auto result = gpu.createDevice(&deviceInfo, nullptr, &device);
   CHECK_RESULT(result, vk::Result::eSuccess);
@@ -1106,7 +1103,7 @@ void vlk::VulkanModule::draw(
 // TODO Move this block outside of the vulkanmodule
 std::vector<vk::CommandBuffer> vlk::VulkanModule::drawWorld(
     vlk::GameWorld *gameWorld,
-    vk::Framebuffer &frameBuffer ) {
+    vk::Framebuffer &frameBuffer) {
   auto gameObjects = gameWorld->getGameObjects();
   auto commandBufferCounts = gameObjects.size();
   FLOG(INFO) << "drawing " << commandBufferCounts;
@@ -1149,13 +1146,13 @@ std::vector<vk::CommandBuffer> vlk::VulkanModule::drawWorld(
   }
   return std::vector<vk::CommandBuffer>();
 }
-void vlk::VulkanModule::setDynamicStates(vk::CommandBuffer &commandBuffer)  {
+void vlk::VulkanModule::setDynamicStates(vk::CommandBuffer &commandBuffer) {
   auto const viewport =
-          vk::Viewport()
-              .setWidth((float) this->width)
-              .setHeight((float) this->height)
-              .setMinDepth(0.0f)
-              .setMaxDepth(1.0f);
+      vk::Viewport()
+          .setWidth((float) this->width)
+          .setHeight((float) this->height)
+          .setMinDepth(0.0f)
+          .setMaxDepth(1.0f);
   commandBuffer.setViewport(0, 1, &viewport);
 
   vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(this->width, this->height));
@@ -1250,7 +1247,9 @@ void vlk::VulkanModule::presentFrame(std::vector<vk::CommandBuffer> &commandBuff
   // TODO nothing is recorded inside the image presentation command buffer
   vk::CommandBuffer *imageCommandBuffer = swapchain_image_resources[swapChainIndex].cmd.get();
 
-  this->clearBackgroundCommandBuffer(imageCommandBuffer, swapchain_image_resources[swapChainIndex].framebuffer, commandBuffers);
+  this->clearBackgroundCommandBuffer(imageCommandBuffer,
+                                     swapchain_image_resources[swapChainIndex].framebuffer,
+                                     commandBuffers);
 
   auto const submit_info = vk::SubmitInfo()
       .setPNext(nullptr)
@@ -1349,6 +1348,7 @@ void vlk::VulkanModule::makeVertexBuffer(
     vlk::vktexcube_vs_uniform &data,
     vk::Buffer &uniformBuffer
 ) {
+  FLOG(INFO);
   vk::DeviceMemory uniform_memory;
   vk::MemoryRequirements memoryRequirements{};
 
@@ -1391,12 +1391,14 @@ void vlk::VulkanModule::prepareTextureObject(
     vk::CommandBuffer *commandBuffer,
     std::string &filename,
     TextureObject &textureObject) {
+  FLOG(INFO);
   this->textureModule->makeTexture(
       commandBuffer,
       filename.data(),
       this->format,
       textureObject);
 }
+
 std::shared_ptr<vlk::VulkanDrawableObject>
 vlk::VulkanModule::prepareRenderableObject(
     vk::CommandBuffer &commandBuffer,

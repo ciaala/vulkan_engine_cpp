@@ -31,7 +31,7 @@ SampleGameWorld::SampleGameWorld(vlk::Engine *engine) {
 
   fillWorld();
 
-  this->audioObjects.emplace_back(new vlk::AudioObject("sample_application/resources/elysium.ogg"));
+  this->audioObjects.emplace_back(new vlk::AudioObject("sample/resources/elysium.ogg"));
 }
 void SampleGameWorld::fillWorld() {
 

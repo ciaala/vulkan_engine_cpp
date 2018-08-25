@@ -13,7 +13,7 @@ namespace vlk {
     class ResourceModel {
 
     public:
-        ResourceModel();
+        ResourceModel() = default;
 
         float *getVertex();
 

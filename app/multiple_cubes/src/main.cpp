@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "Engine.hpp"
-#include "SampleApplication.hpp"
+#include "../include/SampleApplication.hpp"
 
 int main(int argc, char** args) {
     vlk::Engine::static_initialization();

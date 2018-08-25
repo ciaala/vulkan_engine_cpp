@@ -2,7 +2,7 @@
 // Created by crypt on 15/07/17.
 //
 
-#include "../include/SampleApplication.hpp"
+#include "SampleApplication.hpp"
 #include <string>
 
 SampleApplication::SampleApplication(vlk::Engine *engine) :

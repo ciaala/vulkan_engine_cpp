@@ -2,7 +2,7 @@
 // Created by crypt on 19/07/17.
 //
 
-#include "../include/SampleObject.hpp"
+#include "SampleObject.hpp"
 
 void SampleObject::rotateLeft() {
     this->spinningAngle -= spinningStep;
@@ -19,7 +19,7 @@ SampleObject::SampleObject(vlk::ResourceModel *resourceModel) {
     this->uvBufferData = resourceModel->getUV();
 
     this->textureFiles = resourceModel->getTextures();
-    //this->textureFiles.emplace_back("sample_application/resources/Martini.ppm");
+    //this->textureFiles.emplace_back("sample/resources/Martini.ppm");
     this->vertexShaderFiles = resourceModel->getVertexShaders();
     this->fragmentShaderFiles = resourceModel->getFragmentShaders();
 }
