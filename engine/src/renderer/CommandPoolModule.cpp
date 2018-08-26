@@ -38,7 +38,7 @@ std::shared_ptr<vk::CommandBuffer> vlk::CommandPoolModule::createCommandBuffer()
 }
 std::vector<vk::CommandBuffer> vlk::CommandPoolModule::createCommandBuffers(const uint64_t quantity) {
 
-  FLOG(INFO) << " quantity" << quantity;
+  FLOG(INFO) << " quantity of command buffers to allocate: " << quantity;
   auto const commandBufferAllocateInfo = vk::CommandBufferAllocateInfo()
       .setCommandPool(this->commandPool)
       .setLevel(vk::CommandBufferLevel::eSecondary)

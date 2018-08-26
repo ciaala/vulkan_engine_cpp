@@ -11,13 +11,16 @@
 //    }
 void vlk::Engine::static_initialization() {
   google::InitGoogleLogging(vlk::Engine::getName().c_str());
-  std::stringstream log;
-  log << "VulkanEngine startup." << std::endl;
-  log << "Vulkan version: " << vlk::Engine::getVulkanVersion() << std::endl;
-  FLOG(INFO) << log.str();
+  google::SetStderrLogging(GLOG_SEVERITY_INFO);
+  ;
+  FLOG(INFO) << "VulkanEngine startup";
+  CLOG(INFO) << "Vulkan version: " << vlk::Engine::getVulkanVersion();
 }
+
 std::string vlk::Engine::getVulkanVersion() {
-  return std::to_string(VK_HEADER_VERSION);
+  return std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION))
+  + std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION))
+  + std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION));
 }
 
 vlk::Engine::Engine() {
@@ -31,7 +34,7 @@ void vlk::Engine::setupModules() {
   this->audioModule = new AudioModule();
   this->vulkanModule = new VulkanModule(this, true);
   this->xcbModule = new XCBModule(this);
-  this->resourceManager = new ResourceManager("resources");
+  this->resourceManager = new ResourceManager("../../../resources");
   this->renderer = new Renderer(this, vulkanModule, xcbModule);
 }
 

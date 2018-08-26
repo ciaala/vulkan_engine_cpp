@@ -4,6 +4,7 @@
 #include "renderer/VulkanModule.hpp"
 #include "../utility/TimeUtility.hpp"
 
+static const unsigned long COMMANDBUFFER_RENDER_PASS_COUNT = 1;
 vlk::VulkanModule::VulkanModule(
     Engine *engine,
     bool validate) :
@@ -431,7 +432,7 @@ void vlk::VulkanModule::initSwapChain() {
   if (!separate_present_queue) {
     present_queue = graphics_queue;
   } else {
-    LOG(INFO) << "Graphic and Pesentation queue are separated.";
+    CLOG(INFO) << "Graphic and Pesentation queue are separated.";
     device.getQueue(present_queue_family_index, 0, &present_queue);
   }
 
@@ -448,12 +449,12 @@ void vlk::VulkanModule::initSwapChain() {
   // the surface has no preferred format.  Otherwise, at least one
   // supported format will be returned.
   if (formatCount == 1 && surfFormats[0].format == vk::Format::eUndefined) {
-    LOG(INFO) << "Undefined image format. Forcing image format to B8G8R8A8" << std::endl;
+    CLOG(INFO) << "Undefined image format. Forcing image format to B8G8R8A8" << std::endl;
     format = vk::Format::eB8G8R8A8Unorm;
   } else {
     assert(formatCount >= 1);
     format = surfFormats[0].format;
-    LOG(INFO) << "Format set to " << to_string(format);
+    CLOG(INFO) << "Format set to " << to_string(format);
   }
   color_space = surfFormats[0].colorSpace;
 
@@ -498,9 +499,10 @@ void vlk::VulkanModule::createDevice() {
   queues[0].setQueueFamilyIndex(graphics_queue_family_index);
   queues[0].setQueueCount(1);
   queues[0].setPQueuePriorities(priorities);
-  auto it = std::find(requiredExtensionNames.begin(),
-                      requiredExtensionNames.end(),
-                      VK_EXT_DEBUG_REPORT);
+  auto it = std::find(
+      requiredExtensionNames.begin(),
+      requiredExtensionNames.end(),
+      VK_EXT_DEBUG_REPORT);
   if (it != requiredExtensionNames.end()) {
     std::swap(*it, requiredExtensionNames.back());
     requiredExtensionNames.pop_back();
@@ -814,25 +816,26 @@ void vlk::VulkanModule::prepareRenderPass() {
   // the renderpass, the color attachment's layout will be transitioned to
   // LAYOUT_PRESENT_SRC_KHR to be ready to present.  This is all done as part of
   // the renderpass, no barriers are necessary.
-  const vk::AttachmentDescription attachments[2] = {vk::AttachmentDescription()
-                                                        .setFormat(format)
-                                                        .setSamples(vk::SampleCountFlagBits::e1)
-                                                        .setLoadOp(vk::AttachmentLoadOp::eClear)
-                                                        .setStoreOp(vk::AttachmentStoreOp::eStore)
-                                                        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-                                                        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-                                                        .setInitialLayout(vk::ImageLayout::eUndefined)
-                                                        .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
-                                                    vk::AttachmentDescription()
-                                                        .setFormat(depth.format)
-                                                        .setSamples(vk::SampleCountFlagBits::e1)
-                                                        .setLoadOp(vk::AttachmentLoadOp::eClear)
-                                                        .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-                                                        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-                                                        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-                                                        .setInitialLayout(vk::ImageLayout::eUndefined)
-                                                        .setFinalLayout(
-                                                            vk::ImageLayout::eDepthStencilAttachmentOptimal)};
+  const vk::AttachmentDescription attachments[2] =
+      {vk::AttachmentDescription()
+           .setFormat(format)
+           .setSamples(vk::SampleCountFlagBits::e1)
+           .setLoadOp(vk::AttachmentLoadOp::eClear)
+           .setStoreOp(vk::AttachmentStoreOp::eStore)
+           .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+           .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+           .setInitialLayout(vk::ImageLayout::eUndefined)
+           .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
+       vk::AttachmentDescription()
+           .setFormat(depth.format)
+           .setSamples(vk::SampleCountFlagBits::e1)
+           .setLoadOp(vk::AttachmentLoadOp::eClear)
+           .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+           .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+           .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+           .setInitialLayout(vk::ImageLayout::eUndefined)
+           .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+      };
 
   auto const color_reference = vk::AttachmentReference()
       .setAttachment(0)
@@ -884,6 +887,9 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
       clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{redIndex, greenIndex, blueIndex, 1.0f}})),
                         vk::ClearDepthStencilValue(1.0f, 0u)};
 
+  auto result = commandBuffer->begin(&commandInfo);
+  VERIFY(result == vk::Result::eSuccess);
+
   auto const passInfo = vk::RenderPassBeginInfo()
       .setPNext(nullptr)
       .setRenderPass(renderPass)
@@ -891,23 +897,13 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
       .setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D((uint32_t) width, (uint32_t) height)))
       .setClearValueCount(2)
       .setPClearValues(clearValues);
-
-  auto result = commandBuffer->begin(&commandInfo);
-  VERIFY(result == vk::Result::eSuccess);
-
   commandBuffer->beginRenderPass(&passInfo, vk::SubpassContents::eSecondaryCommandBuffers);
 
-  auto const viewport =
-      vk::Viewport()
-          .setWidth((float) width)
-          .setHeight((float) height)
-          .setMinDepth(0.0f)
-          .setMaxDepth(1.0f);
-  commandBuffer->setViewport(0, 1, &viewport);
+  this->prepareViewPortAndScissorCommandBuffer(frameBuffer, subCommandBuffers[0], width, height, 0.0f, 1.0f);
 
-  vk::Rect2D const scissor(vk::Offset2D(0, 0), vk::Extent2D(width, height));
-  commandBuffer->setScissor(0, 1, &scissor);
+  //TODO should be bound to the commandBufferSubPass ?
   // commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->globalPipeline);
+
   commandBuffer->executeCommands(subCommandBuffers);
   commandBuffer->endRenderPass();
 
@@ -945,6 +941,38 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
   //    result =
   commandBuffer->end();
   //    VERIFY(result == vk::Result::eSuccess);
+}
+void vlk::VulkanModule::prepareViewPortAndScissorCommandBuffer(
+    vk::Framebuffer &frameBuffer,
+    vk::CommandBuffer &commandBufferSubPass,
+    float width,
+    float height,
+    float minDepth,
+    float maxDepth) const {
+  FLOG(INFO);
+  auto const viewport = vk::Viewport()
+      .setWidth(width)
+      .setHeight(height)
+      .setMinDepth(minDepth)
+      .setMaxDepth(maxDepth);
+
+  auto const inheritanceInfo = vk::CommandBufferInheritanceInfo(
+      renderPass,
+      0,
+      frameBuffer);
+  auto const commandInfo = vk::CommandBufferBeginInfo()
+      .setFlags(vk::CommandBufferUsageFlagBits::eRenderPassContinue
+      | vk::CommandBufferUsageFlagBits::eSimultaneousUse)
+      .setPInheritanceInfo(&inheritanceInfo);
+
+  commandBufferSubPass.begin(&commandInfo);
+  commandBufferSubPass.setViewport(0, 1, &viewport);
+
+  vk::Rect2D const scissor(
+      vk::Offset2D(0, 0),
+      vk::Extent2D((uint32_t) width, (uint32_t) height));
+  commandBufferSubPass.setScissor(0, 1, &scissor);
+  commandBufferSubPass.end();
 }
 
 vk::RenderPass &vlk::VulkanModule::getRenderPass() {
@@ -994,9 +1022,9 @@ void vlk::VulkanModule::buildImageOwnershipCmd(
     vk::CommandBuffer &commandBuffer,
     vk::Image &image) {
   FLOG(INFO);
-  auto const cmd_buf_info = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-  auto result = commandBuffer.begin(&cmd_buf_info);
-  VERIFY(result == vk::Result::eSuccess);
+  // auto const cmd_buf_info = vk::CommandBufferBeginInfo().setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+  // auto result = commandBuffer.begin(&cmd_buf_info);
+  // VERIFY(result == vk::Result::eSuccess);
 
   auto const image_ownership_barrier =
       vk::ImageMemoryBarrier()
@@ -1010,11 +1038,15 @@ void vlk::VulkanModule::buildImageOwnershipCmd(
           .setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
   commandBuffer.pipelineBarrier(
-      vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      vk::DependencyFlagBits(), 0, nullptr, 0, nullptr, 1, &image_ownership_barrier);
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::DependencyFlagBits(),
+      0, nullptr,
+      0, nullptr,
+      1, &image_ownership_barrier);
   // TODO Investigate
   // result =
-  commandBuffer.end();
+  //commandBuffer.end();
   //VERIFY(result == vk::Result::eSuccess);
 }
 
@@ -1105,13 +1137,13 @@ std::vector<vk::CommandBuffer> vlk::VulkanModule::drawWorld(
     vlk::GameWorld *gameWorld,
     vk::Framebuffer &frameBuffer) {
   auto gameObjects = gameWorld->getGameObjects();
-  auto commandBufferCounts = gameObjects.size();
+  auto commandBufferCounts = gameObjects.size() + COMMANDBUFFER_RENDER_PASS_COUNT;
   FLOG(INFO) << "drawing " << commandBufferCounts;
 
   if (commandBufferCounts > 0) {
     auto commandBuffers = this->commandPoolGraphic->createCommandBuffers(commandBufferCounts);
 
-    for (int index = 0; index < commandBufferCounts; ++index) {
+    for (int index = COMMANDBUFFER_RENDER_PASS_COUNT; index < commandBufferCounts; ++index) {
       vk::CommandBuffer &commandBuffer = commandBuffers[index];
 
       this->commandPoolGraphic->begin(
@@ -1247,9 +1279,10 @@ void vlk::VulkanModule::presentFrame(std::vector<vk::CommandBuffer> &commandBuff
   // TODO nothing is recorded inside the image presentation command buffer
   vk::CommandBuffer *imageCommandBuffer = swapchain_image_resources[swapChainIndex].cmd.get();
 
-  this->clearBackgroundCommandBuffer(imageCommandBuffer,
-                                     swapchain_image_resources[swapChainIndex].framebuffer,
-                                     commandBuffers);
+  this->clearBackgroundCommandBuffer(
+      imageCommandBuffer,
+      swapchain_image_resources[swapChainIndex].framebuffer,
+      commandBuffers);
 
   auto const submit_info = vk::SubmitInfo()
       .setPNext(nullptr)

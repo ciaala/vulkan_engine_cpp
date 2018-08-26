@@ -55,6 +55,8 @@ VkBool32 vlk::VulkanDebugger::vkDebugCallback(
 
 }
 bool vlk::VulkanDebugger::debugCallBack(
+    //TODO ffi. extend to use backtrace http://man7.org/linux/man-pages/man3/backtrace.3.html
+    //TODO also check https://stackoverflow.com/questions/77005/how-to-automatically-generate-a-stacktrace-when-my-gcc-c-program-crashes
     VkDebugReportFlagsEXT flags,
     VkDebugReportObjectTypeEXT objectType,
     uint64_t sourceObject,
@@ -86,7 +88,7 @@ bool vlk::VulkanDebugger::debugCallBack(
         buffer << "\033[0m";
       }
       buffer << endl;
-      LOG(INFO) << buffer.str();
+      LOG(ERROR) << buffer.str();
     }
 
     return false;

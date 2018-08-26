@@ -44,6 +44,9 @@ class LogIndent {
   LogIndent __logIndent(__FILE__, __LINE__, GLOG_SEVERITY_ ## severity, __PRETTY_FUNCTION__); \
   LOG(severity) << __logIndent << "<" << __PRETTY_FUNCTION__ << "> "
 
+#define CLOG(severity) \
+  LOG(severity) << __logIndent << "<" << __PRETTY_FUNCTION__ << "> "
+
 #define ERR_EXIT(err_msg, err_class) \
     do {                             \
         printf("%s\n", err_msg);     \

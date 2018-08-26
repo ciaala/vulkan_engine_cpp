@@ -8,7 +8,7 @@ class VulkanModule;
 #ifndef VULKAN_ENGINE_CPP_VULKANMODULE_HPP
 #define VULKAN_ENGINE_CPP_VULKANMODULE_HPP
 // Allow a maximum of two outstanding presentation operations.
-#define FRAME_LAG 2
+#define FRAME_LAG 3
 
 static const char *const VK_EXT_DEBUG_REPORT = "VK_EXT_debug_report";
 namespace vlk {
@@ -57,7 +57,7 @@ class VulkanModule {
   char const *enabled_layers[64];
   uint32_t enabled_layer_count;
 
-  std::vector<const char*> requiredExtensionNames;
+  std::vector<const char *> requiredExtensionNames;
 
   vk::Instance inst;
   vk::PhysicalDevice gpu;
@@ -210,7 +210,7 @@ class VulkanModule {
 
  private:
   void setDynamicStates(vk::CommandBuffer &commandBuffer);
-    void resetFenceAcquireNextImage();
+  void resetFenceAcquireNextImage();
 
   void presentFrame(std::vector<vk::CommandBuffer> &vector);
 
@@ -219,6 +219,13 @@ class VulkanModule {
       uint32_t index);
 
   void prepareRenderPassAndFramebuffer();
+  void prepareViewPortAndScissorCommandBuffer(
+      vk::Framebuffer &frameBuffer,
+      vk::CommandBuffer &commandBufferSubPass,
+      float width,
+      float height,
+      float minDepth,
+      float maxDepth) const;
 
   // NEW PUBLIC API
  public:
@@ -238,7 +245,8 @@ class VulkanModule {
 
   vk::RenderPass &getRenderPass();
   vk::Device *getDevice();
-  CommandPoolModule * getCommandPoolModule();
+  CommandPoolModule *getCommandPoolModule();
+
 };
 }
 
