@@ -4,7 +4,7 @@
 
 #include "Application.hpp"
 
-class SingleCubeInputController : public vlk::InputController {
+class DummyInputController : public vlk::InputController {
  public:
   void keyReleased(vlk::Keys key) override {
 
@@ -32,11 +32,11 @@ class DummyWorld : public vlk::GameWorld {
 
 Application::Application(vlk::Engine *engine) {
   this->engine = engine;
-  this->inputController = new SingleCubeInputController();
+  this->inputController = new DummyInputController();
   this->world = new DummyWorld();
 }
 std::string Application::getName() {
-  return "single_cube";
+  return "clear_background";
 }
 vlk::InputController *Application::getInputController() {
   return this->inputController;
