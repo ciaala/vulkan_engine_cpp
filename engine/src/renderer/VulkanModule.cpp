@@ -1,6 +1,9 @@
 //
 // Created by crypt on 16/07/17.
 //
+#include <chrono>
+#include <random>
+#include <functional>
 #include "renderer/VulkanModule.hpp"
 #include "../utility/TimeUtility.hpp"
 
@@ -867,6 +870,58 @@ void vlk::VulkanModule::prepareRenderPass() {
   VERIFY(result == vk::Result::eSuccess);
 }
 
+struct Color3 {
+  uint32_t red = 1;
+  uint32_t green = 1;
+  uint32_t blue = 1;
+
+  double coeffRed = 0;
+  double coeffGreen = 0;
+  double coeffBlue = 0;
+
+  uint32_t COLOR_RANGE = 512;
+  uint32_t TIMELIMIT_MILLIS = 5000;
+  std::chrono::milliseconds TIMEFRAME_LIMIT = std::chrono::milliseconds(5000);
+  double MAXCOEFF_MILLI = (double) COLOR_RANGE /(double) TIMELIMIT_MILLIS;
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> sequenceEnd = std::chrono::system_clock::now();
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> previousTime = std::chrono::system_clock::now();
+
+  std::default_random_engine generator;
+
+  std::uniform_real_distribution<> distribution =
+      std::uniform_real_distribution<>( 0.0, MAXCOEFF_MILLI*2);
+
+   void shufflueCoeffs() {
+     auto dice = std::bind(distribution, generator);
+     this->coeffBlue = dice();
+      this->coeffGreen = dice();
+      this->coeffRed = MAXCOEFF_MILLI*2 - coeffGreen - coeffBlue;
+     this->coeffRed = this->coeffRed < 0 ? 0 : this->coeffRed;
+     FLOG(ERROR) << "COEFF: [" << coeffRed << "," << coeffGreen  << "," << coeffBlue << "] " << MAXCOEFF_MILLI ;
+
+   }
+
+  void next() {
+    const std::chrono::time_point now = std::chrono::system_clock::now();
+    if ( sequenceEnd < now) {
+      shufflueCoeffs();
+      sequenceEnd = now + TIMEFRAME_LIMIT;
+    }
+
+    auto delta_MILLIS = std::chrono::duration_cast<std::chrono::milliseconds>( now - previousTime ).count();
+    blue += (uint32_t)((coeffBlue * delta_MILLIS)* 1000);
+    green += (uint32_t)((coeffGreen * delta_MILLIS) * 1000);
+    red += (uint32_t)((coeffRed * delta_MILLIS) * 1000);
+    red %= 255000;
+    green %= 255000;
+    blue %= 255000;
+    previousTime = now;
+    FLOG(INFO) << "COLOR: [" << red << "," << green << "," << blue << "] ~" << delta_MILLIS ;
+   }
+};
+
+static struct Color3 backgroundColorMemory;
+
 void vlk::VulkanModule::clearBackgroundCommandBuffer(
     vk::CommandBuffer *commandBuffer,
     vk::Framebuffer &frameBuffer,
@@ -880,12 +935,17 @@ void vlk::VulkanModule::clearBackgroundCommandBuffer(
       .setFlags(vk::CommandBufferUsageFlagBits::eSimultaneousUse)
       .setPInheritanceInfo(&inheritanceInfo);
 
-  float blueIndex = ((curFrame % 25) * 11) / 255.0f;
-  float greenIndex = ((curFrame % (25 * 25)) * 121) / (255.0f * 255.0f);
-  float redIndex = ((curFrame % (25 * 25 * 25)) * 11 * 121) / (255.0f * 255.0f * 255.0f);
+  backgroundColorMemory.next();
+
   vk::ClearValue const
-      clearValues[2] = {vk::ClearColorValue(std::array<float, 4>({{redIndex, greenIndex, blueIndex, 1.0f}})),
-                        vk::ClearDepthStencilValue(1.0f, 0u)};
+      clearValues[2] = {
+      vk::ClearColorValue(std::array<float, 4>({{
+                                                    (float) backgroundColorMemory.red / 255000.0f,
+                                                    (float) backgroundColorMemory.green / 255000.0f,
+                                                    (float) backgroundColorMemory.blue / 255000.0f,
+                                                    255}
+                                               })),
+      vk::ClearDepthStencilValue(1.0f, 0u)};
 
   auto result = commandBuffer->begin(&commandInfo);
   VERIFY(result == vk::Result::eSuccess);
@@ -962,7 +1022,7 @@ void vlk::VulkanModule::prepareViewPortAndScissorCommandBuffer(
       frameBuffer);
   auto const commandInfo = vk::CommandBufferBeginInfo()
       .setFlags(vk::CommandBufferUsageFlagBits::eRenderPassContinue
-      | vk::CommandBufferUsageFlagBits::eSimultaneousUse)
+                    | vk::CommandBufferUsageFlagBits::eSimultaneousUse)
       .setPInheritanceInfo(&inheritanceInfo);
 
   commandBufferSubPass.begin(&commandInfo);
