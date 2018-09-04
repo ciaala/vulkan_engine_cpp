@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(SOURCE_FILES
         src/Application.cpp
         src/Application.hpp
+        src/SampleObject.hpp
+        src/SampleObject.cpp
         )
 include_directories(../../engine/include)
 
@@ -22,7 +24,7 @@ add_executable(single_cube src/main.cpp)
 target_link_libraries(single_cube vkengine single_cube_library)
 target_include_directories(single_cube PUBLIC
         vkengine
-        app/single_cube)
+        src)
 #
 #add_custom_command(
 #        TARGET ${PROJECT_NAME} POST_BUILD

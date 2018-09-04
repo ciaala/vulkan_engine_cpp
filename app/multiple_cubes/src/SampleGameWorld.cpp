@@ -35,7 +35,7 @@ SampleGameWorld::SampleGameWorld(vlk::Engine *engine) {
 }
 void SampleGameWorld::fillWorld() {
 
-  const auto zeroCube = new SampleObject(engine->getResourceManager()->loadModel("cube1.json"));
+  const auto zeroCube = new SampleObject(engine->getResourceManager()->loadModel("cube0.json"));
   objects.emplace_back(zeroCube);
 
   const auto firstCube = new SampleObject(engine->getResourceManager()->loadModel("cube1.json"));

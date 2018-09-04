@@ -2,7 +2,7 @@
 // Created by crypt on 19/07/17.
 //
 
-#include "../../single_cube/src/SampleObject.hpp"
+#include "SampleObject.hpp"
 
 void SampleObject::rotateLeft() {
     this->spinningAngle -= spinningStep;
