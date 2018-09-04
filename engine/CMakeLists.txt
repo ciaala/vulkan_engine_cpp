@@ -11,7 +11,8 @@ set(SOURCE_FILES
         src/Engine.cpp
         src/renderer/Renderer.cpp
         src/renderer/VulkanModule.cpp
-        src/renderer/XCBModule.cpp
+
+
         src/renderer/ShaderModule.cpp
         src/renderer/TextureModule.cpp
         src/renderer/MemoryModule.cpp
@@ -20,7 +21,7 @@ set(SOURCE_FILES
         include/Engine.hpp
         include/renderer/Renderer.hpp
         include/renderer/VulkanModule.hpp
-        include/renderer/XCBModule.hpp
+
         include/renderer/ShaderModule.hpp
         include/renderer/TextureModule.hpp
         include/renderer/MemoryModule.hpp
@@ -55,7 +56,6 @@ set(SOURCE_FILES
         src/resource/json.hpp
         include/renderer/PresentationModule.hpp)
 
-
 add_library(vkengine STATIC ${SOURCE_FILES})
 target_link_libraries(vkengine ${VULKAN_LIBRARY_DIR}
         xcb
@@ -68,13 +68,28 @@ target_link_libraries(vkengine ${VULKAN_LIBRARY_DIR}
 target_include_directories(vkengine
         PRIVATE include
         PUBLIC ${VULKAN_INCLUDE_DIR}
-        PUBLIC xcb
         PUBLIC openal
-        PUBLIC xcb-keysyms
         PUBLIC vorbis
         PUBLIC ogg
         PUBLIC vorbisfile
         PUBLIC glog)
+
+
+IF (LINUX)
+    set(WINDOW_SOURCE_FILES
+            src/renderer/xcb/XCBModule.hpp
+            src/renderer/xcb/XCBModule.cpp)
+
+    add_library(vkwindow STATIC ${WINDOW_SOURCE_FILES})
+
+    target_include_directories(vkwindow
+            PUBLIC xcb
+            PUBLIC xcb-keysyms
+            )
+elseif ()
+    set(MACO)
+endif ()
+
 if (RST_TOOL)
     add_dependencies(vkengine DOCUMENTATION)
 endif ()

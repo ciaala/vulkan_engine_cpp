@@ -4,8 +4,8 @@
 
 #include <cstdint>
 #include <unistd.h>
-#include "../../include/renderer/XCBModule.hpp"
-#include "../../include/Engine.hpp"
+#include "XCBModule.hpp"
+#include "Engine.hpp"
 #include <iostream>
 
 #include <xcb/xcb_keysyms.h>

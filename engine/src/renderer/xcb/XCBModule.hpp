@@ -12,8 +12,8 @@ namespace vlk {
 }
 
 #include <xcb/xcb.h>
-#include "../Engine.hpp"
-#include "../core/InputModule.hpp"
+#include "Engine.hpp"
+#include "core/InputModule.hpp"
 namespace vlk {
 
     class XCBModule : public PresentationModule {

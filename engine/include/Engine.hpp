@@ -8,7 +8,7 @@
 #include <string>
 #include "game/Application.hpp"
 #include "renderer/Renderer.hpp"
-#include "renderer/XCBModule.hpp"
+#include "../src/renderer/xcb/XCBModule.hpp"
 #include "renderer/VulkanModule.hpp"
 #include "core/InputModule.hpp"
 #include "../src/audio/AudioModule.hpp"

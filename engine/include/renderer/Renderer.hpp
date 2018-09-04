@@ -6,7 +6,7 @@
 #define VULKAN_ENGINE_CPP_RENDERER_HPP
 
 #include "VulkanModule.hpp"
-#include "XCBModule.hpp"
+#include "../../src/renderer/xcb/XCBModule.hpp"
 #include "ShaderModule.hpp"
 #include "ModelRendererAdapter.hpp"
 
