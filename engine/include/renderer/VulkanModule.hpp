@@ -40,6 +40,8 @@ class Engine;
 
 namespace vlk {
 class VulkanModule {
+
+  // PRIVATE FIELD
  private:
   Engine *engine;
 
@@ -82,6 +84,7 @@ class VulkanModule {
   uint32_t queue_family_count;
 
   bool separate_present_queue;
+  bool isReadyClearCommandBuffer;
 
  public:
   VulkanModule(

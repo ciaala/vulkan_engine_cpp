@@ -13,7 +13,8 @@ vlk::VulkanModule::VulkanModule(
     bool validate) :
     enabled_layer_count{0},
     engine(engine),
-    validate(validate) {
+    validate(validate),
+    isReadyClearCommandBuffer(false){
   FLOG(INFO);
 }
 
@@ -1339,15 +1340,16 @@ void vlk::VulkanModule::presentFrame(std::vector<vk::CommandBuffer> &commandBuff
 
   // clearCommandBuffer requires the render pass
 
-
   // TODO nothing is recorded inside the image presentation command buffer
   vk::CommandBuffer *imageCommandBuffer = swapchain_image_resources[swapChainIndex].cmd.get();
+  if ( ! this->isReadyClearCommandBuffer ) {
 
-  this->clearBackgroundCommandBuffer(
-      imageCommandBuffer,
-      swapchain_image_resources[swapChainIndex].framebuffer,
-      commandBuffers);
-
+    this->clearBackgroundCommandBuffer(
+        imageCommandBuffer,
+        swapchain_image_resources[swapChainIndex].framebuffer,
+        commandBuffers);
+    this->isReadyClearCommandBuffer = true;
+  }
   auto const submit_info = vk::SubmitInfo()
       .setPNext(nullptr)
       .setPWaitDstStageMask(&pipe_stage_flags)
