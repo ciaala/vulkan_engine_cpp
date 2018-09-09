@@ -8,15 +8,11 @@
 #include "vulkan/vulkan.h"
 namespace vlk {
 class VulkanDebugger {
- private:
-  void init_debug_callback();
-  PFN_vkCreateDebugReportCallbackEXT pfnCreateDebugReportCallbackEXT;
-  PFN_vkDestroyDebugReportCallbackEXT pfnDestroyDebugReportCallbackEXT;
-  vk::Instance &instance;
+  // PRIVATE STATIC FIELD
+  private:
+    static int SKIP_VULKAN_DEBUGGER_FUNCTION_FRAMES;
 
-  VkDebugReportCallbackCreateInfoEXT debugReportCreateInfo;
-  VkDebugReportCallbackEXT debugReportCallback;
-
+  // PRIVATE STATIC FUNCTION
   static VkBool32 vkDebugCallback(
       VkDebugReportFlagsEXT flags,
       VkDebugReportObjectTypeEXT objType,
@@ -26,6 +22,20 @@ class VulkanDebugger {
       const char *layerPrefix,
       const char *msg,
       void *userData);
+
+  // PRIVATE FIELD
+ private:
+  PFN_vkCreateDebugReportCallbackEXT pfnCreateDebugReportCallbackEXT;
+  PFN_vkDestroyDebugReportCallbackEXT pfnDestroyDebugReportCallbackEXT;
+  vk::Instance &instance;
+
+  VkDebugReportCallbackCreateInfoEXT debugReportCreateInfo;
+  VkDebugReportCallbackEXT debugReportCallback;
+
+  // PRIVATE METHOD
+ private:
+
+  void init_debug_callback();
   bool debugCallBack(
       VkDebugReportFlagsEXT flags,
       VkDebugReportObjectTypeEXT objectType,
@@ -34,6 +44,9 @@ class VulkanDebugger {
       int32_t messageCode,
       const char *layerPrefix,
       const char *message);
+  void print_backtrace();
+
+  // PUBLIC METHOD
  public :
   explicit VulkanDebugger(vk::Instance &instance);
   ~VulkanDebugger();

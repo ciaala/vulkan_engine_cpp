@@ -11,16 +11,15 @@
 //    }
 void vlk::Engine::static_initialization() {
   google::InitGoogleLogging(vlk::Engine::getName().c_str());
-  google::SetStderrLogging(GLOG_SEVERITY_INFO);
-  ;
+  google::SetStderrLogging(GLOG_SEVERITY_INFO);;
   FLOG(INFO) << "VulkanEngine startup";
   CLOG(INFO) << "Vulkan version: " << vlk::Engine::getVulkanVersion();
 }
 
 std::string vlk::Engine::getVulkanVersion() {
   return std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION))
-  + std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION))
-  + std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION));
+      + std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION))
+      + std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION));
 }
 
 vlk::Engine::Engine() {
@@ -55,9 +54,10 @@ void vlk::Engine::init() {
 void vlk::Engine::draw() {
   static int c = 0;
   static int gc = 0;
-  if (c % 1000 == 0) {
-
-    FLOG(INFO) << "Drawing {frame: " << gc << "000, objects: " << this->application->getWorld()->getGameObjects().size()
+  if (c % 250 == 0) {
+    FLOG(INFO) << "Drawing {frame: "
+               << gc * 250 << ", objects: "
+               << this->application->getWorld()->getGameObjects().size()
                << "}" << std::endl;
     c = 1;
     gc++;

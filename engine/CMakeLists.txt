@@ -2,19 +2,12 @@ cmake_minimum_required(VERSION 3.11)
 set(CMAKE_MODULE_PATH ../cmake)
 project(vkengine)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic")
+
 option(BUILD_DOC "Build documentation" ON)
-# TODO discover a package manager to build
-# TODO substitutes each modules with proper dependencies
-# TODO Add gflags from sub directory
-#add_subdirectory(modules/gflags)
-#include(ExternalProject)
-
-#message("adding subdirectory gflags")
-
-#ExternalProject_Add(gflags
-#        GIT_REPOSITORY git@github.com:gflags/gflags.git
-#        GIT_TAG master
-#        )
+# TODO discover a package manager to build the required libraries
+# + substitutes each modules with proper dependencies
+# + add gflags from sub directory
 
 message("adding subdirectory googletest")
 add_subdirectory(modules/googletest)

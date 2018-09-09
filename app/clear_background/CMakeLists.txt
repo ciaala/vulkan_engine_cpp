@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.11)
 
 project(clear_background)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic")
+
 set(SOURCE_FILES
         src/Application.cpp
         src/Application.hpp

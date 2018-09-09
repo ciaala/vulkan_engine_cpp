@@ -882,42 +882,46 @@ struct Color3 {
   uint32_t COLOR_RANGE = 512;
   uint32_t TIMELIMIT_MILLIS = 5000;
   std::chrono::milliseconds TIMEFRAME_LIMIT = std::chrono::milliseconds(5000);
-  double MAXCOEFF_MILLI = (double) COLOR_RANGE /(double) TIMELIMIT_MILLIS;
-  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> sequenceEnd = std::chrono::system_clock::now();
-  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> previousTime = std::chrono::system_clock::now();
+  double MAXCOEFF_MILLI = (double) COLOR_RANGE / (double) TIMELIMIT_MILLIS;
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>
+      sequenceEnd = std::chrono::system_clock::now();
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>
+      previousTime = std::chrono::system_clock::now();
 
   std::default_random_engine generator;
 
   std::uniform_real_distribution<> distribution =
-      std::uniform_real_distribution<>( 0.0, MAXCOEFF_MILLI*2);
+      std::uniform_real_distribution<>(0.0, MAXCOEFF_MILLI * 2);
 
-   void shufflueCoeffs() {
-     auto dice = std::bind(distribution, generator);
-     this->coeffBlue = dice();
-      this->coeffGreen = dice();
-      this->coeffRed = MAXCOEFF_MILLI*2 - coeffGreen - coeffBlue;
-     this->coeffRed = this->coeffRed < 0 ? 0 : this->coeffRed;
-     FLOG(ERROR) << "COEFF: [" << coeffRed << "," << coeffGreen  << "," << coeffBlue << "] " << MAXCOEFF_MILLI ;
+  void shufflueCoeffs() {
+    auto dice = std::bind(distribution, generator);
+    this->coeffBlue = dice();
+    this->coeffGreen = dice();
+    this->coeffRed = MAXCOEFF_MILLI * 2 - coeffGreen - coeffBlue;
+    this->coeffRed = this->coeffRed < 0 ? 0 : this->coeffRed;
+    FLOG(ERROR) << "COEFF: [" << coeffRed << "," << coeffGreen << "," << coeffBlue << "] " << MAXCOEFF_MILLI;
 
-   }
+  }
 
   void next() {
     const std::chrono::time_point now = std::chrono::system_clock::now();
-    if ( sequenceEnd < now) {
+    if (sequenceEnd < now) {
       shufflueCoeffs();
       sequenceEnd = now + TIMEFRAME_LIMIT;
     }
 
-    auto delta_MILLIS = std::chrono::duration_cast<std::chrono::milliseconds>( now - previousTime ).count();
-    blue += (uint32_t)((coeffBlue * delta_MILLIS)* 1000);
-    green += (uint32_t)((coeffGreen * delta_MILLIS) * 1000);
-    red += (uint32_t)((coeffRed * delta_MILLIS) * 1000);
+    auto delta_MILLIS = std::chrono::duration_cast<std::chrono::milliseconds>
+        (now - previousTime)
+        .count();
+    blue += (uint32_t) ((coeffBlue * delta_MILLIS) * 1000);
+    green += (uint32_t) ((coeffGreen * delta_MILLIS) * 1000);
+    red += (uint32_t) ((coeffRed * delta_MILLIS) * 1000);
     red %= 255000;
     green %= 255000;
     blue %= 255000;
     previousTime = now;
-    FLOG(INFO) << "COLOR: [" << red << "," << green << "," << blue << "] ~" << delta_MILLIS ;
-   }
+    FLOG(INFO) << "COLOR: [" << red << "," << green << "," << blue << "] ~" << delta_MILLIS;
+  }
 };
 
 static struct Color3 backgroundColorMemory;
