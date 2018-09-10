@@ -159,7 +159,7 @@ class VulkanModule {
   uint32_t width;
   uint32_t height;
 
-  void clearBackgroundCommandBuffer(
+  void initClearBackgroundCommandBuffer(
       vk::CommandBuffer *buffer,
       vk::Framebuffer &frameBuffer,
       std::vector<vk::CommandBuffer> &subCommandBuffers);
@@ -251,6 +251,8 @@ class VulkanModule {
   vk::Device *getDevice();
   CommandPoolModule *getCommandPoolModule();
   uint32_t getCurrentFrame();
+  void updateClearBackgroundCommandBuffer(vk::CommandBuffer *pBuffer);
+  void printSwapchainImageResources() const;
 };
 }
 

@@ -23,6 +23,7 @@ typedef struct SwapchainImageResources {
   uint32_t id;
   vk::Image image;
   std::shared_ptr<vk::CommandBuffer> cmd;
+  // TODO should use the ArrayProxy
   std::vector<vk::CommandBuffer> subCommands;
   vk::CommandBuffer graphics_to_present_cmd;
   vk::ImageView view;

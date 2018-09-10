@@ -2,7 +2,7 @@
 // Created by crypt on 31/12/17.
 //
 
-#include <glog/log_severity.h>
+#include "core/CommonMacro.hpp"
 #include "renderer/VulkanModule.hpp"
 
 vlk::CommandPoolModule::CommandPoolModule(const vk::Device &device,
@@ -24,6 +24,7 @@ std::shared_ptr<vk::CommandBuffer> vlk::CommandPoolModule::createCommandBuffer()
       new vk::CommandBuffer,
       [this](vk::CommandBuffer *commandBuffer) {
         this->releaseCommandBuffer(commandBuffer);
+        this->identifiers.erase(commandBuffer);
       });
   uint64_t id = commandBufferCounter++;
   identifiers[result.get()] = id;
@@ -51,11 +52,15 @@ vlk::CommandPoolModule::~CommandPoolModule() {
   device.destroyCommandPool(this->commandPool);
 }
 void vlk::CommandPoolModule::releaseCommandBuffer(vk::CommandBuffer *commandBuffer) {
-  uint64_t id = this->identifiers.count(commandBuffer) > 0 ? this->identifiers.at(commandBuffer) : UINT64_MAX;
-  FLOG(INFO) << "Deleting command buffer " << id;
-  device.freeCommandBuffers(commandPool, 1, commandBuffer);
-  this->identifiers.erase(commandBuffer);
-  delete commandBuffer;
+  auto id = this->identifiers.count(commandBuffer) > 0 ? this->identifiers[commandBuffer] : UINT64_MAX;
+  if ( id < UINT64_MAX) {
+    FLOG(INFO) << "Deleting command buffer " << id;
+    device.freeCommandBuffers(commandPool, 1, commandBuffer);
+    this->identifiers.erase(commandBuffer);
+    delete commandBuffer;
+  } else {
+    LOG(ERROR) << "Trying to delete command buffer which has already been deleted" << std::endl;
+  }
 }
 void vlk::CommandPoolModule::begin(vk::CommandBuffer &commandBuffer,
                                           vk::RenderPass &renderPass,

@@ -7,8 +7,11 @@
 #include <iostream>
 #include "renderer/VulkanModule.hpp"
 #include "../utility/TimeUtility.hpp"
+#include "ShufflingColor.hpp"
 
+static class vlk::ShufflingColor backgroundColorMemory;
 static const unsigned long COMMANDBUFFER_RENDER_PASS_COUNT = 1;
+
 vlk::VulkanModule::VulkanModule(
     Engine *engine,
     bool validate) :
@@ -847,7 +850,6 @@ void vlk::VulkanModule::prepareRenderPass() {
 
   auto const depth_reference =
       vk::AttachmentReference().setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-  https://www.youtube.com/watch?v=Es1fbCeeNDo
   auto const subpass = vk::SubpassDescription()
       .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
       .setInputAttachmentCount(0)
@@ -871,63 +873,7 @@ void vlk::VulkanModule::prepareRenderPass() {
   VERIFY(result == vk::Result::eSuccess);
 }
 
-struct Color3 {
-  uint32_t red = 1;
-  uint32_t green = 1;
-  uint32_t blue = 1;
-
-  double coeffRed = 0;
-  double coeffGreen = 0;
-  double coeffBlue = 0;
-
-  uint32_t COLOR_RANGE = 512;
-  uint32_t TIMELIMIT_MILLIS = 5000;
-  std::chrono::milliseconds TIMEFRAME_LIMIT = std::chrono::milliseconds(5000);
-  double MAXCOEFF_MILLI = (double) COLOR_RANGE / (double) TIMELIMIT_MILLIS;
-  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>
-      sequenceEnd = std::chrono::system_clock::now();
-  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>
-      previousTime = std::chrono::system_clock::now();
-
-  std::default_random_engine generator;
-
-  std::uniform_real_distribution<> distribution =
-      std::uniform_real_distribution<>(0.0, MAXCOEFF_MILLI * 2);
-
-  void shufflueCoeffs() {
-    auto dice = std::bind(distribution, generator);
-    this->coeffBlue = dice();
-    this->coeffGreen = dice();
-    this->coeffRed = MAXCOEFF_MILLI * 2 - coeffGreen - coeffBlue;
-    this->coeffRed = this->coeffRed < 0 ? 0 : this->coeffRed;
-    FLOG(ERROR) << "COEFF: [" << coeffRed << "," << coeffGreen << "," << coeffBlue << "] " << MAXCOEFF_MILLI;
-
-  }
-
-  void next() {
-    const std::chrono::time_point now = std::chrono::system_clock::now();
-    if (sequenceEnd < now) {
-      shufflueCoeffs();
-      sequenceEnd = now + TIMEFRAME_LIMIT;
-    }
-
-    auto delta_MILLIS = std::chrono::duration_cast<std::chrono::milliseconds>
-        (now - previousTime)
-        .count();
-    blue += (uint32_t) ((coeffBlue * delta_MILLIS) * 1000);
-    green += (uint32_t) ((coeffGreen * delta_MILLIS) * 1000);
-    red += (uint32_t) ((coeffRed * delta_MILLIS) * 1000);
-    red %= 255000;
-    green %= 255000;
-    blue %= 255000;
-    previousTime = now;
-    FLOG(INFO) << "COLOR: [" << red << "," << green << "," << blue << "] ~" << delta_MILLIS;
-  }
-};
-
-static struct Color3 backgroundColorMemory;
-
-void vlk::VulkanModule::clearBackgroundCommandBuffer(
+void vlk::VulkanModule::initClearBackgroundCommandBuffer(
     vk::CommandBuffer *commandBuffer,
     vk::Framebuffer &frameBuffer,
     std::vector<vk::CommandBuffer> &subCommandBuffers) {
@@ -1341,25 +1287,23 @@ void vlk::VulkanModule::presentFrame(std::vector<vk::CommandBuffer> &commandBuff
   // clearCommandBuffer requires the render pass
 
   // TODO nothing is recorded inside the image presentation command buffer
-  auto swapchainResource = swapchain_image_resources[swapChainIndex]      ;
-  vk::CommandBuffer *imageCommandBuffer = swapchainResource.cmd.get();
-  std::cerr << "flag: ";
-  for(int ii = 0; ii < swapchainImageCount; ii ++) {
-    std::cerr << ii << ':' << swapchain_image_resources[ii].id << ':' <<  swapchain_image_resources[ii].isReadyClearCommandBuffer << ';';
-  }
-  std::cerr <<std::endl;
-  if ( ! swapchainResource.isReadyClearCommandBuffer ) {
-    this->clearBackgroundCommandBuffer(
-        imageCommandBuffer,
-        swapchainResource.framebuffer,
-        commandBuffers);
+  SwapchainImageResources &swapchainResource = swapchain_image_resources[swapChainIndex];
+  // this->printSwapchainImageResources();
+  if ( swapchainResource.isReadyClearCommandBuffer ) {
+    auto oldCommandBuffer = swapchainResource.cmd.get();
+    swapchainResource.cmd = getCommandPoolModule()->createCommandBuffer();
+  } else {
     swapchainResource.isReadyClearCommandBuffer = true;
   }
-  std::cerr << "flag: ";
-  for(int ii = 0; ii < swapchainImageCount; ii ++) {
-    std::cerr << ii << ':' << swapchain_image_resources[ii].id << ':' <<  swapchain_image_resources[ii].isReadyClearCommandBuffer << ';';
-  }
- std::cerr <<std::endl;
+  vk::CommandBuffer *imageCommandBuffer = swapchainResource.cmd.get();
+
+  this->initClearBackgroundCommandBuffer(
+      imageCommandBuffer,
+      swapchainResource.framebuffer,
+      commandBuffers);
+  swapchainResource.isReadyClearCommandBuffer = true;
+  // this->printSwapchainImageResources();
+
   auto const submit_info = vk::SubmitInfo()
       .setPNext(nullptr)
       .setPWaitDstStageMask(&pipe_stage_flags)
@@ -1420,6 +1364,13 @@ void vlk::VulkanModule::presentFrame(std::vector<vk::CommandBuffer> &commandBuff
   } else {
     VERIFY(result == vk::Result::eSuccess);
   }
+}
+void vlk::VulkanModule::printSwapchainImageResources() const {
+  std::cerr << "flag: ";
+  for(int ii = 0; ii < this->swapchainImageCount; ii ++) {
+    std::cerr << ii << ':' << this->swapchain_image_resources[ii].id << ':' << this->swapchain_image_resources[ii].isReadyClearCommandBuffer << ';';
+  }
+  std::cerr << std::endl;
 }
 void vlk::VulkanModule::prepareRenderPassAndFramebuffer() {
   FLOG(INFO);
@@ -1544,4 +1495,6 @@ vlk::CommandPoolModule *vlk::VulkanModule::getCommandPoolModule() {
 }
 uint32_t vlk::VulkanModule::getCurrentFrame() {
   return this->curFrame;
+}
+void vlk::VulkanModule::updateClearBackgroundCommandBuffer(vk::CommandBuffer *pBuffer) {
 }

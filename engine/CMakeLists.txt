@@ -52,6 +52,7 @@ set(SOURCE_FILES
         include/renderer/TextureModule.hpp
         include/renderer/MemoryModule.hpp
         include/renderer/RendererDefinition.hpp
+        src/renderer/RendererDefinition.cpp
 
         include/core/InputModule.hpp
         include/core/CommonMacro.hpp
@@ -93,7 +94,13 @@ set(SOURCE_FILES
         include/renderer/DescriptorModule.hpp
         src/core/CommonMacro.cpp
         src/renderer/VulkanDebugger.cpp
-        src/renderer/VulkanDebugger.hpp src/utility/Utility.cpp src/utility/Utility.hpp src/renderer/RendererDefinition.cpp)
+        src/renderer/VulkanDebugger.hpp
+        src/utility/Utility.cpp
+        src/utility/Utility.hpp
+
+        src/renderer/ShufflingColor.cpp
+        src/renderer/ShufflingColor.hpp
+        )
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})
