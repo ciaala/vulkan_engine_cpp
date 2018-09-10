@@ -6,7 +6,10 @@
 #define VULKAN_ENGINE_CPP_VULKANDEBUGGER_HXX
 #include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan.h"
+#include "renderer/VulkanModule.hpp"
 namespace vlk {
+class VulkanModule;
+
 class VulkanDebugger {
   // PRIVATE STATIC FIELD
   private:
@@ -22,12 +25,12 @@ class VulkanDebugger {
       const char *layerPrefix,
       const char *msg,
       void *userData);
-
   // PRIVATE FIELD
  private:
   PFN_vkCreateDebugReportCallbackEXT pfnCreateDebugReportCallbackEXT;
   PFN_vkDestroyDebugReportCallbackEXT pfnDestroyDebugReportCallbackEXT;
   vk::Instance &instance;
+  vlk::VulkanModule *vulkanModule;
 
   VkDebugReportCallbackCreateInfoEXT debugReportCreateInfo;
   VkDebugReportCallbackEXT debugReportCallback;
@@ -48,7 +51,7 @@ class VulkanDebugger {
 
   // PUBLIC METHOD
  public :
-  explicit VulkanDebugger(vk::Instance &instance);
+  VulkanDebugger(vk::Instance &instance, vlk::VulkanModule *vulkanModule);
   ~VulkanDebugger();
 
 };

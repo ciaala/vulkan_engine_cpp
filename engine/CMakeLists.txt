@@ -93,7 +93,7 @@ set(SOURCE_FILES
         include/renderer/DescriptorModule.hpp
         src/core/CommonMacro.cpp
         src/renderer/VulkanDebugger.cpp
-        src/renderer/VulkanDebugger.hpp src/utility/Utility.cpp src/utility/Utility.hpp)
+        src/renderer/VulkanDebugger.hpp src/utility/Utility.cpp src/utility/Utility.hpp src/renderer/RendererDefinition.cpp)
 
 
 add_library(vkengine STATIC ${SOURCE_FILES})

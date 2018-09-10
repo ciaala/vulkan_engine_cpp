@@ -12,8 +12,9 @@ using namespace std;
 
 int vlk::VulkanDebugger::SKIP_VULKAN_DEBUGGER_FUNCTION_FRAMES = 3;
 
-vlk::VulkanDebugger::VulkanDebugger(vk::Instance &instance) :
-    instance(instance) {
+vlk::VulkanDebugger::VulkanDebugger(vk::Instance &instance, vlk::VulkanModule *vulkanModule) :
+    instance(instance),
+    vulkanModule(vulkanModule){
   init_debug_callback();
 }
 void
@@ -78,22 +79,24 @@ bool vlk::VulkanDebugger::debugCallBack(
     std::stringstream buffer;
 
     if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) {
-      buffer << "[I| ";
+      buffer << "[I";
     } else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
-      buffer << "[W| ";
+      buffer << "[W";
     } else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {
-      buffer << "[P| ";
+      buffer << "[P";
     } else if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
       //std::cout << "\033[1;31mbold [ERROR ***** | ";
-      buffer << "\033[0;1;32;4m[E| ";
+      buffer << "\033[0;1;32;4m[E";
     } else if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) {
-      buffer << "[D| ";
+      buffer << "[D";
     }
-
-    buffer << '(' << objectType << ")" << layerPrefix << "] " << message;
+    buffer << '|' << vulkanModule->getCurrentFrame() ;
+    buffer << '|' << objectType;
+    buffer << '|' << layerPrefix;
+    buffer << "] " << message;
     if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
       buffer << "\033[0m";
-      print_backtrace();
+
     }
     buffer << endl;
 
@@ -106,6 +109,7 @@ bool vlk::VulkanDebugger::debugCallBack(
     } else if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) {
       LOG(INFO) << buffer.str();
     }
+    print_backtrace();
   }
 
   return false;

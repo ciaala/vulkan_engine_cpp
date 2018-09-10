@@ -13,6 +13,7 @@ class VulkanModule;
 static const char *const VK_EXT_DEBUG_REPORT = "VK_EXT_debug_report";
 namespace vlk {
 class Engine;
+class VulkanDebugger;
 };
 
 #include "RendererDefinition.hpp"
@@ -84,7 +85,7 @@ class VulkanModule {
   uint32_t queue_family_count;
 
   bool separate_present_queue;
-  bool isReadyClearCommandBuffer;
+  //bool isReadyClearCommandBuffer;
 
  public:
   VulkanModule(
@@ -249,7 +250,7 @@ class VulkanModule {
   vk::RenderPass &getRenderPass();
   vk::Device *getDevice();
   CommandPoolModule *getCommandPoolModule();
-
+  uint32_t getCurrentFrame();
 };
 }
 

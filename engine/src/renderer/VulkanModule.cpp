@@ -4,6 +4,7 @@
 #include <chrono>
 #include <random>
 #include <functional>
+#include <iostream>
 #include "renderer/VulkanModule.hpp"
 #include "../utility/TimeUtility.hpp"
 
@@ -13,8 +14,7 @@ vlk::VulkanModule::VulkanModule(
     bool validate) :
     enabled_layer_count{0},
     engine(engine),
-    validate(validate),
-    isReadyClearCommandBuffer(false){
+    validate(validate){
   FLOG(INFO);
 }
 
@@ -1341,15 +1341,25 @@ void vlk::VulkanModule::presentFrame(std::vector<vk::CommandBuffer> &commandBuff
   // clearCommandBuffer requires the render pass
 
   // TODO nothing is recorded inside the image presentation command buffer
-  vk::CommandBuffer *imageCommandBuffer = swapchain_image_resources[swapChainIndex].cmd.get();
-  if ( ! this->isReadyClearCommandBuffer ) {
-
+  auto swapchainResource = swapchain_image_resources[swapChainIndex]      ;
+  vk::CommandBuffer *imageCommandBuffer = swapchainResource.cmd.get();
+  std::cerr << "flag: ";
+  for(int ii = 0; ii < swapchainImageCount; ii ++) {
+    std::cerr << ii << ':' << swapchain_image_resources[ii].id << ':' <<  swapchain_image_resources[ii].isReadyClearCommandBuffer << ';';
+  }
+  std::cerr <<std::endl;
+  if ( ! swapchainResource.isReadyClearCommandBuffer ) {
     this->clearBackgroundCommandBuffer(
         imageCommandBuffer,
-        swapchain_image_resources[swapChainIndex].framebuffer,
+        swapchainResource.framebuffer,
         commandBuffers);
-    this->isReadyClearCommandBuffer = true;
+    swapchainResource.isReadyClearCommandBuffer = true;
   }
+  std::cerr << "flag: ";
+  for(int ii = 0; ii < swapchainImageCount; ii ++) {
+    std::cerr << ii << ':' << swapchain_image_resources[ii].id << ':' <<  swapchain_image_resources[ii].isReadyClearCommandBuffer << ';';
+  }
+ std::cerr <<std::endl;
   auto const submit_info = vk::SubmitInfo()
       .setPNext(nullptr)
       .setPWaitDstStageMask(&pipe_stage_flags)
@@ -1510,7 +1520,7 @@ vlk::VulkanModule::prepareRenderableObject(
 }
 void vlk::VulkanModule::initSubModules() {
   FLOG(INFO);
-  this->vulkanDebugger = new VulkanDebugger(this->inst);
+  this->vulkanDebugger = new VulkanDebugger(this->inst, this);
   this->memoryModule = new MemoryModule(&memory_properties);
   this->shaderModule = new ShaderModule(&device);
   this->pipelineModule = new VulkanPipelineModule(&device);
@@ -1532,4 +1542,6 @@ vk::Format &vlk::VulkanModule::getFormat() {
 vlk::CommandPoolModule *vlk::VulkanModule::getCommandPoolModule() {
   return this->commandPoolGraphic;
 }
-
+uint32_t vlk::VulkanModule::getCurrentFrame() {
+  return this->curFrame;
+}
