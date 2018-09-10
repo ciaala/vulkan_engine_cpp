@@ -5,12 +5,14 @@
 #include <glog/logging.h>
 #include "resource/ResourceManager.hpp"
 #include <sys/stat.h>
-#include "json.hpp"
 #include "../utility/Utility.hpp"
 #include <fstream>
 
-std::string vlk::ResourceManager::emptyPath("");
-using json = nlohmann::json;
+// NOLINT
+std::string vlk::ResourceManager::emptyPath = "";
+// NOLINT
+std::vector<std::string>
+    vlk::ResourceManager::properties = {"vertex", "uv", "textures", "vertexShaders", "fragmentShaders"};
 
 vlk::ResourceManager::ResourceManager(const std::string &customPath) {
   // TODO make Windows ready
@@ -39,7 +41,7 @@ vlk::ResourceManager::ResourceManager(const std::string &customPath) {
 
 namespace vlk {
 
-bool containsAllPropertiesTypeArray(json &json, std::vector<std::string> properties) {
+bool containsAllPropertiesTypeArray(json &json, std::vector<std::string> &properties) {
   for (auto &&property : properties) {
     if (!json.at(property).is_array()) {
       return false;
@@ -78,13 +80,12 @@ vlk::ResourceModel *vlk::ResourceManager::loadJSONModel(const std::string &ident
     p << ss;
     //std::cout << p << std::endl;
 
-    std::vector<std::string> properties = {"vertex", "uv", "textures", "vertexShaders", "fragmentShaders"};
     if (containsAllPropertiesTypeArray(p, properties)) {
       std::vector<float> vertex = p["vertex"];
       std::vector<float> uv = p["uv"];
-      std::vector<std::string> textures = p["textures"];
-      std::vector<std::string> vertexShaders = p["vertexShaders"];
-      std::vector<std::string> fragmentShaders = p["fragmentShaders"];
+      std::vector<std::string> textures = relocate(p, "textures");
+      std::vector<std::string> vertexShaders = relocate(p, "vertexShaders");
+      std::vector<std::string> fragmentShaders = relocate(p, "fragmentShaders");
 
       return (new ResourceModel())->setVertex(vertex)
           ->setUV(uv)
@@ -111,4 +112,12 @@ vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifie
     }
   }
   return modelCache[identifier];
+}
+std::vector<std::string> vlk::ResourceManager::relocate(json references, std::string propertyKey) {
+  std::vector<std::string> filenames;
+  //TODO(ffi) rewrite really soon
+  for (json &element : references[propertyKey]) {
+    filenames.push_back(this->loadPath + "/" + element.dump());
+  }
+  return filenames;
 }

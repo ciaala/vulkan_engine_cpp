@@ -184,6 +184,7 @@ void vlk::VulkanDrawableObject::prepareResourceBuffers(std::shared_ptr<vk::Comma
   vulkan.textures.resize(textureFiles.size());
   unsigned int index = 0;
   for (std::string &textureFile : textureFiles) {
+
     this->vulkanModule->prepareTextureObject(
         commandBuffer.get(),
         textureFile,

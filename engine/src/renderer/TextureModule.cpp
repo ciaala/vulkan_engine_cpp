@@ -67,7 +67,7 @@ void vlk::TextureModule::prepareTextureImage(const char *filename,
 
     auto data = device->mapMemory(tex_obj.mem, 0, tex_obj.mem_alloc.allocationSize);
     if (!loadTexture(filename, (uint8_t *) data, &layout, &tex_width, &tex_height)) {
-       fprintf(stderr, "Error loading texture: %s\n", filename);
+      fprintf(stderr, "Error loading texture: %s\n", filename);
     }
 
     device->unmapMemory(tex_obj.mem);
@@ -131,7 +131,7 @@ vlk::TextureModule::loadTexture(const char *filename,
 
     for (int x = 0; x < *width; x++) {
       size_t s = fread(rowPtr, 3, 1, fPtr);
-     // (void) s;
+      // (void) s;
       rowPtr[3] = 255; /* Alpha of 1 */
       rowPtr += 4;
     }
@@ -154,17 +154,15 @@ void vlk::TextureModule::destroyTextureImage(vlk::TextureObject *tex_objs) {
 vlk::TextureModule::TextureModule(vk::Device *device,
                                   vk::PhysicalDevice *gpu,
                                   vlk::MemoryModule *memoryModule,
-vk::Format &textureFormat)  :
-  gpu(gpu),
-  device(device),
-  memoryModule(memoryModule),
-  useStagingBuffer{true},
-  textureFormat{textureFormat}
-{
+                                  vk::Format &textureFormat) :
+    gpu(gpu),
+    device(device),
+    memoryModule(memoryModule),
+    useStagingBuffer{true},
+    textureFormat{textureFormat}{
   FLOG(INFO);
   gpu->getFormatProperties(textureFormat, &textureFormatProperties);
 }
-
 
 auto DstAccessMask = [](vk::ImageLayout const &layout) {
   FLOG(INFO);
@@ -175,27 +173,22 @@ auto DstAccessMask = [](vk::ImageLayout const &layout) {
       // completed
       flags = vk::AccessFlagBits::eTransferWrite;
       break;
-    case vk::ImageLayout::eColorAttachmentOptimal:
-      flags = vk::AccessFlagBits::eColorAttachmentWrite;
+    case vk::ImageLayout::eColorAttachmentOptimal:flags = vk::AccessFlagBits::eColorAttachmentWrite;
       break;
-    case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-      flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    case vk::ImageLayout::eDepthStencilAttachmentOptimal:flags = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
       break;
     case vk::ImageLayout::eShaderReadOnlyOptimal:
       // Make sure any Copy or CPU writes to image are flushed
       flags = vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eInputAttachmentRead;
       break;
-    case vk::ImageLayout::eTransferSrcOptimal:
-      flags = vk::AccessFlagBits::eTransferRead;
+    case vk::ImageLayout::eTransferSrcOptimal:flags = vk::AccessFlagBits::eTransferRead;
       break;
-    case vk::ImageLayout::ePresentSrcKHR:
-      flags = vk::AccessFlagBits::eMemoryRead;
+    case vk::ImageLayout::ePresentSrcKHR:flags = vk::AccessFlagBits::eMemoryRead;
       break;
     default:break;
   }
   return flags;
 };
-
 
 void vlk::TextureModule::setImageLayout(const vk::CommandBuffer *commandBuffer,
                                         vk::Image image,
@@ -206,8 +199,6 @@ void vlk::TextureModule::setImageLayout(const vk::CommandBuffer *commandBuffer,
                                         vk::PipelineStageFlags srcStages,
                                         vk::PipelineStageFlags destStages) {
   FLOG(INFO);
-
-
 
   auto const imageMemoryBarrier = vk::ImageMemoryBarrier()
       .setSrcAccessMask(srcAccessMask)
@@ -221,8 +212,8 @@ void vlk::TextureModule::setImageLayout(const vk::CommandBuffer *commandBuffer,
 
   const int memoryBarrierCount = 0;
   const int bufferMemoryBarrierCount = 0;
-  const vk::BufferMemoryBarrier* bufferMemoryBarriers = nullptr;
-  const vk::MemoryBarrier* memoryBarriers = nullptr;
+  const vk::BufferMemoryBarrier *bufferMemoryBarriers = nullptr;
+  const vk::MemoryBarrier *memoryBarriers = nullptr;
   const int imageMemoryBarrierCount = 1;
   commandBuffer->pipelineBarrier(srcStages,
                                  destStages,
@@ -242,7 +233,7 @@ void vlk::TextureModule::makeTexture(vk::CommandBuffer *commandBuffer,
                                      const char *textureFile,
                                      const vk::Format &texFormat,
                                      TextureObject &currentTexture) {
-  FLOG(INFO);
+  FLOG(INFO) << textureFile;
 
   if ((this->textureFormatProperties.linearTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) &&
       !this->useStagingBuffer) {
@@ -261,71 +252,71 @@ void vlk::TextureModule::makeTextureWithStagingBuffer(const vk::CommandBuffer *c
                                                       const char *textureFile,
                                                       vlk::TextureObject &currentTexture) {/* Must use staging buffer to copy linear texture to optimized */
 
-  FLOG(INFO);
+  FLOG(INFO) << textureFile;
   TextureObject staging_texture;
   this->prepareTextureImage(textureFile,
-                              staging_texture,
-                              vk::ImageTiling::eLinear,
-                              vk::ImageUsageFlagBits::eTransferSrc,
-                              vk::MemoryPropertyFlagBits::eHostVisible
-                                  | vk::MemoryPropertyFlagBits::eHostCoherent);
+                            staging_texture,
+                            vk::ImageTiling::eLinear,
+                            vk::ImageUsageFlagBits::eTransferSrc,
+                            vk::MemoryPropertyFlagBits::eHostVisible
+                                | vk::MemoryPropertyFlagBits::eHostCoherent);
 
   this->prepareTextureImage(textureFile,
-                              currentTexture,
-                              vk::ImageTiling::eOptimal,
-                              vk::ImageUsageFlagBits::eTransferDst
-                                  | vk::ImageUsageFlagBits::eSampled,
-                              vk::MemoryPropertyFlagBits::eDeviceLocal);
+                            currentTexture,
+                            vk::ImageTiling::eOptimal,
+                            vk::ImageUsageFlagBits::eTransferDst
+                                | vk::ImageUsageFlagBits::eSampled,
+                            vk::MemoryPropertyFlagBits::eDeviceLocal);
 
   this->setImageLayout(commandBuffer,
-                         staging_texture.image,
-                         vk::ImageAspectFlagBits::eColor,
-                         vk::ImageLayout::ePreinitialized,
-                         vk::ImageLayout::eTransferSrcOptimal,
-                         vk::AccessFlagBits(),
-                         vk::PipelineStageFlagBits::eTopOfPipe,
-                         vk::PipelineStageFlagBits::eTransfer);
+                       staging_texture.image,
+                       vk::ImageAspectFlagBits::eColor,
+                       vk::ImageLayout::ePreinitialized,
+                       vk::ImageLayout::eTransferSrcOptimal,
+                       vk::AccessFlagBits(),
+                       vk::PipelineStageFlagBits::eTopOfPipe,
+                       vk::PipelineStageFlagBits::eTransfer);
 
   this->setImageLayout(commandBuffer,
-                         currentTexture.image,
-                         vk::ImageAspectFlagBits::eColor,
-                         vk::ImageLayout::ePreinitialized,
-                         vk::ImageLayout::eTransferDstOptimal,
-                         vk::AccessFlagBits(),
-                         vk::PipelineStageFlagBits::eTopOfPipe,
-                         vk::PipelineStageFlagBits::eTransfer);
+                       currentTexture.image,
+                       vk::ImageAspectFlagBits::eColor,
+                       vk::ImageLayout::ePreinitialized,
+                       vk::ImageLayout::eTransferDstOptimal,
+                       vk::AccessFlagBits(),
+                       vk::PipelineStageFlagBits::eTopOfPipe,
+                       vk::PipelineStageFlagBits::eTransfer);
 
   auto const subResource = vk::ImageSubresourceLayers()
-        .setAspectMask(vk::ImageAspectFlagBits::eColor)
-        .setMipLevel(0)
-        .setBaseArrayLayer(0)
-        .setLayerCount(1);
+      .setAspectMask(vk::ImageAspectFlagBits::eColor)
+      .setMipLevel(0)
+      .setBaseArrayLayer(0)
+      .setLayerCount(1);
 
   auto const copy_region =
-        vk::ImageCopy()
-            .setSrcSubresource(subResource)
-            .setSrcOffset({0, 0, 0})
-            .setDstSubresource(subResource)
-            .setDstOffset({0, 0, 0})
-            .setExtent(
-                {(uint32_t) staging_texture.tex_width,
-                 (uint32_t) staging_texture.tex_height, 1});
+      vk::ImageCopy()
+          .setSrcSubresource(subResource)
+          .setSrcOffset({0, 0, 0})
+          .setDstSubresource(subResource)
+          .setDstOffset({0, 0, 0})
+          .setExtent(
+              {(uint32_t) staging_texture.tex_width,
+               (uint32_t) staging_texture.tex_height, 1});
 
   commandBuffer->copyImage(staging_texture.image,
-                            vk::ImageLayout::eTransferSrcOptimal,
-                            currentTexture.image,
-                            vk::ImageLayout::eTransferDstOptimal,
-                            1,
-                            &copy_region);
+                           vk::ImageLayout::eTransferSrcOptimal,
+                           currentTexture.image,
+                           vk::ImageLayout::eTransferDstOptimal,
+                           1,
+                           &copy_region);
 
   this->setImageLayout(commandBuffer,
-                         currentTexture.image,
-                         vk::ImageAspectFlagBits::eColor,
-                         vk::ImageLayout::eTransferDstOptimal,
-                         currentTexture.imageLayout,
-                         vk::AccessFlagBits::eTransferWrite,
-                         vk::PipelineStageFlagBits::eTransfer,
-                         vk::PipelineStageFlagBits::eFragmentShader);
+                       currentTexture.image,
+                       vk::ImageAspectFlagBits::eColor,
+                       vk::ImageLayout::eTransferDstOptimal,
+                       currentTexture.imageLayout,
+                       vk::AccessFlagBits::eTransferWrite,
+                       vk::PipelineStageFlagBits::eTransfer,
+                       vk::PipelineStageFlagBits::eFragmentShader);
 
 }
 void vlk::TextureModule::makeTextureWithoutStagingBuffer(const vk::CommandBuffer *commandBuffer,
@@ -335,26 +326,26 @@ void vlk::TextureModule::makeTextureWithoutStagingBuffer(const vk::CommandBuffer
   FLOG(INFO);
   vlk::TextureObject staging_texture;
   this->prepareTextureImage(textureFile, currentTexture, vk::ImageTiling::eLinear,
-                              vk::ImageUsageFlagBits::eSampled,
-                              vk::MemoryPropertyFlagBits::eHostVisible
-                                  | vk::MemoryPropertyFlagBits::eHostCoherent);
+                            vk::ImageUsageFlagBits::eSampled,
+                            vk::MemoryPropertyFlagBits::eHostVisible
+                                | vk::MemoryPropertyFlagBits::eHostCoherent);
   // Nothing in the globalPipeline needs to be complete to start, and don't allow fragment
   // shader to run until layout transition completes
   this->setImageLayout(commandBuffer,
-                         currentTexture.image,
-                         vk::ImageAspectFlagBits::eColor,
-                         vk::ImageLayout::ePreinitialized,
-                         currentTexture.imageLayout,
-                         vk::AccessFlagBits::eHostWrite,
-                         vk::PipelineStageFlagBits::eTopOfPipe,
-                         vk::PipelineStageFlagBits::eFragmentShader);
+                       currentTexture.image,
+                       vk::ImageAspectFlagBits::eColor,
+                       vk::ImageLayout::ePreinitialized,
+                       currentTexture.imageLayout,
+                       vk::AccessFlagBits::eHostWrite,
+                       vk::PipelineStageFlagBits::eTopOfPipe,
+                       vk::PipelineStageFlagBits::eFragmentShader);
   staging_texture.image = vk::Image();
 }
 
 void vlk::TextureModule::createImageView(const vk::Format &texFormat,
-                                         vlk::TextureObject &currentTexture)  {
+                                         vlk::TextureObject &currentTexture) {
   FLOG(INFO);
-  auto  samplerInfo = vk::SamplerCreateInfo()
+  auto samplerInfo = vk::SamplerCreateInfo()
       .setMagFilter(vk::Filter::eNearest)
       .setMinFilter(vk::Filter::eNearest)
       .setMipmapMode(vk::SamplerMipmapMode::eNearest)

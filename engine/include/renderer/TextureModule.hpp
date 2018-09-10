@@ -58,17 +58,13 @@ class TextureModule {
                                     vlk::TextureObject &currentTexture);
 
   // CONSTRUCTOR & DESTRUCTOR
-
-
-
  public:
   TextureModule(vk::Device *device,
-                vk::PhysicalDevice *physicalDevice,
-                MemoryModule *memoryModule,
-                vk::Format &textureFormat);
+                  vk::PhysicalDevice *physicalDevice,
+                  vlk::MemoryModule *memoryModule,
+                  vk::Format &textureFormat);
 
   // PUBLIC METHODS
-
   void makeTexture(vk::CommandBuffer *commandBuffer,
                                        const char *textureFile,
                                        const vk::Format &texFormat,
