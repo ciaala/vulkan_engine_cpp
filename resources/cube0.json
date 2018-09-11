@@ -18,12 +18,12 @@
     0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0
   ],
   "textures": [
-    "resources/fcinter.ppm"
+    "fcinter.ppm"
   ],
   "vertexShaders": [
-    "resources/cube-vert.spv"
+    "cube-vert.spv"
   ],
   "fragmentShaders": [
-    "resources/cube-frag.spv"
+    "cube-frag.spv"
   ]
 }

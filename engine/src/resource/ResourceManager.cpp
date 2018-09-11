@@ -2,17 +2,41 @@
 // Created by crypt on 24/07/17.
 //
 
-#include <glog/logging.h>
+#include "core/CommonMacro.hpp"
 #include "resource/ResourceManager.hpp"
 #include <sys/stat.h>
 #include "json.hpp"
 #include "../utility/Utility.hpp"
 #include <fstream>
 
-std::string vlk::ResourceManager::emptyPath("");
 using json = nlohmann::json;
+namespace vlk {
 
-vlk::ResourceManager::ResourceManager(const std::string &customPath) {
+// CONSTANTS
+static const std::string TEXTURE_IMAGES_PROPERTY = "textures";
+static const std::string VERTEX_SHADERS_PROPERTY = "vertexShaders";
+static const std::string FRAGMENT_SHADERS_PROPERTY = "fragmentShaders";
+static const char *const VERTEX_PROPERTY = "vertex";
+static const char *const TEXTURE_PROPERTY = "uv";
+
+const std::string ResourceManager::emptyPath = "";
+
+std::vector<std::string> const ResourceManager::properties = {VERTEX_PROPERTY,
+     TEXTURE_PROPERTY,
+     TEXTURE_IMAGES_PROPERTY,
+     VERTEX_SHADERS_PROPERTY,
+     FRAGMENT_SHADERS_PROPERTY};
+
+std::vector<std::string>
+relocateResource(const std::string loadPath, const json &model, const std::string &property) {
+  std::vector<std::string> resources;
+  for (auto &element: model[property]) {
+    resources.emplace_back(loadPath + std::filesystem::path::preferred_separator + element.get<std::string>());
+  }
+  return resources;
+}
+
+ResourceManager::ResourceManager(const std::string &customPath) {
   // TODO make Windows ready
 
   struct stat st{0};
@@ -22,6 +46,7 @@ vlk::ResourceManager::ResourceManager(const std::string &customPath) {
   } else {
     FLOG(INFO) << "using default resource locations" << std::endl;
     char currentPath[4096];
+
     if (getcwd(currentPath, 4096) == currentPath) {
       this->loadPath = std::string(currentPath) + "/resources";
     } else {
@@ -37,17 +62,13 @@ vlk::ResourceManager::ResourceManager(const std::string &customPath) {
   }
 }
 
-namespace vlk {
-
-bool containsAllPropertiesTypeArray(json &json, std::vector<std::string> properties) {
+bool containsAllPropertiesTypeArray(json &json, std::vector<std::string> &properties) {
   for (auto &&property : properties) {
     if (!json.at(property).is_array()) {
       return false;
     }
   }
   return true;
-}
-
 }
 
 std::string stripJSONComment(std::string &line) {
@@ -78,13 +99,12 @@ vlk::ResourceModel *vlk::ResourceManager::loadJSONModel(const std::string &ident
     p << ss;
     //std::cout << p << std::endl;
 
-    std::vector<std::string> properties = {"vertex", "uv", "textures", "vertexShaders", "fragmentShaders"};
     if (containsAllPropertiesTypeArray(p, properties)) {
-      std::vector<float> vertex = p["vertex"];
-      std::vector<float> uv = p["uv"];
-      std::vector<std::string> textures = p["textures"];
-      std::vector<std::string> vertexShaders = p["vertexShaders"];
-      std::vector<std::string> fragmentShaders = p["fragmentShaders"];
+      std::vector<float> vertex = p[VERTEX_PROPERTY];
+      std::vector<float> uv = p[TEXTURE_PROPERTY];
+      std::vector<std::string> textures = relocateResource(this->loadPath, p, TEXTURE_IMAGES_PROPERTY);
+      std::vector<std::string> vertexShaders = relocateResource(this->loadPath, p, VERTEX_SHADERS_PROPERTY);
+      std::vector<std::string> fragmentShaders = relocateResource(this->loadPath, p, FRAGMENT_SHADERS_PROPERTY);
 
       return (new ResourceModel())->setVertex(vertex)
           ->setUV(uv)
@@ -94,7 +114,6 @@ vlk::ResourceModel *vlk::ResourceManager::loadJSONModel(const std::string &ident
 
     } else {
       LOG(ERROR) << "Check propertie: at least one is missing." << std::endl;
-
     }
   }
   LOG(ERROR) << "Unable to open the file: " << Utility::getAbsolutePath(fullname) << std::endl;
@@ -111,4 +130,6 @@ vlk::ResourceModel *vlk::ResourceManager::loadModel(const std::string &identifie
     }
   }
   return modelCache[identifier];
+}
+
 }

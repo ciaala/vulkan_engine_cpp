@@ -135,7 +135,6 @@ vlk::TextureModule::loadTexture(const char *filename,
       rowPtr[3] = 255; /* Alpha of 1 */
       rowPtr += 4;
     }
-
     rgba_data += layout->rowPitch;
   }
 
@@ -264,18 +263,18 @@ void vlk::TextureModule::makeTextureWithStagingBuffer(const vk::CommandBuffer *c
   FLOG(INFO);
   TextureObject staging_texture;
   this->prepareTextureImage(textureFile,
-                              staging_texture,
-                              vk::ImageTiling::eLinear,
-                              vk::ImageUsageFlagBits::eTransferSrc,
-                              vk::MemoryPropertyFlagBits::eHostVisible
-                                  | vk::MemoryPropertyFlagBits::eHostCoherent);
+                            staging_texture,
+                            vk::ImageTiling::eLinear,
+                            vk::ImageUsageFlagBits::eTransferSrc,
+                            vk::MemoryPropertyFlagBits::eHostVisible
+                                | vk::MemoryPropertyFlagBits::eHostCoherent);
 
   this->prepareTextureImage(textureFile,
-                              currentTexture,
-                              vk::ImageTiling::eOptimal,
-                              vk::ImageUsageFlagBits::eTransferDst
-                                  | vk::ImageUsageFlagBits::eSampled,
-                              vk::MemoryPropertyFlagBits::eDeviceLocal);
+                            currentTexture,
+                            vk::ImageTiling::eOptimal,
+                            vk::ImageUsageFlagBits::eTransferDst
+                                | vk::ImageUsageFlagBits::eSampled,
+                            vk::MemoryPropertyFlagBits::eDeviceLocal);
 
   this->setImageLayout(commandBuffer,
                          staging_texture.image,
@@ -335,9 +334,9 @@ void vlk::TextureModule::makeTextureWithoutStagingBuffer(const vk::CommandBuffer
   FLOG(INFO);
   vlk::TextureObject staging_texture;
   this->prepareTextureImage(textureFile, currentTexture, vk::ImageTiling::eLinear,
-                              vk::ImageUsageFlagBits::eSampled,
-                              vk::MemoryPropertyFlagBits::eHostVisible
-                                  | vk::MemoryPropertyFlagBits::eHostCoherent);
+                            vk::ImageUsageFlagBits::eSampled,
+                            vk::MemoryPropertyFlagBits::eHostVisible
+                                | vk::MemoryPropertyFlagBits::eHostCoherent);
   // Nothing in the globalPipeline needs to be complete to start, and don't allow fragment
   // shader to run until layout transition completes
   this->setImageLayout(commandBuffer,

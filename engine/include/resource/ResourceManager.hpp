@@ -10,23 +10,26 @@
 #include "ResourceModel.hpp"
 
 namespace vlk {
-    class ResourceManager {
-    private:
-        // TODO MAKE CONSTANT
-        std::string loadPath;
-        static std::string emptyPath;
-    public:
-        explicit ResourceManager(const std::string &customPath = emptyPath);
+class ResourceManager {
+  // CONSTANTS
+ private:
+  static const std::vector<std::string> properties;
 
-        ResourceModel *loadModel(const std::string &identifier);
+  // FIELD
+ private:
+  std::string loadPath;
+  static const std::string emptyPath;
+ public:
+  explicit ResourceManager(const std::string &customPath = emptyPath);
 
-    private:
+  ResourceModel *loadModel(const std::string &identifier);
 
-        ResourceModel *loadJSONModel(const std::string &identifier);
+ private:
 
-        std::unordered_map<std::string, ResourceModel *> modelCache;
-    };
+  ResourceModel *loadJSONModel(const std::string &identifier);
+
+  std::unordered_map<std::string, ResourceModel *> modelCache;
+};
 }
-
 
 #endif //VULKAN_ENGINE_CPP_RESOURCEMANAGER_HPP
