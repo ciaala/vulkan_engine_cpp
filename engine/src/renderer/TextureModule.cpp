@@ -135,7 +135,6 @@ vlk::TextureModule::loadTexture(const char *filename,
       rowPtr[3] = 255; /* Alpha of 1 */
       rowPtr += 4;
     }
-
     rgba_data += layout->rowPitch;
   }
 

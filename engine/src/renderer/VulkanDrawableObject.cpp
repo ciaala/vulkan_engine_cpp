@@ -179,7 +179,7 @@ void vlk::VulkanDrawableObject::buildDrawCommandBuffer(
 }
 
 void vlk::VulkanDrawableObject::prepareResourceBuffers(std::shared_ptr<vk::CommandBuffer> commandBuffer) {
-  FLOG(INFO) << " gameObject: " << this->gameObject->getSid();
+  FLOG(INFO) << "gameObject: " << this->gameObject->getSid();
   auto textureFiles = gameObject->getTextureFiles();
   vulkan.textures.resize(textureFiles.size());
   unsigned int index = 0;

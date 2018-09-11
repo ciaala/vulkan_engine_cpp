@@ -26,10 +26,10 @@ class TextureModule {
  private:
   void
   prepareTextureImage(const char *filename,
-                      TextureObject &tex_obj,
-                      vk::ImageTiling tiling,
-                      vk::ImageUsageFlags usage,
-                      vk::MemoryPropertyFlags required_props);
+                        TextureObject &tex_obj,
+                        vk::ImageTiling tiling,
+                        vk::ImageUsageFlags usage,
+                        vk::MemoryPropertyFlags required_props);
 
   bool
   loadTexture(const char *filename,

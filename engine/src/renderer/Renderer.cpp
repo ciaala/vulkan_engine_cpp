@@ -13,9 +13,9 @@ vlk::Renderer::Renderer(Engine *engine, VulkanModule *vulkanModule, XCBModule *x
   //this->initVulkan();
 }
 
-const uint16_t vlk::Renderer::WINDOW_WIDTH = 500;
+const uint16_t vlk::Renderer::WINDOW_WIDTH = 1024;
 
-const uint16_t vlk::Renderer::WINDOW_HEIGHT = 500;
+const uint16_t vlk::Renderer::WINDOW_HEIGHT = 1024;
 
 void vlk::Renderer::initWindowLibrary() {
   FLOG(INFO);

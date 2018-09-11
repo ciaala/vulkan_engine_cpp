@@ -8,33 +8,27 @@
 #include <string>
 #include <unordered_map>
 #include "ResourceModel.hpp"
-#include "../../src/resource/json.hpp"
-using json = nlohmann::json;
-
 
 namespace vlk {
 class ResourceManager {
-
+  // CONSTANTS
  private:
-  static std::vector<std::string> properties;
+  static const std::vector<std::string> properties;
 
+  // FIELD
  private:
-
-  // TODO MAKE CONSTANT
   std::string loadPath;
-  static std::string emptyPath;
+  static const std::string emptyPath;
  public:
   explicit ResourceManager(const std::string &customPath = emptyPath);
 
   ResourceModel *loadModel(const std::string &identifier);
 
-  // PRIVATE METHOD
  private:
 
   ResourceModel *loadJSONModel(const std::string &identifier);
 
   std::unordered_map<std::string, ResourceModel *> modelCache;
-  std::vector<std::string> relocate(json references, std::string string);
 };
 }
 

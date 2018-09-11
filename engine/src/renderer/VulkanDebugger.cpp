@@ -9,12 +9,11 @@
 #include "iostream"
 using namespace std;
 
-
 int vlk::VulkanDebugger::SKIP_VULKAN_DEBUGGER_FUNCTION_FRAMES = 3;
 
 vlk::VulkanDebugger::VulkanDebugger(vk::Instance &instance, vlk::VulkanModule *vulkanModule) :
     instance(instance),
-    vulkanModule(vulkanModule){
+    vulkanModule(vulkanModule) {
   init_debug_callback();
 }
 void
@@ -40,7 +39,10 @@ vlk::VulkanDebugger::init_debug_callback() {
           | VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
   debugReportCreateInfo.pfnCallback = vkDebugCallback;
   debugReportCreateInfo.pUserData = this;
-  pfnCreateDebugReportCallbackEXT(this->instance, &this->debugReportCreateInfo, nullptr, &this->debugReportCallback);
+  pfnCreateDebugReportCallbackEXT(this->instance,
+                                  &this->debugReportCreateInfo,
+                                  nullptr,
+                                  &this->debugReportCallback);
 }
 
 vlk::VulkanDebugger::~VulkanDebugger() {
@@ -90,7 +92,7 @@ bool vlk::VulkanDebugger::debugCallBack(
     } else if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) {
       buffer << "[D";
     }
-    buffer << '|' << vulkanModule->getCurrentFrame() ;
+    buffer << '|' << vulkanModule->getCurrentFrame();
     buffer << '|' << objectType;
     buffer << '|' << layerPrefix;
     buffer << "] " << message;
@@ -151,9 +153,9 @@ print_function_name(char *function_definition, std::stringstream &buffer) {
                                       &funcnamesize,
                                       &status);
       if (status == 0) {
-        buffer << "\033[4m" << ret << "[" <<begin_offset << "]\033[0m";
+        buffer << "\033[4m" << ret << "[" << begin_offset << "]\033[0m";
       } else {
-        buffer << "\033[9m" << function_definition << "[" <<  begin_offset << "]\033[0m";
+        buffer << "\033[9m" << function_definition << "[" << begin_offset << "]\033[0m";
       }
       free(funcname);
       return;
@@ -184,7 +186,7 @@ vlk::VulkanDebugger::print_backtrace() {
 
   std::stringstream stacktrace;
   for (j = SKIP_VULKAN_DEBUGGER_FUNCTION_FRAMES; j < nptrs; j++) {
-    stacktrace << "\t\t" ;
+    stacktrace << "\t\t";
     print_function_name(strings[j], stacktrace);
     stacktrace << std::endl;
   }
