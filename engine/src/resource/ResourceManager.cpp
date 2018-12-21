@@ -62,7 +62,7 @@ ResourceManager::ResourceManager(const std::string &customPath) {
   }
 }
 
-bool containsAllPropertiesTypeArray(json &json, std::vector<std::string> &properties) {
+bool containsAllPropertiesTypeArray(json &json, const std::vector<std::string> &properties) {
   for (auto &&property : properties) {
     if (!json.at(property).is_array()) {
       return false;
