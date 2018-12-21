@@ -1154,7 +1154,7 @@ std::vector<vk::CommandBuffer> vlk::VulkanModule::drawWorld(
   if (commandBufferCounts > 0) {
     auto commandBuffers = this->commandPoolGraphic->createCommandBuffers(commandBufferCounts);
 
-    for (int index = COMMANDBUFFER_RENDER_PASS_COUNT; index < commandBufferCounts; ++index) {
+    for (int index = COMMANDBUFFER_RENDER_PASS_COUNT; index < commandBufferCounts-1; ++index) {
       vk::CommandBuffer &commandBuffer = commandBuffers[index];
 
       this->commandPoolGraphic->begin(
