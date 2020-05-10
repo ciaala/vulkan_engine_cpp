@@ -1,6 +1,6 @@
 [submodule "engine/modules/glog"]
 	path = engine/modules/glog
-	url = https://github.com/google/glog.git
+	url = https://github.com/ciaala/vlk_glog
 [submodule "engine/modules/googletest"]
 	path = engine/modules/googletest
 	url = https://github.com/google/googletest

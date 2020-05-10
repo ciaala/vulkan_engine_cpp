@@ -1,5 +1,10 @@
 set(CMAKE_VERBOSE_MAKEFILE)
-set(VULKAN_BASE_DIR /opt/VulkanSDK/current/)
+
+if(DEFINED ${VULKAN_BASE_DIR})
+    set(VULKAN_BASE_DIR /opt/VulkanSDK/current/)
+    message(STATUS "Falling back to " ${VULKAN_BASE_DIR})
+endif()
+
 message("VULKAN_BASE_DIR: " ${VULKAN_BASE_DIR})
 find_path(VULKAN_INCLUDE_DIR
         NAMES vulkan/vulkan.h

@@ -6,7 +6,8 @@
 #define VULKAN_ENGINE_CPP_RENDERERDEFINITION_HPP
 
 #define VK_USE_PLATFORM_XCB_KHR 1
-
+// #define VULKAN_HPP_DISABLE_ENHANCED_MODE 1
+#include <memory>
 #include <vulkan/vulkan.hpp>
 #include "core/CommonMacro.hpp"
 
